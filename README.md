@@ -6,26 +6,72 @@ CampusCare is a centralized campus infrastructure and maintenance management pla
 
 ---
 
+## Quick Start (Running Locally with Docker Compose)
+
+The entire CampusCare stack (Frontend, Backend, and MongoDB) can be spun up using Docker Compose:
+
+### 1. Configure Environment Variables
+Copy the root `.env.example` template:
+```bash
+cp .env.example .env
+```
+Default credentials and endpoints in `.env` are pre-configured for instant local execution.
+
+### 2. Build and Start the Stack
+Start all containerized services:
+```bash
+docker compose up --build -d
+```
+Docker Compose will automatically:
+1. Initialize the `mongodb` service with health checks and authentication.
+2. Build and launch the `backend` service once MongoDB is healthy.
+3. Build and launch the `frontend` NGINX service on port 80.
+
+### 3. Seed Initial Demonstration Data
+Once the containers are up, seed the accounts and demonstration complaints inside the backend container:
+```bash
+docker compose exec backend node seed.js
+```
+
+### 4. Access the Application
+- **Frontend Portal**: [http://localhost](http://localhost) (Port 80)
+- **Backend API**: [http://localhost:5000/api](http://localhost:5000/api)
+
+### 5. Pre-Seeded Demonstration Accounts
+| Role | Email | Password | Portal Entry |
+|---|---|---|---|
+| **Admin** | `admin@pccoepune.org` | `Admin@12345` | `/admin/login` |
+| **Staff** | `staff@pccoepune.org` | `Staff@12345` | `/staff/login` |
+| **Student 1** | `aarav.sharma@pccoepune.org` (PRN: `123B1B201`) | `Student@12345` | `/login` |
+| **Student 2** | `neha.patil@pccoepune.org` (PRN: `123B1B202`) | `Student@12345` | `/login` |
+
+### 6. Teardown & Reset
+To stop and remove all containers, networks, and database volumes:
+```bash
+docker compose down -v
+```
+
+---
+
 ## Project Structure
 
 ```text
 CampusCare/
-├── frontend/           # React + Vite application (planned for next phase)
-├── backend/            # Express.js REST API & MongoDB database
-│   ├── config/         # Database and server configuration
-│   │   └── db.js       # Mongoose connection utility
-│   ├── controllers/    # Request handlers and business logic
-│   │   └── authController.js # Register, login, and profile handlers
-│   ├── middleware/     # Custom Express middleware
-│   │   └── auth.js     # JWT verification (protect) & role authorization (authorize)
-│   ├── models/         # Mongoose data models
-│   │   └── User.js     # User schema (student, admin, staff)
-│   ├── routes/         # API route definitions
-│   │   └── auth.js     # /api/auth endpoints
-│   ├── .env.example    # Environment variable template
-│   ├── package.json    # Backend dependencies and scripts
-│   ├── seed.js         # Initial seed script for Admin and Staff accounts
+├── frontend/           # React + Vite application served via NGINX
+│   ├── src/            # Components, pages, contexts, design system
+│   ├── Dockerfile      # Multi-stage build (Node builder + NGINX runtime)
+│   └── nginx.conf      # NGINX reverse routing & SPA fallback configuration
+├── backend/            # Express.js REST API & MongoDB models
+│   ├── config/         # Database connection (db.js)
+│   ├── controllers/    # Route controllers (auth, complaints, admin, staff)
+│   ├── middleware/     # JWT authentication & role-based access control
+│   ├── models/         # Mongoose schemas (User, Complaint)
+│   ├── routes/         # API routes
+│   ├── Dockerfile      # Lightweight Alpine Node image (non-root)
+│   ├── seed.js         # Initial seed script for Admin, Staff & Student data
 │   └── server.js       # Express server entry point
+├── docker-compose.yml  # Multi-container orchestration (Mongo, Backend, Frontend)
+├── .env.example        # Environment variable template
 ├── .gitignore          # Root Git ignore rules
 ├── PLAN.md             # Comprehensive project architecture blueprint
 └── README.md           # Project documentation
@@ -33,58 +79,13 @@ CampusCare/
 
 ---
 
-## Tech Stack (Backend & Auth)
+## Tech Stack
 
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Database**: MongoDB with Mongoose ODM
-- **Authentication**: JSON Web Tokens (`jsonwebtoken`)
-- **Password Security**: Salted hashing with `bcryptjs`
-- **CORS**: Configured for cross-origin API access
-
----
-
-## Getting Started
-
-### 1. Prerequisites
-
-- [Node.js](https://nodejs.org/) (v18 or higher recommended)
-- [MongoDB](https://www.mongodb.com/) (Local instance running on port 27017 or a MongoDB Atlas connection URI)
-
-### 2. Backend Setup
-
-1. Open a terminal and navigate to the `backend/` directory:
-   ```bash
-   cd backend
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Create your `.env` file from `.env.example`:
-   ```bash
-   cp .env.example .env
-   ```
-   Configure the following variables in `.env`:
-   - `PORT`: Server port (default: `5000`)
-   - `MONGO_URI`: MongoDB connection string (e.g., `mongodb://127.0.0.1:27017/campuscare`)
-   - `JWT_SECRET`: Secret key used to sign and verify JWT tokens
-
-4. Seed the initial Administrator and Staff accounts:
-   ```bash
-   npm run seed
-   ```
-
-5. Start the development server:
-   ```bash
-   npm run dev
-   ```
-   Or start in standard mode:
-   ```bash
-   npm start
-   ```
+- **Frontend**: React 18, Vite, Tailwind CSS, Framer Motion, Lucide React, Axios, Recharts, NGINX
+- **Backend**: Node.js, Express.js
+- **Database**: MongoDB 7 with Mongoose ODM
+- **Authentication**: JSON Web Tokens (`jsonwebtoken`), `bcryptjs` password hashing
+- **Containerization**: Docker, Docker Compose
 
 ---
 
@@ -94,7 +95,7 @@ CampusCare/
 
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| `POST` | `/api/auth/register` | Public | Register a new user (`name`, `email`, `password`, `studentId`, optional `role`) |
+| `POST` | `/api/auth/register` | Public | Register a new student (`name`, `email`, `studentId`, `password`, `role`) |
 | `POST` | `/api/auth/login` | Public | Login with `email` and `password`, returns JWT `{ id, role }` |
 | `GET` | `/api/auth/me` | Protected (`protect`) | Returns logged-in user profile (excluding password) |
 
@@ -111,10 +112,10 @@ CampusCare/
 
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| `GET` | `/api/admin/dashboard` | Protected (`admin`) | Summary metrics (total, pending, assigned, in-progress, resolved) & category/priority charts |
-| `GET` | `/api/admin/complaints` | Protected (`admin`) | Query all complaints across campus with filters, search, and pagination (`?page`, `?limit`) |
-| `PUT` | `/api/admin/complaints/:id/assign` | Protected (`admin`) | Assign a staff member to complaint (`staffId`); updates status to `ASSIGNED` |
-| `PUT` | `/api/admin/complaints/:id/status` | Protected (`admin`) | Update complaint status and append to timeline |
+| `GET` | `/api/admin/dashboard` | Protected (`admin`) | Summary metrics (total, pending, assigned, in-progress, resolved) & charts |
+| `GET` | `/api/admin/complaints` | Protected (`admin`) | Query all campus complaints with filters, search, and pagination |
+| `PUT` | `/api/admin/complaints/:id/assign` | Protected (`admin`) | Assign a staff member (`staffId`); updates status to `ASSIGNED` |
+| `PUT` | `/api/admin/complaints/:id/status` | Protected (`admin`) | Update complaint status and/or priority with timeline audit logging |
 | `GET` | `/api/admin/users` | Protected (`admin`) | List users, filtered by `?role=student\|staff\|admin` |
 
 ### 4. Staff Task Endpoints
@@ -141,4 +142,12 @@ Staff Starts Work (IN_PROGRESS)
          ▼
 Staff Resolves & Enters Notes (RESOLVED)
 ```
-Every transition appends to `statusHistory: [{ status, changedAt, changedBy, notes }]` for a complete audit trail.
+Every transition automatically appends to `statusHistory: [{ status, changedAt, changedBy, notes }]` for a complete audit trail.
+
+---
+
+## Deployment
+
+> **Status**: *To be configured.*
+> Cloud infrastructure provisioning (via Terraform) and production container deployment workflows will be documented here once cloud environments are active.
+

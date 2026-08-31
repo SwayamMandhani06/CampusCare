@@ -1,13 +1,22 @@
 # Dependency directories
 node_modules/
+**/node_modules/
 package-lock.json
 
 # Environment variables & secrets
 .env
+.env.*
 .env.local
 .env.production
+!.env.example
+!**/.env.example
+
+# SSH and TLS Keys & Certificates
 *.pem
 *.key
+id_rsa
+id_rsa.pub
+*.pub
 
 # Logs
 *.log
@@ -19,12 +28,23 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
-# Build artifacts (for future frontend)
+# Build artifacts
 dist/
 build/
+**/dist/
+**/build/
 
 # IDE / Editor configuration
 .vscode/
 .idea/
 
+# Terraform (Infrastructure as Code)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+
+# Planning and Internal Verification Artifacts
 PLAN.md
+VERIFICATION_REPORT.md

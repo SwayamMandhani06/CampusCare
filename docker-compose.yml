@@ -1,0 +1,67 @@
+services:
+  # 1. MongoDB Database Service
+  mongodb:
+    image: mongo:7
+    container_name: campuscare-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    volumes:
+      - mongodata:/data/db
+    healthcheck:
+      test: [ "CMD-SHELL", "mongosh --eval \"db.adminCommand('ping')\"" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    # Port 27017 is kept strictly internal to the container network for security
+    networks:
+      - campuscare-net
+
+  # 2. Node.js / Express Backend REST API
+  backend:
+    build:
+      context: ./backend
+    container_name: campuscare-backend
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      PORT: ${PORT:-5000}
+      MONGO_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/campuscare?authSource=admin
+      JWT_SECRET: ${JWT_SECRET}
+      NODE_ENV: production
+    ports:
+      - "${PORT:-5000}:5000"
+    networks:
+      - campuscare-net
+
+  # 3. React + Vite + NGINX Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # For local development, default to http://localhost:5000.
+        # NOTE: For cloud VM / production deployments (e.g. AWS EC2, GCP Compute Engine),
+        # rebuild this service passing the VM's public IP/Domain (e.g. VITE_API_URL=http://<PUBLIC_IP>:5000)
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5000}
+    container_name: campuscare-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - campuscare-net
+
+# Single custom bridge network for internal DNS service discovery
+networks:
+  campuscare-net:
+    driver: bridge
+
+# Persistent named volume for MongoDB data directory
+volumes:
+  mongodata:
+    driver: local

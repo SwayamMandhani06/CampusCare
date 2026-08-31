@@ -1,0 +1,25 @@
+# ==============================================================================
+# CampusCare — Terraform Variable Values Template
+# Copy this file to terraform.tfvars and fill in your GCP project details:
+# cp terraform.tfvars.example terraform.tfvars
+# ==============================================================================
+
+# Required: Your Google Cloud Project ID
+gcp_project_id = "your-gcp-project-id-here"
+
+# Deployment Region & Zone
+gcp_region = "asia-south1"
+gcp_zone   = "asia-south1-a"
+
+# VM Instance Sizing (e2-medium: 2 vCPU, 4GB RAM)
+machine_type = "e2-medium"
+
+# SSH Authentication Configuration
+# Ensure you generate the key pair first:
+# ssh-keygen -t ed25519 -f ~/.ssh/campuscare-key -C "campuscare"
+ssh_public_key_path = "~/.ssh/campuscare-key.pub"
+ssh_user            = "campuscare"
+
+# Network Ingress Rules
+# Set to "0.0.0.0/0" for open demo access or your IP (e.g. "<YOUR_PUBLIC_IP>/32") for restriction
+allowed_ssh_cidr = "0.0.0.0/0"

@@ -44,7 +44,11 @@ build/
 *.tfstate.*
 *.tfvars
 *.tfvars.json
+!*.tfvars.example
+!**/*.tfvars.example
+
 
 # Planning and Internal Verification Artifacts
 PLAN.md
 VERIFICATION_REPORT.md
+DEMO_SCRIPT.md

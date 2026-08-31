@@ -85,6 +85,15 @@ const Navbar = () => {
             </>
           )}
 
+          {user?.role === 'staff' && (
+            <Link
+              to="/staff/tasks"
+              className="text-sm text-muted hover:text-ink transition-colors"
+            >
+              Assigned Tasks
+            </Link>
+          )}
+
           {user?.role === 'student' && (
             <Link
               to="/complaints"

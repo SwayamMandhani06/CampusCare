@@ -5,11 +5,10 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 
-// Pages
+// Public Pages
 import LandingPage from './pages/LandingPage';
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
-import DashboardPlaceholder from './pages/DashboardPlaceholder';
 
 // Student Pages
 import StudentDashboard from './pages/student/StudentDashboard';
@@ -22,6 +21,11 @@ import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminComplaintsPage from './pages/admin/AdminComplaintsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
+
+// Staff Pages
+import StaffLoginPage from './pages/staff/StaffLoginPage';
+import StaffDashboard from './pages/staff/StaffDashboard';
+import StaffTasksPage from './pages/staff/StaffTasksPage';
 
 function App() {
   return (
@@ -36,6 +40,7 @@ function App() {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/admin/login" element={<AdminLoginPage />} />
+              <Route path="/staff/login" element={<StaffLoginPage />} />
 
               {/* Student Routes */}
               <Route
@@ -97,15 +102,20 @@ function App() {
                 }
               />
 
-              {/* Staff Dashboard (to be fleshed out in upcoming stage) */}
+              {/* Staff Routes */}
               <Route
                 path="/staff/dashboard"
                 element={
-                  <ProtectedRoute allowedRoles={['staff', 'admin']}>
-                    <DashboardPlaceholder
-                      title="Facility Staff Task Dispatch"
-                      roleRequired="staff"
-                    />
+                  <ProtectedRoute allowedRoles={['staff']}>
+                    <StaffDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/staff/tasks"
+                element={
+                  <ProtectedRoute allowedRoles={['staff']}>
+                    <StaffTasksPage />
                   </ProtectedRoute>
                 }
               />

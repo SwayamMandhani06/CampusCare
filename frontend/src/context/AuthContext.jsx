@@ -7,6 +7,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(() => localStorage.getItem('campuscare_token'));
   const [loading, setLoading] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   // Initialize and verify user on mount
   useEffect(() => {
@@ -14,9 +15,16 @@ export const AuthProvider = ({ children }) => {
       const storedToken = localStorage.getItem('campuscare_token');
       const storedUser = localStorage.getItem('campuscare_user');
 
-      if (storedToken && storedUser) {
+      if (storedToken) {
+        if (storedUser) {
+          try {
+            setUser(JSON.parse(storedUser));
+          } catch (e) {
+            console.error('[AuthContext] Failed to parse stored user:', e);
+          }
+        }
+
         try {
-          setUser(JSON.parse(storedUser));
           // Verify with backend /api/auth/me
           const res = await api.get('/auth/me');
           if (res.data && res.data.user) {
@@ -29,6 +37,7 @@ export const AuthProvider = ({ children }) => {
         }
       }
       setLoading(false);
+      setIsInitializing(false);
     };
 
     initializeAuth();
@@ -83,6 +92,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated: !!token && !!user,
         role: user ? user.role : null,
         loading,
+        isInitializing,
         login,
         register,
         logout,

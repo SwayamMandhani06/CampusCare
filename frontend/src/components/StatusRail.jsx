@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 /**
@@ -11,6 +11,8 @@ import { motion } from 'framer-motion';
  * - orientation: "vertical" (detail view / sidebar cards) | "horizontal" (landing / dashboard summaries)
  * - currentStatus: string
  * - statusHistory: array of { status, changedAt, changedBy, notes }
+ * - Sequential animation on mount (~150ms per reached stage)
+ * - Incremental animation for live status transitions
  */
 const STATUS_STEPS = [
   {
@@ -52,11 +54,61 @@ const StatusRail = ({
   compact = false,
   className = '',
 }) => {
-  const currentIndex = STATUS_STEPS.findIndex(
+  const targetIndex = STATUS_STEPS.findIndex(
     (s) => s.key === (currentStatus || '').toUpperCase()
   );
-  // Fallback to 0 if not found
-  const activeIdx = currentIndex >= 0 ? currentIndex : 0;
+  const finalActiveIdx = targetIndex >= 0 ? targetIndex : 0;
+
+  // Track the highest step animated so far
+  const [animatedIdx, setAnimatedIdx] = useState(0);
+  const initialMounted = useRef(false);
+
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches;
+
+    if (prefersReducedMotion) {
+      setAnimatedIdx(finalActiveIdx);
+      initialMounted.current = true;
+      return;
+    }
+
+    if (!initialMounted.current) {
+      // First mount: animate sequentially from 0 to finalActiveIdx
+      initialMounted.current = true;
+      let currentStep = 0;
+      setAnimatedIdx(0);
+
+      const interval = setInterval(() => {
+        currentStep += 1;
+        if (currentStep <= finalActiveIdx) {
+          setAnimatedIdx(currentStep);
+        } else {
+          clearInterval(interval);
+        }
+      }, 150);
+
+      return () => clearInterval(interval);
+    } else {
+      // Subsequent live update: advance animatedIdx incrementally to finalActiveIdx
+      if (finalActiveIdx > animatedIdx) {
+        let currentStep = animatedIdx;
+        const interval = setInterval(() => {
+          currentStep += 1;
+          if (currentStep <= finalActiveIdx) {
+            setAnimatedIdx(currentStep);
+          } else {
+            clearInterval(interval);
+          }
+        }, 180);
+
+        return () => clearInterval(interval);
+      } else {
+        setAnimatedIdx(finalActiveIdx);
+      }
+    }
+  }, [finalActiveIdx]);
 
   // Format date helper for history
   const getHistoryInfo = (key) => {
@@ -70,19 +122,21 @@ const StatusRail = ({
         <div className="relative flex items-center justify-between">
           {/* Connector rail behind nodes */}
           <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] bg-line z-0" />
-          
-          {/* Reached rail highlight */}
-          <div
-            className="absolute left-0 top-1/2 -translate-y-1/2 h-[2px] z-0 transition-all duration-300"
-            style={{
-              width: `${(activeIdx / (STATUS_STEPS.length - 1)) * 100}%`,
-              backgroundColor: STATUS_STEPS[activeIdx].color,
+
+          {/* Reached rail highlight with smooth stroke transition */}
+          <motion.div
+            className="absolute left-0 top-1/2 -translate-y-1/2 h-[2px] z-0"
+            initial={false}
+            animate={{
+              width: `${(animatedIdx / (STATUS_STEPS.length - 1)) * 100}%`,
+              backgroundColor: STATUS_STEPS[animatedIdx]?.color || 'var(--brand)',
             }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
           />
 
           {STATUS_STEPS.map((step, idx) => {
-            const isReached = idx <= activeIdx;
-            const isCurrent = idx === activeIdx;
+            const isReached = idx <= animatedIdx;
+            const isCurrent = idx === animatedIdx;
 
             return (
               <div
@@ -94,8 +148,9 @@ const StatusRail = ({
                   animate={{
                     backgroundColor: isReached ? step.activeHex : 'var(--paper)',
                     borderColor: isReached ? step.activeHex : 'var(--line)',
+                    scale: isCurrent ? 1.08 : 1,
                   }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: 0.25 }}
                   className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-colors ${
                     isCurrent ? 'ring-4 ring-offset-2 ring-line' : ''
                   }`}
@@ -109,7 +164,7 @@ const StatusRail = ({
 
                 {!compact && (
                   <span
-                    className={`mt-2 text-xs font-mono tracking-tight text-center ${
+                    className={`mt-2 text-xs font-mono tracking-tight text-center transition-colors duration-200 ${
                       isReached ? 'font-medium text-ink' : 'text-muted'
                     }`}
                   >
@@ -128,8 +183,8 @@ const StatusRail = ({
   return (
     <div className={`flex flex-col space-y-0 ${className}`}>
       {STATUS_STEPS.map((step, idx) => {
-        const isReached = idx <= activeIdx;
-        const isCurrent = idx === activeIdx;
+        const isReached = idx <= animatedIdx;
+        const isCurrent = idx === animatedIdx;
         const isLast = idx === STATUS_STEPS.length - 1;
         const historyItem = getHistoryInfo(step.key);
 
@@ -142,8 +197,9 @@ const StatusRail = ({
                 animate={{
                   backgroundColor: isReached ? step.activeHex : 'var(--paper)',
                   borderColor: isReached ? step.activeHex : 'var(--line)',
+                  scale: isCurrent ? 1.1 : 1,
                 }}
-                transition={{ duration: 0.2 }}
+                transition={{ duration: 0.25 }}
                 className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                   isCurrent ? 'ring-4 ring-offset-1 ring-line' : ''
                 }`}
@@ -156,12 +212,20 @@ const StatusRail = ({
               </motion.div>
 
               {!isLast && (
-                <div
-                  className="w-[2px] h-9 my-1 transition-colors duration-200"
-                  style={{
-                    backgroundColor: idx < activeIdx ? STATUS_STEPS[idx + 1].color : 'var(--line)',
-                  }}
-                />
+                <div className="w-[2px] h-10 my-1 bg-line relative overflow-hidden">
+                  <motion.div
+                    className="w-full absolute top-0 left-0"
+                    initial={{ height: 0 }}
+                    animate={{
+                      height: idx < animatedIdx ? '100%' : '0%',
+                      backgroundColor:
+                        idx < animatedIdx
+                          ? STATUS_STEPS[idx + 1].color
+                          : 'transparent',
+                    }}
+                    transition={{ duration: 0.2, ease: 'easeInOut' }}
+                  />
+                </div>
               )}
             </div>
 
@@ -169,7 +233,7 @@ const StatusRail = ({
             <div className="pb-3 pt-0.5 flex-1">
               <div className="flex items-center justify-between">
                 <span
-                  className={`text-xs font-mono uppercase tracking-wider ${
+                  className={`text-xs font-mono uppercase tracking-wider transition-colors duration-200 ${
                     isReached ? 'font-medium text-ink' : 'text-muted'
                   }`}
                 >

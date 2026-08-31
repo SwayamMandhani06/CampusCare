@@ -302,7 +302,7 @@ const StaffTasksPage = () => {
                 </div>
                 {selectedTask.createdBy?.studentId && (
                   <div className="text-muted font-mono text-[11px]">
-                    Student ID: {selectedTask.createdBy?.studentId}
+                    PRN: {selectedTask.createdBy?.studentId}
                   </div>
                 )}
               </div>

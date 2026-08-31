@@ -25,7 +25,7 @@ const Footer = () => {
             <div className="flex items-center space-x-2 pt-1">
               <span className="w-2 h-2 rounded-full bg-status-resolved animate-pulse" />
               <span className="text-[11px] font-mono text-muted uppercase tracking-wider">
-                Services Operational • DevOps FA1
+                Services Operational • PCCOE Facilities
               </span>
             </div>
           </div>

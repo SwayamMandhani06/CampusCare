@@ -90,7 +90,7 @@ const StudentDashboard = () => {
             Welcome, {user?.name || 'Student'}
           </h1>
           <p className="text-xs text-muted mt-1">
-            Student ID: <span className="font-mono text-ink">{user?.studentId || 'N/A'}</span> • {user?.email}
+            PRN: <span className="font-mono text-ink">{user?.studentId || 'N/A'}</span> • {user?.email}
           </p>
         </div>
 

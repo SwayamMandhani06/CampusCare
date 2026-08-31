@@ -9,15 +9,16 @@ import Button from './Button';
  * Guards routes by checking authentication and optional allowed roles
  */
 const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { isAuthenticated, user, loading } = useAuth();
+  const { isAuthenticated, user, loading, isInitializing } = useAuth();
   const location = useLocation();
 
-  if (loading) {
+  // Wait for initial auth/me check before evaluating roles or redirecting
+  if (isInitializing || loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="flex items-center space-x-3 text-muted">
           <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
-          <span className="font-mono text-sm">Authenticating...</span>
+          <span className="font-mono text-sm">Verifying authorization...</span>
         </div>
       </div>
     );

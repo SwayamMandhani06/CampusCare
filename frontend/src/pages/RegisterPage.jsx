@@ -42,7 +42,14 @@ const RegisterPage = () => {
     } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
       errs.email = 'Enter a valid email address';
     }
-    if (!formData.studentId.trim()) errs.studentId = 'Student ID number is required';
+
+    const prnRegex = /^\d{3}[A-Za-z]\d[A-Za-z]\d{3}$/;
+    if (!formData.studentId.trim()) {
+      errs.studentId = 'PRN is required';
+    } else if (!prnRegex.test(formData.studentId.trim())) {
+      errs.studentId = 'PRN must be in the format 123B1B231';
+    }
+
     if (!formData.password) {
       errs.password = 'Password is required';
     } else if (formData.password.length < 6) {
@@ -139,7 +146,7 @@ const RegisterPage = () => {
               label="Campus Email"
               id="email"
               type="email"
-              placeholder="name@campuscare.edu"
+              placeholder="name@pccoepune.org"
               value={formData.email}
               onChange={handleChange}
               error={errors.email}
@@ -147,10 +154,10 @@ const RegisterPage = () => {
             />
 
             <InputField
-              label="Student ID"
+              label="PRN"
               id="studentId"
               type="text"
-              placeholder="e.g. STU-2026-0042"
+              placeholder="e.g. 123B1B231"
               value={formData.studentId}
               onChange={handleChange}
               error={errors.studentId}
@@ -196,7 +203,7 @@ const RegisterPage = () => {
             <p className="text-xs text-muted">
               Already have an account?{' '}
               <Link to="/login" className="font-medium text-brand hover:underline">
-                Sign in here
+                Sign in
               </Link>
             </p>
           </div>

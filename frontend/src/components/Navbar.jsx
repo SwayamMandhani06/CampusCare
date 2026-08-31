@@ -8,7 +8,7 @@ import Button from './Button';
  * Navbar Component
  * Minimalist header with wordmark in Geist medium and state-aware auth controls
  */
-const Navbar = () => {
+const Navbar = ({ roleChip }) => {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -48,24 +48,38 @@ const Navbar = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-6">
-          <Link
-            to="/#how-it-works"
-            className="text-sm text-muted hover:text-ink transition-colors"
+          <button
+            type="button"
+            onClick={() => {
+              if (window.location.pathname !== '/') {
+                navigate('/#how-it-works');
+              } else {
+                const el = document.getElementById('how-it-works');
+                el?.scrollIntoView({
+                  behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+                });
+              }
+            }}
+            className="text-sm text-muted hover:text-ink transition-colors cursor-pointer"
           >
             Workflow
-          </Link>
-          <Link
-            to="/#roles"
-            className="text-sm text-muted hover:text-ink transition-colors"
-          >
-            Roles
-          </Link>
-          <Link
-            to="/#categories"
-            className="text-sm text-muted hover:text-ink transition-colors"
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (window.location.pathname !== '/') {
+                navigate('/#categories');
+              } else {
+                const el = document.getElementById('categories');
+                el?.scrollIntoView({
+                  behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+                });
+              }
+            }}
+            className="text-sm text-muted hover:text-ink transition-colors cursor-pointer"
           >
             Categories
-          </Link>
+          </button>
 
           {/* Role-Specific Navigation Links */}
           {user?.role === 'admin' && (
@@ -106,26 +120,32 @@ const Navbar = () => {
           {/* Auth State Actions */}
           <div className="flex items-center pl-4 border-l border-line space-x-3">
             {isAuthenticated ? (
-              <>
-                <Link to={getDashboardPath()}>
-                  <Button variant="secondary" size="sm" className="font-mono text-xs">
-                    {getRoleIcon()}
-                    <span className="uppercase">{user?.role}</span>
-                    <span className="text-muted ml-1 hidden lg:inline">Dashboard</span>
-                  </Button>
+              <div className="flex items-center space-x-2">
+                <Link
+                  to={getDashboardPath()}
+                  className="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-line/40 hover:bg-line/70 transition-colors text-xs font-mono text-ink"
+                >
+                  {getRoleIcon()}
+                  <span className="truncate max-w-[130px]">{user?.name || user?.email}</span>
                 </Link>
+
+                {roleChip && (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-brand/10 text-brand border border-brand/20 font-medium">
+                    {roleChip}
+                  </span>
+                )}
 
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleLogout}
-                  title="Logout"
-                  className="text-muted hover:text-priority-critical"
+                  className="h-8 px-2 text-muted hover:text-ink"
+                  title="Sign out"
                 >
-                  <LogOut size={16} />
+                  <LogOut size={14} className="mr-1" />
                   <span className="text-xs font-mono">Exit</span>
                 </Button>
-              </>
+              </div>
             ) : (
               <>
                 <Link to="/login">
@@ -159,27 +179,40 @@ const Navbar = () => {
       {mobileMenuOpen && (
         <div className="md:hidden border-b border-line bg-paper px-4 py-5 space-y-4 animate-in fade-in duration-150">
           <div className="flex flex-col space-y-3">
-            <Link
-              to="/#how-it-works"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-sm font-medium text-muted hover:text-ink py-1"
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                if (window.location.pathname !== '/') {
+                  navigate('/#how-it-works');
+                } else {
+                  const el = document.getElementById('how-it-works');
+                  el?.scrollIntoView({
+                    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+                  });
+                }
+              }}
+              className="text-left text-sm font-medium text-muted hover:text-ink py-1"
             >
               Workflow
-            </Link>
-            <Link
-              to="/#roles"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-sm font-medium text-muted hover:text-ink py-1"
-            >
-              Roles
-            </Link>
-            <Link
-              to="/#categories"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-sm font-medium text-muted hover:text-ink py-1"
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                if (window.location.pathname !== '/') {
+                  navigate('/#categories');
+                } else {
+                  const el = document.getElementById('categories');
+                  el?.scrollIntoView({
+                    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+                  });
+                }
+              }}
+              className="text-left text-sm font-medium text-muted hover:text-ink py-1"
             >
               Categories
-            </Link>
+            </button>
           </div>
 
           <div className="pt-3 border-t border-line flex flex-col space-y-2">

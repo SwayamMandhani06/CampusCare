@@ -124,7 +124,7 @@ const AdminUsersPage = () => {
                 <th className="py-3 px-4 font-medium">User Details</th>
                 <th className="py-3 px-4 font-medium">Campus Email</th>
                 {activeTab === 'student' ? (
-                  <th className="py-3 px-4 font-medium">Student ID</th>
+                  <th className="py-3 px-4 font-medium">PRN</th>
                 ) : (
                   <th className="py-3 px-4 font-medium">Access Level</th>
                 )}

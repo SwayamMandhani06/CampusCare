@@ -47,12 +47,6 @@ const StaffLoginPage = () => {
     }
   };
 
-  const fillSeededStaff = () => {
-    setEmail('staff@campuscare.edu');
-    setPassword('StaffPassword123!');
-    setError('');
-  };
-
   return (
     <div className="min-h-[calc(100vh-12rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <motion.div
@@ -94,7 +88,7 @@ const StaffLoginPage = () => {
               label="Staff Email"
               id="email"
               type="email"
-              placeholder="staff@campuscare.edu"
+              placeholder="staff@pccoepune.org"
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
@@ -129,34 +123,19 @@ const StaffLoginPage = () => {
             </div>
           </form>
 
-          {/* Quick Credential Chip */}
-          <div className="mt-6 pt-5 border-t border-line">
-            <div className="flex items-center space-x-1.5 text-xs text-muted font-mono mb-2">
-              <KeyRound size={12} />
-              <span>Seeded Technician Credential:</span>
-            </div>
-            <button
-              type="button"
-              onClick={fillSeededStaff}
-              className="w-full p-2.5 border border-line rounded bg-paper/60 hover:bg-line/30 text-[11px] text-left transition-colors flex items-center justify-between"
-            >
-              <div>
-                <span className="font-mono font-medium text-status-assigned block uppercase">
-                  Staff Lead
-                </span>
-                <span className="text-muted block font-mono">staff@campuscare.edu</span>
-              </div>
-              <span className="text-xs font-mono text-brand">Auto-fill</span>
-            </button>
-          </div>
-
-          <div className="mt-6 pt-4 border-t border-line text-center">
+          <div className="mt-6 pt-4 border-t border-line text-center space-y-2">
             <p className="text-xs text-muted">
               Not a staff member?{' '}
               <Link to="/login" className="font-medium text-brand hover:underline">
                 Student portal
               </Link>
             </p>
+
+            <div className="pt-1 text-[11px] font-mono text-muted">
+              <Link to="/admin/login" className="hover:text-ink transition-colors hover:underline">
+                Admin? Sign in here →
+              </Link>
+            </div>
           </div>
         </Card>
       </motion.div>

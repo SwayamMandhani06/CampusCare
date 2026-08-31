@@ -471,7 +471,7 @@ const AdminComplaintsPage = () => {
                 </div>
                 {selectedComplaint.createdBy?.studentId && (
                   <div className="text-muted font-mono text-[11px]">
-                    Student ID: {selectedComplaint.createdBy?.studentId}
+                    PRN: {selectedComplaint.createdBy?.studentId}
                   </div>
                 )}
               </div>

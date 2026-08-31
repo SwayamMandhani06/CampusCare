@@ -57,13 +57,6 @@ const LoginPage = () => {
     }
   };
 
-  // Demo account quick filler
-  const fillDemoAccount = (roleEmail, rolePass) => {
-    setEmail(roleEmail);
-    setPassword(rolePass);
-    setError('');
-  };
-
   return (
     <div className="min-h-[calc(100vh-12rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <motion.div
@@ -105,7 +98,7 @@ const LoginPage = () => {
               label="Campus Email"
               id="email"
               type="email"
-              placeholder="name@campuscare.edu"
+              placeholder="name@pccoepune.org"
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
@@ -140,47 +133,23 @@ const LoginPage = () => {
             </div>
           </form>
 
-          {/* Quick Credential Chips for Viva / Demo Testing */}
-          <div className="mt-6 pt-5 border-t border-line">
-            <div className="flex items-center space-x-1.5 text-xs text-muted font-mono mb-2">
-              <KeyRound size={12} />
-              <span>Quick Demo Credentials:</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-left">
-              <button
-                type="button"
-                onClick={() =>
-                  fillDemoAccount('admin@campuscare.edu', 'AdminPassword123!')
-                }
-                className="p-2 border border-line rounded bg-paper/60 hover:bg-line/30 text-[11px] text-left transition-colors"
-              >
-                <span className="font-mono font-medium text-status-reviewed block uppercase">
-                  Admin
-                </span>
-                <span className="text-muted block truncate">admin@campuscare.edu</span>
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  fillDemoAccount('staff@campuscare.edu', 'StaffPassword123!')
-                }
-                className="p-2 border border-line rounded bg-paper/60 hover:bg-line/30 text-[11px] text-left transition-colors"
-              >
-                <span className="font-mono font-medium text-status-assigned block uppercase">
-                  Staff Lead
-                </span>
-                <span className="text-muted block truncate">staff@campuscare.edu</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-6 pt-4 border-t border-line text-center">
+          <div className="mt-6 pt-4 border-t border-line text-center space-y-2">
             <p className="text-xs text-muted">
-              Don't have an account yet?{' '}
+              New here?{' '}
               <Link to="/register" className="font-medium text-brand hover:underline">
-                Create student account
+                Create an account
               </Link>
             </p>
+
+            <div className="pt-2 flex items-center justify-center space-x-3 text-[11px] font-mono text-muted">
+              <Link to="/admin/login" className="hover:text-ink transition-colors hover:underline">
+                Admin? Sign in here →
+              </Link>
+              <span>•</span>
+              <Link to="/staff/login" className="hover:text-ink transition-colors hover:underline">
+                Staff? Sign in here →
+              </Link>
+            </div>
           </div>
         </Card>
       </motion.div>

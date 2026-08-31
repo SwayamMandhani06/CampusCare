@@ -88,7 +88,9 @@ CampusCare/
 
 ---
 
-## Authentication Endpoints
+## API Endpoints
+
+### 1. Authentication Endpoints
 
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
@@ -96,11 +98,47 @@ CampusCare/
 | `POST` | `/api/auth/login` | Public | Login with `email` and `password`, returns JWT `{ id, role }` |
 | `GET` | `/api/auth/me` | Protected (`protect`) | Returns logged-in user profile (excluding password) |
 
+### 2. Student Complaint Endpoints
+
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `POST` | `/api/complaints` | Protected (`student`) | Submit a complaint (`title`, `description`, `category`, `location`, `priority`) |
+| `GET` | `/api/complaints` | Protected (`student`) | List own complaints (supports `?status`, `?category`, `?priority`, `?search`) |
+| `GET` | `/api/complaints/:id` | Protected | Get single complaint detail with full timeline (student can only access own) |
+| `PUT` | `/api/complaints/:id` | Protected (`student`) | Edit complaint details (restricted to `PENDING` status only; 409 otherwise) |
+
+### 3. Administrator Endpoints
+
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `GET` | `/api/admin/dashboard` | Protected (`admin`) | Summary metrics (total, pending, assigned, in-progress, resolved) & category/priority charts |
+| `GET` | `/api/admin/complaints` | Protected (`admin`) | Query all complaints across campus with filters, search, and pagination (`?page`, `?limit`) |
+| `PUT` | `/api/admin/complaints/:id/assign` | Protected (`admin`) | Assign a staff member to complaint (`staffId`); updates status to `ASSIGNED` |
+| `PUT` | `/api/admin/complaints/:id/status` | Protected (`admin`) | Update complaint status and append to timeline |
+| `GET` | `/api/admin/users` | Protected (`admin`) | List users, filtered by `?role=student\|staff\|admin` |
+
+### 4. Staff Task Endpoints
+
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `GET` | `/api/staff/tasks` | Protected (`staff`) | List complaints assigned to logged-in staff member |
+| `PUT` | `/api/staff/tasks/:id/status` | Protected (`staff`) | Transition task status to `IN_PROGRESS` or `RESOLVED` |
+| `PUT` | `/api/staff/tasks/:id/resolve` | Protected (`staff`) | Mark task as `RESOLVED` and submit `resolutionNotes` |
+
 ---
 
-## Role-Based Access Control
+## Complaint Lifecycle Flow
 
-The system supports three user roles:
-- **`student`**: Can register, raise complaints, and track status.
-- **`admin`**: System administrators who assign staff and oversee operations.
-- **`staff`**: Campus facility and maintenance personnel assigned to tickets.
+```text
+Student Submits (PENDING)
+         │
+         ▼
+Admin Assigns Staff (ASSIGNED)
+         │
+         ▼
+Staff Starts Work (IN_PROGRESS)
+         │
+         ▼
+Staff Resolves & Enters Notes (RESOLVED)
+```
+Every transition appends to `statusHistory: [{ status, changedAt, changedBy, notes }]` for a complete audit trail.

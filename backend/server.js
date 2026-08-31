@@ -31,7 +31,14 @@ app.get('/api/health', (req, res) => {
 
 // Mount Routes
 const authRoutes = require('./routes/auth');
+const complaintRoutes = require('./routes/complaints');
+const adminRoutes = require('./routes/admin');
+const staffRoutes = require('./routes/staff');
+
 app.use('/api/auth', authRoutes);
+app.use('/api/complaints', complaintRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/staff', staffRoutes);
 
 // Catch-all 404 handler for undefined endpoints
 app.use((req, res) => {

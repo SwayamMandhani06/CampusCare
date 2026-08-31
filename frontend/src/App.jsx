@@ -11,6 +11,12 @@ import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import DashboardPlaceholder from './pages/DashboardPlaceholder';
 
+// Student Pages
+import StudentDashboard from './pages/student/StudentDashboard';
+import RaiseComplaintPage from './pages/student/RaiseComplaintPage';
+import MyComplaintsPage from './pages/student/MyComplaintsPage';
+import ComplaintDetailPage from './pages/student/ComplaintDetailPage';
+
 function App() {
   return (
     <AuthProvider>
@@ -24,19 +30,41 @@ function App() {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/login" element={<LoginPage />} />
 
-              {/* Protected Routes */}
+              {/* Student Routes */}
               <Route
                 path="/dashboard"
                 element={
-                  <ProtectedRoute allowedRoles={['student', 'admin']}>
-                    <DashboardPlaceholder
-                      title="Student Complaint Portal"
-                      roleRequired="student"
-                    />
+                  <ProtectedRoute allowedRoles={['student']}>
+                    <StudentDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/complaints/new"
+                element={
+                  <ProtectedRoute allowedRoles={['student']}>
+                    <RaiseComplaintPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/complaints"
+                element={
+                  <ProtectedRoute allowedRoles={['student']}>
+                    <MyComplaintsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/complaints/:id"
+                element={
+                  <ProtectedRoute allowedRoles={['student', 'admin', 'staff']}>
+                    <ComplaintDetailPage />
                   </ProtectedRoute>
                 }
               />
 
+              {/* Admin & Staff Dashboards (to be fleshed out in upcoming stages) */}
               <Route
                 path="/admin/dashboard"
                 element={

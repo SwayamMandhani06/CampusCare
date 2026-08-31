@@ -49,6 +49,7 @@ const AdminComplaintsPage = () => {
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [selectedStaffId, setSelectedStaffId] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
+  const [selectedPriority, setSelectedPriority] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [actionSuccess, setActionSuccess] = useState('');
   const [actionError, setActionError] = useState('');
@@ -107,6 +108,7 @@ const AdminComplaintsPage = () => {
     setSelectedComplaint(complaint);
     setSelectedStaffId(complaint.assignedTo?._id || '');
     setSelectedStatus(complaint.status);
+    setSelectedPriority(complaint.priority);
     setActionSuccess('');
     setActionError('');
   };
@@ -171,6 +173,33 @@ const AdminComplaintsPage = () => {
     } catch (err) {
       console.error('[StatusChange] Error:', err);
       setActionError(err.response?.data?.message || 'Failed to update status.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Admin Action: Change Priority
+  const handlePriorityChange = async (newPriority) => {
+    if (!newPriority || newPriority === selectedComplaint.priority) return;
+
+    setActionLoading(true);
+    setActionSuccess('');
+    setActionError('');
+
+    try {
+      const res = await api.put(`/admin/complaints/${selectedComplaint._id}/status`, {
+        priority: newPriority,
+      });
+
+      if (res.data && res.data.complaint) {
+        setSelectedComplaint(res.data.complaint);
+        setSelectedPriority(res.data.complaint.priority);
+        setActionSuccess(`Priority updated to ${newPriority}`);
+        fetchComplaints(pagination.page);
+      }
+    } catch (err) {
+      console.error('[PriorityChange] Error:', err);
+      setActionError(err.response?.data?.message || 'Failed to update priority.');
     } finally {
       setActionLoading(false);
     }
@@ -296,7 +325,9 @@ const AdminComplaintsPage = () => {
               ) : complaints.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-muted font-mono">
-                    No complaints found matching current query filters.
+                    {hasActiveFilters
+                      ? 'No complaints found matching current query filters.'
+                      : 'No complaints in the registry yet.'}
                   </td>
                 </tr>
               ) : (
@@ -528,7 +559,36 @@ const AdminComplaintsPage = () => {
                   )}
                 </div>
 
-                {/* 2. Change Status Override */}
+                {/* 2. Change Priority */}
+                <div className="space-y-1.5 pt-3 border-t border-line">
+                  <label className="text-xs font-medium text-ink block">
+                    Update Urgency / Priority
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <select
+                      value={selectedPriority}
+                      onChange={(e) => setSelectedPriority(e.target.value)}
+                      className="flex-1 px-3 py-2 bg-paper text-xs text-ink border border-line rounded focus:border-brand focus-visible:outline-brand cursor-pointer font-mono"
+                    >
+                      {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((pr) => (
+                        <option key={pr} value={pr}>
+                          {pr}
+                        </option>
+                      ))}
+                    </select>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handlePriorityChange(selectedPriority)}
+                      disabled={actionLoading || selectedPriority === selectedComplaint.priority}
+                      className="text-xs font-mono shrink-0"
+                    >
+                      Update Priority
+                    </Button>
+                  </div>
+                </div>
+
+                {/* 3. Change Status Override */}
                 <div className="space-y-1.5 pt-3 border-t border-line">
                   <label className="text-xs font-medium text-ink block">
                     Change Lifecycle Status

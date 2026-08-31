@@ -92,13 +92,13 @@ async function runTests() {
     console.log('\n--- Step 1: Seeding Admin & Staff ---');
     const adminUser = await User.create({
       name: 'Campus Administrator',
-      email: 'admin@campuscare.edu',
+      email: 'admin@pccoepune.org',
       password: 'AdminPassword123!',
       role: 'admin',
     });
     const staffUser = await User.create({
       name: 'Maintenance Staff Lead',
-      email: 'staff@campuscare.edu',
+      email: 'staff@pccoepune.org',
       password: 'StaffPassword123!',
       role: 'staff',
     });
@@ -112,7 +112,7 @@ async function runTests() {
     console.log('\n--- Step 2: Student Registration ---');
     const studentRegPayload = {
       name: 'Rahul Sharma',
-      email: 'rahul.s@campuscare.edu',
+      email: 'rahul.s@pccoepune.org',
       password: 'StudentPass#2026',
       studentId: 'STU-2026-0042',
       role: 'student',
@@ -139,7 +139,7 @@ async function runTests() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: 'rahul.s@campuscare.edu',
+        email: 'rahul.s@pccoepune.org',
         password: 'StudentPass#2026',
       }),
     });
@@ -156,7 +156,7 @@ async function runTests() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: 'admin@campuscare.edu',
+        email: 'admin@pccoepune.org',
         password: 'AdminPassword123!',
       }),
     });
@@ -173,7 +173,7 @@ async function runTests() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: 'staff@campuscare.edu',
+        email: 'staff@pccoepune.org',
         password: 'StaffPassword123!',
       }),
     });
@@ -193,7 +193,7 @@ async function runTests() {
 
     assert(studentMeRes.status === 200, 'GET /api/auth/me with Student token returns 200 OK');
     assert(studentMeRes.body.user.role === 'student', 'Student profile returns role: student');
-    assert(studentMeRes.body.user.email === 'rahul.s@campuscare.edu', 'Student profile matches email');
+    assert(studentMeRes.body.user.email === 'rahul.s@pccoepune.org', 'Student profile matches email');
     assert(!studentMeRes.body.user.password, 'Student profile excludes password field');
 
     // -------------------------------------------------------------
@@ -207,7 +207,7 @@ async function runTests() {
 
     assert(adminMeRes.status === 200, 'GET /api/auth/me with Admin token returns 200 OK');
     assert(adminMeRes.body.user.role === 'admin', 'Admin profile returns role: admin');
-    assert(adminMeRes.body.user.email === 'admin@campuscare.edu', 'Admin profile matches email');
+    assert(adminMeRes.body.user.email === 'admin@pccoepune.org', 'Admin profile matches email');
 
     // -------------------------------------------------------------
     // Test 8: Protected GET /api/auth/me for Staff
@@ -230,7 +230,7 @@ async function runTests() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: 'admin@campuscare.edu',
+        email: 'admin@pccoepune.org',
         password: 'WrongPassword!',
       }),
     });

@@ -27,7 +27,7 @@ CampusCare/
 │   ├── seed.js         # Initial seed script for Admin and Staff accounts
 │   └── server.js       # Express server entry point
 ├── .gitignore          # Root Git ignore rules
-├── PLAN.md             # Comprehensive DevOps project blueprint
+├── PLAN.md             # Comprehensive project architecture blueprint
 └── README.md           # Project documentation
 ```
 

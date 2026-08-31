@@ -190,7 +190,9 @@ const StaffTasksPage = () => {
             </div>
           ) : tasks.length === 0 ? (
             <Card className="p-8 text-center border-dashed">
-              <span className="text-xs text-muted">Nothing assigned right now.</span>
+              <span className="text-xs text-muted">
+                {statusFilter ? `No ${statusFilter.toLowerCase().replace('_', ' ')} tasks right now.` : 'Nothing assigned right now.'}
+              </span>
             </Card>
           ) : (
             <div className="border border-line rounded-lg divide-y divide-line bg-paper overflow-hidden shadow-sm max-h-[750px] overflow-y-auto">

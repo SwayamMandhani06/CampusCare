@@ -244,29 +244,19 @@ const assignStaff = async (req, res) => {
 };
 
 /**
- * @desc    Update complaint status manually (admin override)
+ * @desc    Update complaint status or priority manually (admin override)
  * @route   PUT /api/admin/complaints/:id/status
  * @access  Private (Admin only)
  */
 const updateComplaintStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, notes } = req.body;
+    const { status, priority, notes } = req.body;
 
-    if (!status) {
+    if (!status && !priority) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide a valid status',
-      });
-    }
-
-    const upperStatus = status.toUpperCase();
-    const allowedStatuses = ['PENDING', 'REVIEWED', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED'];
-
-    if (!allowedStatuses.includes(upperStatus)) {
-      return res.status(400).json({
-        success: false,
-        message: `Invalid status '${status}'. Allowed statuses: ${allowedStatuses.join(', ')}`,
+        message: 'Please provide a valid status or priority to update',
       });
     }
 
@@ -278,16 +268,39 @@ const updateComplaintStatus = async (req, res) => {
       });
     }
 
-    // Update status
-    complaint.status = upperStatus;
+    if (status) {
+      const upperStatus = status.toUpperCase();
+      const allowedStatuses = ['PENDING', 'REVIEWED', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED'];
 
-    // Append to status history
-    complaint.statusHistory.push({
-      status: upperStatus,
-      changedAt: new Date(),
-      changedBy: req.user._id,
-      notes: notes || `Status updated to ${upperStatus} by admin`,
-    });
+      if (!allowedStatuses.includes(upperStatus)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid status '${status}'. Allowed statuses: ${allowedStatuses.join(', ')}`,
+        });
+      }
+
+      complaint.status = upperStatus;
+      complaint.statusHistory.push({
+        status: upperStatus,
+        changedAt: new Date(),
+        changedBy: req.user._id,
+        notes: notes || `Status updated to ${upperStatus} by admin override`,
+      });
+    }
+
+    if (priority) {
+      const upperPriority = priority.toUpperCase();
+      const allowedPriorities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+
+      if (!allowedPriorities.includes(upperPriority)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid priority '${priority}'. Allowed priorities: ${allowedPriorities.join(', ')}`,
+        });
+      }
+
+      complaint.priority = upperPriority;
+    }
 
     await complaint.save();
 
@@ -296,9 +309,15 @@ const updateComplaintStatus = async (req, res) => {
       .populate('assignedTo', 'name email role')
       .populate('statusHistory.changedBy', 'name email role');
 
+    const message = status && priority
+      ? `Status updated to ${status} and priority updated to ${priority}`
+      : status
+      ? `Status updated to ${status}`
+      : `Priority updated to ${priority}`;
+
     return res.status(200).json({
       success: true,
-      message: `Status updated to ${upperStatus}`,
+      message,
       complaint: populatedComplaint,
     });
   } catch (error) {

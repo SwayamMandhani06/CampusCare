@@ -29,7 +29,7 @@ const StudentDashboard = () => {
   useEffect(() => {
     const fetchComplaints = async () => {
       try {
-        setLoading(false);
+        setLoading(true);
         const res = await api.get('/complaints');
         if (res.data && res.data.complaints) {
           setComplaints(res.data.complaints);

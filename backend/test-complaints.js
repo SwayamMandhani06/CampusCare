@@ -93,14 +93,14 @@ async function runComplaintTests() {
     console.log('\n--- Step 1: User Setup & Authentication ---');
     const adminUser = await User.create({
       name: 'Admin Officer',
-      email: 'admin.flow@campuscare.edu',
+      email: 'admin.flow@pccoepune.org',
       password: 'AdminPassword123!',
       role: 'admin',
     });
 
     const staffUser = await User.create({
       name: 'Electrician Staff Mike',
-      email: 'mike.staff@campuscare.edu',
+      email: 'mike.staff@pccoepune.org',
       password: 'StaffPassword123!',
       role: 'staff',
     });
@@ -111,7 +111,7 @@ async function runComplaintTests() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: 'Aarav Patel',
-        email: 'aarav@campuscare.edu',
+        email: 'aarav@pccoepune.org',
         password: 'StudentPass123!',
         studentId: 'STU-2026-101',
         role: 'student',
@@ -125,7 +125,7 @@ async function runComplaintTests() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: 'Diya Sen',
-        email: 'diya@campuscare.edu',
+        email: 'diya@pccoepune.org',
         password: 'StudentPass123!',
         studentId: 'STU-2026-102',
         role: 'student',
@@ -138,7 +138,7 @@ async function runComplaintTests() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: 'admin.flow@campuscare.edu',
+        email: 'admin.flow@pccoepune.org',
         password: 'AdminPassword123!',
       }),
     });
@@ -149,7 +149,7 @@ async function runComplaintTests() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: 'mike.staff@campuscare.edu',
+        email: 'mike.staff@pccoepune.org',
         password: 'StaffPassword123!',
       }),
     });

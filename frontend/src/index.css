@@ -1,0 +1,88 @@
+/* Font Imports via Fontsource */
+@import "@fontsource/geist/400.css";
+@import "@fontsource/geist/500.css";
+@import "@fontsource/geist/600.css";
+@import "@fontsource/geist/700.css";
+
+@import "@fontsource/geist-mono/400.css";
+@import "@fontsource/geist-mono/500.css";
+@import "@fontsource/geist-mono/600.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Core Neutrals */
+  --ink: #14161A;
+  --paper: #F5F6F4;
+  --muted: #6B7280;
+  --line: #E3E5E1;
+  --brand: #3D5A80;
+  --brand-hover: #2F4767;
+
+  /* Semantic Status Colors */
+  --status-pending: #8A8F98;
+  --status-reviewed: #4A6FA1;
+  --status-assigned: #C9A227;
+  --status-progress: #C2683D;
+  --status-resolved: #6B8F71;
+
+  /* Semantic Priority Colors */
+  --priority-low: #6B8F71;
+  --priority-medium: #C9A227;
+  --priority-high: #C2683D;
+  --priority-critical: #B14A4A;
+}
+
+/* Base resets & typography */
+html {
+  scroll-behavior: smooth;
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+/* Selection highlight */
+::selection {
+  background-color: #3D5A8025;
+  color: var(--ink);
+}
+
+/* Focus styles: intentional hairline outline in brand */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Hairline borders */
+.border-hairline {
+  border-width: 1px;
+  border-color: var(--line);
+}
+
+/* Accessible reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

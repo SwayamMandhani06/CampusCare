@@ -67,6 +67,33 @@ const Navbar = () => {
             Categories
           </Link>
 
+          {/* Role-Specific Navigation Links */}
+          {user?.role === 'admin' && (
+            <>
+              <Link
+                to="/admin/complaints"
+                className="text-sm text-muted hover:text-ink transition-colors"
+              >
+                Complaints
+              </Link>
+              <Link
+                to="/admin/users"
+                className="text-sm text-muted hover:text-ink transition-colors"
+              >
+                Users & Staff
+              </Link>
+            </>
+          )}
+
+          {user?.role === 'student' && (
+            <Link
+              to="/complaints"
+              className="text-sm text-muted hover:text-ink transition-colors"
+            >
+              My Complaints
+            </Link>
+          )}
+
           {/* Auth State Actions */}
           <div className="flex items-center pl-4 border-l border-line space-x-3">
             {isAuthenticated ? (

@@ -17,6 +17,12 @@ import RaiseComplaintPage from './pages/student/RaiseComplaintPage';
 import MyComplaintsPage from './pages/student/MyComplaintsPage';
 import ComplaintDetailPage from './pages/student/ComplaintDetailPage';
 
+// Admin Pages
+import AdminLoginPage from './pages/admin/AdminLoginPage';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminComplaintsPage from './pages/admin/AdminComplaintsPage';
+import AdminUsersPage from './pages/admin/AdminUsersPage';
+
 function App() {
   return (
     <AuthProvider>
@@ -29,6 +35,7 @@ function App() {
               <Route path="/" element={<LandingPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/admin/login" element={<AdminLoginPage />} />
 
               {/* Student Routes */}
               <Route
@@ -64,19 +71,33 @@ function App() {
                 }
               />
 
-              {/* Admin & Staff Dashboards (to be fleshed out in upcoming stages) */}
+              {/* Administrator Routes */}
               <Route
                 path="/admin/dashboard"
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
-                    <DashboardPlaceholder
-                      title="Administrator Operations Console"
-                      roleRequired="admin"
-                    />
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/complaints"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminComplaintsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/users"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminUsersPage />
                   </ProtectedRoute>
                 }
               />
 
+              {/* Staff Dashboard (to be fleshed out in upcoming stage) */}
               <Route
                 path="/staff/dashboard"
                 element={

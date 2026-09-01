@@ -478,16 +478,3 @@ Contributions make the open-source community an amazing place to learn, inspire,
 
 Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information.
 
----
-
-## 👨‍💻 Maintainer & Acknowledgements
-
-- **Author**: [Swayam Mandhani](https://github.com/SwayamMandhani06)
-- **Organization**: Pimpri Chinchwad College of Engineering (PCCOE)
-- **Repository**: [https://github.com/SwayamMandhani06/CampusCare](https://github.com/SwayamMandhani06/CampusCare)
-
-<div align="center">
-
-*Built with ❤️ for smarter, cleaner, and more accountable campuses.*
-
-</div>

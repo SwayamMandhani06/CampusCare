@@ -1,0 +1,65 @@
+# =============================================================================
+# CampusCare — Prometheus Helm Values Configuration (Phase 4B)
+# =============================================================================
+# Target Architecture: Single-node k3s on AWS EC2 (t3.small, 2 GiB RAM)
+# Chart: prometheus-community/prometheus
+# Namespace: monitoring
+# Access: Internal ClusterIP only (Prometheus is not exposed publicly)
+# =============================================================================
+
+# Disable auxiliary sub-charts to conserve CPU/RAM on t3.small
+alertmanager:
+  enabled: false
+
+prometheus-pushgateway:
+  enabled: false
+
+prometheus-node-exporter:
+  enabled: false
+
+kube-state-metrics:
+  enabled: false
+
+# Prometheus Server Core Configuration
+server:
+  enabled: true
+  name: server
+
+  # Data retention policy tuned for academic environment storage preservation
+  retention: "3d"
+
+  # Internal Service configuration (ClusterIP only - no public LoadBalancer/NodePort)
+  service:
+    enabled: true
+    type: ClusterIP
+    servicePort: 80
+
+  # Persistent Volume Claim configuration on k3s local-path provisioner
+  persistentVolume:
+    enabled: true
+    storageClass: "local-path"
+    mountPath: /data
+    size: 2Gi
+    pvcDeleteOnStsDelete: false
+    pvcDeleteOnStsScale: false
+
+  # Resource requests and limits sized safely for single-node t3.small
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+# CampusCare Application Metrics Scrape Configuration
+# Scrapes the backend service using internal Kubernetes DNS
+extraScrapeConfigs: |
+  - job_name: 'campuscare-backend'
+    metrics_path: /metrics
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    scheme: http
+    static_configs:
+      - targets:
+          - campuscare-backend-service.campuscare.svc.cluster.local:5000

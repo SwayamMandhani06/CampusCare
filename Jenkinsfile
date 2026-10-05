@@ -176,7 +176,8 @@ pipeline {
                         set -e
 
                         echo "[INFO] Authenticating to Docker Hub securely via stdin..."
-                        echo "${DOCKERHUB_PASSWORD}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
+                        DOCKER_LOGIN_USER=$(echo "${DOCKERHUB_USERNAME:-swayammandhani06}" | tr '[:upper:]' '[:lower:]')
+                        echo "${DOCKERHUB_PASSWORD}" | docker login -u "${DOCKER_LOGIN_USER}" --password-stdin
 
                         echo "[PUSH 1/2] Pushing Backend Image: ${BACKEND_IMAGE}:${IMAGE_TAG}..."
                         docker push "${BACKEND_IMAGE}:${IMAGE_TAG}"

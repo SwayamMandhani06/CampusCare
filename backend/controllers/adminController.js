@@ -1,9 +1,11 @@
 /**
  * Admin Controller
- * High-level administrative operations: Dashboard analytics, complaint assignment, status overrides, and user listings.
+ * High-level administrative operations: Dashboard analytics, complaint assignment, status overrides, user listings, and CSV export.
  */
 const Complaint = require('../models/Complaint');
 const User = require('../models/User');
+const notificationService = require('../utils/notificationService');
+const { formatComplaintsCsv } = require('../utils/csvExport');
 
 /**
  * @desc    Get dashboard metrics and analytics
@@ -103,7 +105,17 @@ const getAdminDashboard = async (req, res) => {
  */
 const getAllComplaints = async (req, res) => {
   try {
-    const { status, category, priority, search, page = 1, limit = 10 } = req.query;
+    const {
+      status,
+      category,
+      priority,
+      search,
+      assignedStaff,
+      startDate,
+      endDate,
+      page = 1,
+      limit = 10,
+    } = req.query;
 
     const query = {};
 
@@ -117,6 +129,24 @@ const getAllComplaints = async (req, res) => {
 
     if (priority) {
       query.priority = priority.toUpperCase();
+    }
+
+    if (assignedStaff) {
+      if (assignedStaff === 'unassigned') {
+        query.assignedTo = null;
+      } else {
+        query.assignedTo = assignedStaff;
+      }
+    }
+
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) query.createdAt.$gte = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = end;
+      }
     }
 
     if (search) {
@@ -203,6 +233,8 @@ const assignStaff = async (req, res) => {
       });
     }
 
+    const now = new Date();
+
     // Update assignment and status
     complaint.assignedTo = staffUser._id;
     complaint.status = 'ASSIGNED';
@@ -210,9 +242,20 @@ const assignStaff = async (req, res) => {
     // Append to status history timeline
     complaint.statusHistory.push({
       status: 'ASSIGNED',
-      changedAt: new Date(),
+      changedAt: now,
       changedBy: req.user._id,
       notes: `Assigned to staff: ${staffUser.name} (${staffUser.email})`,
+    });
+
+    // Append to activity timeline
+    complaint.activityTimeline.push({
+      eventType: 'ASSIGNED',
+      actor: req.user._id,
+      actorName: req.user.name,
+      actorRole: req.user.role,
+      message: `Assigned to ${staffUser.name} (${staffUser.email})`,
+      timestamp: now,
+      metadata: { staffId: staffUser._id, staffName: staffUser.name },
     });
 
     await complaint.save();
@@ -220,7 +263,15 @@ const assignStaff = async (req, res) => {
     const populatedComplaint = await Complaint.findById(id)
       .populate('createdBy', 'name email studentId role')
       .populate('assignedTo', 'name email role')
-      .populate('statusHistory.changedBy', 'name email role');
+      .populate('statusHistory.changedBy', 'name email role')
+      .populate('activityTimeline.actor', 'name email role');
+
+    // Dispatch notifications
+    notificationService.notifyComplaintAssigned(
+      populatedComplaint,
+      staffUser,
+      populatedComplaint.createdBy
+    );
 
     return res.status(200).json({
       success: true,
@@ -268,6 +319,8 @@ const updateComplaintStatus = async (req, res) => {
       });
     }
 
+    const now = new Date();
+
     if (status) {
       const upperStatus = status.toUpperCase();
       const allowedStatuses = ['PENDING', 'REVIEWED', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED'];
@@ -282,9 +335,19 @@ const updateComplaintStatus = async (req, res) => {
       complaint.status = upperStatus;
       complaint.statusHistory.push({
         status: upperStatus,
-        changedAt: new Date(),
+        changedAt: now,
         changedBy: req.user._id,
         notes: notes || `Status updated to ${upperStatus} by admin override`,
+      });
+
+      complaint.activityTimeline.push({
+        eventType: upperStatus === 'RESOLVED' ? 'RESOLVED' : 'STATUS_CHANGED',
+        actor: req.user._id,
+        actorName: req.user.name,
+        actorRole: req.user.role,
+        message: notes || `Status set to ${upperStatus} by admin`,
+        timestamp: now,
+        metadata: { newStatus: upperStatus },
       });
     }
 
@@ -300,6 +363,15 @@ const updateComplaintStatus = async (req, res) => {
       }
 
       complaint.priority = upperPriority;
+      complaint.activityTimeline.push({
+        eventType: 'PRIORITY_CHANGED',
+        actor: req.user._id,
+        actorName: req.user.name,
+        actorRole: req.user.role,
+        message: `Priority changed to ${upperPriority} by admin`,
+        timestamp: now,
+        metadata: { newPriority: upperPriority },
+      });
     }
 
     await complaint.save();
@@ -307,13 +379,33 @@ const updateComplaintStatus = async (req, res) => {
     const populatedComplaint = await Complaint.findById(id)
       .populate('createdBy', 'name email studentId role')
       .populate('assignedTo', 'name email role')
-      .populate('statusHistory.changedBy', 'name email role');
+      .populate('statusHistory.changedBy', 'name email role')
+      .populate('activityTimeline.actor', 'name email role');
 
-    const message = status && priority
-      ? `Status updated to ${status} and priority updated to ${priority}`
-      : status
-      ? `Status updated to ${status}`
-      : `Priority updated to ${priority}`;
+    if (status) {
+      const upperStatus = status.toUpperCase();
+      if (upperStatus === 'RESOLVED') {
+        notificationService.notifyComplaintResolved(
+          populatedComplaint,
+          populatedComplaint.createdBy,
+          notes
+        );
+      } else {
+        notificationService.notifyComplaintStatusChanged(
+          populatedComplaint,
+          populatedComplaint.createdBy,
+          upperStatus,
+          notes
+        );
+      }
+    }
+
+    const message =
+      status && priority
+        ? `Status updated to ${status} and priority updated to ${priority}`
+        : status
+        ? `Status updated to ${status}`
+        : `Priority updated to ${priority}`;
 
     return res.status(200).json({
       success: true,
@@ -369,10 +461,70 @@ const getAllUsers = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Export all filtered complaints as CSV
+ * @route   GET /api/admin/complaints/export
+ * @access  Private (Admin only)
+ */
+const exportAdminComplaintsCsv = async (req, res) => {
+  try {
+    const { status, category, priority, search, assignedStaff, startDate, endDate } = req.query;
+
+    const query = {};
+
+    if (status) query.status = status.toUpperCase();
+    if (category) query.category = category;
+    if (priority) query.priority = priority.toUpperCase();
+
+    if (assignedStaff) {
+      if (assignedStaff === 'unassigned') query.assignedTo = null;
+      else query.assignedTo = assignedStaff;
+    }
+
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) query.createdAt.$gte = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = end;
+      }
+    }
+
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { location: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const complaints = await Complaint.find(query)
+      .populate('createdBy', 'name email')
+      .populate('assignedTo', 'name email')
+      .sort({ createdAt: -1 });
+
+    const csvContent = formatComplaintsCsv(complaints);
+    const filename = `campuscare-all-complaints-${new Date().toISOString().slice(0, 10)}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    return res.status(200).send(csvContent);
+  } catch (error) {
+    console.error(`[Admin Export CSV Error] ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error exporting complaints CSV',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getAdminDashboard,
   getAllComplaints,
   assignStaff,
   updateComplaintStatus,
   getAllUsers,
+  exportAdminComplaintsCsv,
 };

@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Activity, LogOut, Menu, X, Shield, Wrench, GraduationCap } from 'lucide-react';
 import Button from './Button';
+import ThemeToggle from './ThemeToggle';
+import NotificationBell from './NotificationBell';
 
 /**
  * Navbar Component
@@ -117,8 +119,14 @@ const Navbar = ({ roleChip }) => {
             </Link>
           )}
 
+          {/* Controls: Notifications & Theme */}
+          <div className="flex items-center space-x-1.5 pl-2">
+            {isAuthenticated && <NotificationBell />}
+            <ThemeToggle />
+          </div>
+
           {/* Auth State Actions */}
-          <div className="flex items-center pl-4 border-l border-line space-x-3">
+          <div className="flex items-center pl-3 border-l border-line space-x-3">
             {isAuthenticated ? (
               <div className="flex items-center space-x-2">
                 <Link
@@ -163,8 +171,10 @@ const Navbar = ({ roleChip }) => {
           </div>
         </nav>
 
-        {/* Mobile menu toggle */}
+        {/* Mobile controls & menu toggle */}
         <div className="flex md:hidden items-center space-x-2">
+          {isAuthenticated && <NotificationBell />}
+          <ThemeToggle />
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 text-muted hover:text-ink focus-visible:outline-brand"

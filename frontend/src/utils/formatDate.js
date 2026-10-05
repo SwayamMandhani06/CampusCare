@@ -44,3 +44,5 @@ export const formatFullDateTime = (dateString) => {
     minute: '2-digit',
   });
 };
+
+export const formatTimeAgo = formatRelativeDate;

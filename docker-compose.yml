@@ -33,6 +33,9 @@ services:
       MONGO_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/campuscare?authSource=admin
       JWT_SECRET: ${JWT_SECRET}
       NODE_ENV: production
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - uploadsdata:/app/uploads
     ports:
       - "${PORT:-5000}:5000"
     networks:
@@ -61,7 +64,9 @@ networks:
   campuscare-net:
     driver: bridge
 
-# Persistent named volume for MongoDB data directory
+# Persistent named volumes
 volumes:
   mongodata:
+    driver: local
+  uploadsdata:
     driver: local

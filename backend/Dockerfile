@@ -16,6 +16,9 @@ RUN npm ci --omit=dev && npm cache clean --force
 # Copy application source code with ownership assigned to node user
 COPY --chown=node:node . .
 
+# Ensure persistent uploads directory exists and has appropriate permissions
+RUN mkdir -p /app/uploads && chown -R node:node /app/uploads
+
 # Switch to non-root user
 USER node
 

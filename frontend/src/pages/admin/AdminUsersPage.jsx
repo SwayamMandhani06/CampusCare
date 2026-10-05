@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import EmptyState from '../../components/EmptyState';
 import { formatFullDateTime } from '../../utils/formatDate';
 import {
-  Users,
   GraduationCap,
   Wrench,
   Search,
   Mail,
-  Shield,
   RotateCcw,
 } from 'lucide-react';
 
@@ -48,7 +48,7 @@ const AdminUsersPage = () => {
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 w-full">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 w-full text-left">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-line gap-4">
         <div>
@@ -134,17 +134,29 @@ const AdminUsersPage = () => {
             <tbody className="divide-y divide-line">
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="py-12 text-center text-muted font-mono">
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
-                      <span>Loading user accounts...</span>
-                    </div>
+                  <td colSpan={4} className="py-12 text-center text-muted">
+                    <LoadingSpinner label="Loading user accounts..." size={20} />
                   </td>
                 </tr>
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-12 text-center text-muted font-mono">
-                    No {activeTab} accounts found matching query.
+                  <td colSpan={4} className="py-10">
+                    <EmptyState
+                      title={`No ${activeTab === 'student' ? 'Students' : 'Staff'} Found`}
+                      message={
+                        search
+                          ? `No ${activeTab} accounts matched your search criteria.`
+                          : `No ${activeTab} accounts registered yet.`
+                      }
+                      action={
+                        search && (
+                          <Button variant="secondary" size="sm" onClick={() => setSearch('')} className="text-xs">
+                            <RotateCcw size={12} className="mr-1.5" />
+                            Clear Search
+                          </Button>
+                        )
+                      }
+                    />
                   </td>
                 </tr>
               ) : (
@@ -181,7 +193,7 @@ const AdminUsersPage = () => {
                         </span>
                       ) : (
                         <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded text-[10px] font-mono uppercase bg-status-assigned/10 text-status-assigned border border-status-assigned/30">
-                          <Wrench size={11} />
+                          <Wrench size={11} className="mr-1" />
                           <span>Campus Technician</span>
                         </span>
                       )}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Public Layout
@@ -45,95 +46,97 @@ const PublicLayout = ({ children }) => (
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Public Routes with standard Navbar/Footer */}
-          <Route
-            path="/"
-            element={
-              <PublicLayout>
-                <LandingPage />
-              </PublicLayout>
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              <PublicLayout>
-                <RegisterPage />
-              </PublicLayout>
-            }
-          />
-          <Route
-            path="/login"
-            element={
-              <PublicLayout>
-                <LoginPage />
-              </PublicLayout>
-            }
-          />
-          <Route
-            path="/admin/login"
-            element={
-              <PublicLayout>
-                <AdminLoginPage />
-              </PublicLayout>
-            }
-          />
-          <Route
-            path="/staff/login"
-            element={
-              <PublicLayout>
-                <StaffLoginPage />
-              </PublicLayout>
-            }
-          />
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            {/* Public Routes with standard Navbar/Footer */}
+            <Route
+              path="/"
+              element={
+                <PublicLayout>
+                  <LandingPage />
+                </PublicLayout>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <PublicLayout>
+                  <RegisterPage />
+                </PublicLayout>
+              }
+            />
+            <Route
+              path="/login"
+              element={
+                <PublicLayout>
+                  <LoginPage />
+                </PublicLayout>
+              }
+            />
+            <Route
+              path="/admin/login"
+              element={
+                <PublicLayout>
+                  <AdminLoginPage />
+                </PublicLayout>
+              }
+            />
+            <Route
+              path="/staff/login"
+              element={
+                <PublicLayout>
+                  <StaffLoginPage />
+                </PublicLayout>
+              }
+            />
 
-          {/* Student Role Shell (Persistent 3px steel blue top bar, Navbar with Student chip) */}
-          <Route
-            element={
-              <ProtectedRoute allowedRoles={['student']}>
-                <StudentLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/dashboard" element={<StudentDashboard />} />
-            <Route path="/complaints/new" element={<RaiseComplaintPage />} />
-            <Route path="/complaints" element={<MyComplaintsPage />} />
-            <Route path="/complaints/:id" element={<ComplaintDetailPage />} />
-          </Route>
+            {/* Student Role Shell (Persistent 3px steel blue top bar, Navbar with Student chip) */}
+            <Route
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <StudentLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/dashboard" element={<StudentDashboard />} />
+              <Route path="/complaints/new" element={<RaiseComplaintPage />} />
+              <Route path="/complaints" element={<MyComplaintsPage />} />
+              <Route path="/complaints/:id" element={<ComplaintDetailPage />} />
+            </Route>
 
-          {/* Admin Role Shell (Persistent 3px muted gold top bar, dark-tint left sidebar console) */}
-          <Route
-            element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/complaints" element={<AdminComplaintsPage />} />
-            <Route path="/admin/users" element={<AdminUsersPage />} />
-          </Route>
+            {/* Admin Role Shell (Persistent 3px muted gold top bar, dark-tint left sidebar console) */}
+            <Route
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/complaints" element={<AdminComplaintsPage />} />
+              <Route path="/admin/users" element={<AdminUsersPage />} />
+            </Route>
 
-          {/* Staff Role Shell (Persistent 3px burnt sienna top bar, slim task-focused header) */}
-          <Route
-            element={
-              <ProtectedRoute allowedRoles={['staff']}>
-                <StaffLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/staff/dashboard" element={<StaffDashboard />} />
-            <Route path="/staff/tasks" element={<StaffTasksPage />} />
-          </Route>
+            {/* Staff Role Shell (Persistent 3px burnt sienna top bar, slim task-focused header) */}
+            <Route
+              element={
+                <ProtectedRoute allowedRoles={['staff']}>
+                  <StaffLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/staff/dashboard" element={<StaffDashboard />} />
+              <Route path="/staff/tasks" element={<StaffTasksPage />} />
+            </Route>
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

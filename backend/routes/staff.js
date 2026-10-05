@@ -9,6 +9,7 @@ const {
   getStaffTasks,
   updateTaskStatus,
   resolveTask,
+  exportStaffTasksCsv,
 } = require('../controllers/staffController');
 
 const { protect, authorize } = require('../middleware/auth');
@@ -17,6 +18,7 @@ const { protect, authorize } = require('../middleware/auth');
 router.use(protect);
 router.use(authorize('staff'));
 
+router.get('/tasks/export', exportStaffTasksCsv);
 router.get('/tasks', getStaffTasks);
 router.put('/tasks/:id/status', updateTaskStatus);
 router.put('/tasks/:id/resolve', resolveTask);

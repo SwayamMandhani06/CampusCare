@@ -35,6 +35,29 @@
   --priority-critical: #B14A4A;
 }
 
+.dark {
+  /* Dark Mode Neutrals */
+  --ink: #F3F4F6;
+  --paper: #0F172A;
+  --muted: #94A3B8;
+  --line: #334155;
+  --brand: #60A5FA;
+  --brand-hover: #3B82F6;
+
+  /* Semantic Status Colors in Dark Mode */
+  --status-pending: #94A3B8;
+  --status-reviewed: #60A5FA;
+  --status-assigned: #FBBF24;
+  --status-progress: #FB923C;
+  --status-resolved: #34D399;
+
+  /* Semantic Priority Colors in Dark Mode */
+  --priority-low: #34D399;
+  --priority-medium: #FBBF24;
+  --priority-high: #FB923C;
+  --priority-critical: #F87171;
+}
+
 /* Base resets & typography */
 html {
   scroll-behavior: smooth;

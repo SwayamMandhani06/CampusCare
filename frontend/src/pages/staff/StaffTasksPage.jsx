@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
@@ -7,21 +7,23 @@ import Textarea from '../../components/Textarea';
 import StatusBadge from '../../components/StatusBadge';
 import PriorityBadge from '../../components/PriorityBadge';
 import StatusRail from '../../components/StatusRail';
-import { getCategoryIcon } from '../../utils/categoryIcons';
-import { formatRelativeDate, formatFullDateTime } from '../../utils/formatDate';
+import ComplaintComments from '../../components/ComplaintComments';
+import ComplaintImageGallery from '../../components/ComplaintImageGallery';
+import ActivityTimeline from '../../components/ActivityTimeline';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import EmptyState from '../../components/EmptyState';
+import { CATEGORIES } from '../../utils/categoryIcons';
+import { formatRelativeDate } from '../../utils/formatDate';
 import {
-  Wrench,
   Play,
   CheckCircle,
   MapPin,
-  Calendar,
-  User,
   AlertCircle,
   Search,
   RotateCcw,
   Check,
-  FileText,
-  Clock,
+  Download,
+  History,
 } from 'lucide-react';
 
 const STATUS_FILTERS = [
@@ -31,14 +33,29 @@ const STATUS_FILTERS = [
   { value: 'RESOLVED', label: 'Completed' },
 ];
 
+const PRIORITY_OPTIONS = [
+  { value: '', label: 'All Priorities' },
+  { value: 'LOW', label: 'Low' },
+  { value: 'MEDIUM', label: 'Medium' },
+  { value: 'HIGH', label: 'High' },
+  { value: 'CRITICAL', label: 'Critical' },
+];
+
 const StaffTasksPage = () => {
   const [searchParams] = useSearchParams();
   const initialTaskId = searchParams.get('taskId');
 
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('');
+  const [exporting, setExporting] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+
+  // Filters
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
 
   // Resolution form state
   const [resolutionNotes, setResolutionNotes] = useState('');
@@ -46,24 +63,39 @@ const StaffTasksPage = () => {
   const [actionSuccess, setActionSuccess] = useState('');
   const [actionError, setActionError] = useState('');
 
+  // Debounce search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [search]);
+
   const fetchTasks = async () => {
     setLoading(true);
     try {
       const params = {};
       if (statusFilter) params.status = statusFilter;
+      if (priorityFilter) params.priority = priorityFilter;
+      if (categoryFilter) params.category = categoryFilter;
+      if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
 
       const res = await api.get('/staff/tasks', { params });
       if (res.data && res.data.tasks) {
         setTasks(res.data.tasks);
 
-        // Auto-select task if specified by query parameter
+        // Auto-select task if specified or preserve selection
         if (initialTaskId) {
           const matched = res.data.tasks.find((t) => t._id === initialTaskId);
-          if (matched) {
-            setSelectedTask(matched);
-          }
-        } else if (res.data.tasks.length > 0 && !selectedTask) {
-          setSelectedTask(res.data.tasks[0]);
+          if (matched) setSelectedTask(matched);
+        } else if (res.data.tasks.length > 0) {
+          setSelectedTask((current) => {
+            if (!current) return res.data.tasks[0];
+            const updated = res.data.tasks.find((t) => t._id === current._id);
+            return updated || res.data.tasks[0];
+          });
+        } else {
+          setSelectedTask(null);
         }
       }
     } catch (err) {
@@ -75,7 +107,52 @@ const StaffTasksPage = () => {
 
   useEffect(() => {
     fetchTasks();
-  }, [statusFilter]);
+  }, [statusFilter, priorityFilter, categoryFilter, debouncedSearch]);
+
+  const hasActiveFilters = Boolean(
+    search || statusFilter || priorityFilter || categoryFilter
+  );
+
+  const resetFilters = () => {
+    setSearch('');
+    setStatusFilter('');
+    setPriorityFilter('');
+    setCategoryFilter('');
+  };
+
+  const handleExportCsv = async () => {
+    setExporting(true);
+    try {
+      const params = {};
+      if (statusFilter) params.status = statusFilter;
+      if (priorityFilter) params.priority = priorityFilter;
+      if (categoryFilter) params.category = categoryFilter;
+      if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
+
+      const res = await api.get('/staff/tasks/export', {
+        params,
+        responseType: 'blob',
+      });
+
+      const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute(
+        'download',
+        `staff-tasks-${new Date().toISOString().slice(0, 10)}.csv`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('[Export Tasks CSV] Error:', err);
+      alert('Failed to export tasks CSV.');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   // Action 1: Start Work (sets status to IN_PROGRESS)
   const handleStartWork = async () => {
@@ -93,7 +170,6 @@ const StaffTasksPage = () => {
       if (res.data && res.data.task) {
         setSelectedTask(res.data.task);
         setActionSuccess('Work order is now marked IN PROGRESS.');
-        // Update item in list
         setTasks((prev) =>
           prev.map((t) => (t._id === res.data.task._id ? res.data.task : t))
         );
@@ -127,7 +203,6 @@ const StaffTasksPage = () => {
         setSelectedTask(res.data.task);
         setActionSuccess('Work order marked RESOLVED successfully.');
         setResolutionNotes('');
-        // Update item in list
         setTasks((prev) =>
           prev.map((t) => (t._id === res.data.task._id ? res.data.task : t))
         );
@@ -141,7 +216,7 @@ const StaffTasksPage = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 w-full">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 w-full text-left">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-line gap-4">
         <div>
@@ -152,30 +227,109 @@ const StaffTasksPage = () => {
             Assigned Work Orders
           </h1>
           <p className="text-xs text-muted mt-1">
-            Review assignment details, record progress states, and log resolution notes.
+            Review assignment details, record progress states, communicate via comments, and log resolutions.
           </p>
         </div>
 
         <div className="flex items-center space-x-2">
-          {STATUS_FILTERS.map((filter) => (
-            <button
-              key={filter.value}
-              onClick={() => setStatusFilter(filter.value)}
-              className={`px-3 py-1.5 text-xs font-mono rounded border transition-colors ${
-                statusFilter === filter.value
-                  ? 'bg-ink text-paper border-ink font-medium'
-                  : 'bg-paper text-muted border-line hover:text-ink'
-              }`}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleExportCsv}
+            disabled={exporting || tasks.length === 0}
+            className="text-xs font-mono"
+            title="Export assigned tasks to CSV"
+          >
+            <Download size={13} className="mr-1.5" />
+            <span>{exporting ? 'Exporting...' : 'Export CSV'}</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Filter Toolbar */}
+      <div className="my-6 p-4 bg-paper border border-line rounded-lg space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+          {/* Search */}
+          <div className="md:col-span-4 relative">
+            <Search
+              size={15}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+            />
+            <input
+              type="text"
+              placeholder="Search tasks..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 bg-paper text-xs text-ink border border-line rounded focus:border-brand focus-visible:outline-brand"
+            />
+          </div>
+
+          {/* Status Tabs */}
+          <div className="md:col-span-3">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand font-mono"
             >
-              {filter.label}
-            </button>
-          ))}
+              {STATUS_FILTERS.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Priority */}
+          <div className="md:col-span-2">
+            <select
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value)}
+              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand font-mono"
+            >
+              {PRIORITY_OPTIONS.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Category */}
+          <div className="md:col-span-2">
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand"
+            >
+              <option value="">All Categories</option>
+              {CATEGORIES.map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Reset */}
+          <div className="md:col-span-1 flex justify-end">
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={resetFilters}
+                className="text-xs font-mono text-muted hover:text-ink w-full"
+                title="Reset Filters"
+              >
+                <RotateCcw size={13} />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Main Workbench Layout: Task List Left (1/3), Detail & Actions Right (2/3) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-8 items-start">
-        {/* Left Column: Task Queue (4 cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Task Queue (5 cols) */}
         <div className="lg:col-span-5 space-y-3">
           <div className="flex items-center justify-between pb-2">
             <span className="text-xs font-mono uppercase text-muted tracking-wider">
@@ -184,16 +338,26 @@ const StaffTasksPage = () => {
           </div>
 
           {loading ? (
-            <div className="p-8 text-center text-xs font-mono text-muted border border-line rounded-lg bg-paper">
-              <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-              <span>Loading tasks...</span>
+            <div className="py-12 border border-line rounded-lg bg-paper">
+              <LoadingSpinner label="Loading tasks..." size={18} />
             </div>
           ) : tasks.length === 0 ? (
-            <Card className="p-8 text-center border-dashed">
-              <span className="text-xs text-muted">
-                {statusFilter ? `No ${statusFilter.toLowerCase().replace('_', ' ')} tasks right now.` : 'Nothing assigned right now.'}
-              </span>
-            </Card>
+            <EmptyState
+              title="No Tasks Found"
+              message={
+                hasActiveFilters
+                  ? 'No assigned work orders match your active filter settings.'
+                  : 'You have no assigned tasks in your queue right now.'
+              }
+              action={
+                hasActiveFilters && (
+                  <Button variant="secondary" size="sm" onClick={resetFilters}>
+                    <RotateCcw size={12} className="mr-1.5" />
+                    Reset Filters
+                  </Button>
+                )
+              }
+            />
           ) : (
             <div className="border border-line rounded-lg divide-y divide-line bg-paper overflow-hidden shadow-sm max-h-[750px] overflow-y-auto">
               {tasks.map((task) => {
@@ -228,7 +392,7 @@ const StaffTasksPage = () => {
 
                     <div className="flex items-center justify-between text-xs text-muted">
                       <span className="truncate max-w-[200px] flex items-center font-mono text-[11px]">
-                        <MapPin size={11} className="mr-1 shrink-0" />
+                        <MapPin size={11} className="mr-1 shrink-0 text-brand" />
                         {task.location}
                       </span>
                       <span className="font-mono text-[11px]">
@@ -242,7 +406,7 @@ const StaffTasksPage = () => {
           )}
         </div>
 
-        {/* Right Column: Task Detail, StatusRail & Action Workflow (7 cols) */}
+        {/* Right Column: Task Detail, StatusRail, Actions, Timeline, Comments (7 cols) */}
         <div className="lg:col-span-7">
           {selectedTask ? (
             <Card className="p-6 sm:p-8 space-y-6">
@@ -294,6 +458,16 @@ const StaffTasksPage = () => {
                 </p>
               </div>
 
+              {/* Attached Images */}
+              {selectedTask.images && selectedTask.images.length > 0 && (
+                <div className="pt-2">
+                  <ComplaintImageGallery
+                    complaintId={selectedTask._id}
+                    images={selectedTask.images}
+                  />
+                </div>
+              )}
+
               {/* Student Submitter Info */}
               <div className="p-3 bg-paper/60 border border-line rounded text-xs space-y-1">
                 <span className="text-muted font-mono uppercase text-[10px] block">
@@ -307,20 +481,6 @@ const StaffTasksPage = () => {
                     PRN: {selectedTask.createdBy?.studentId}
                   </div>
                 )}
-              </div>
-
-              {/* Live Ticket Rail Forward Motion */}
-              <div className="pt-4 border-t border-line">
-                <h3 className="text-xs font-mono uppercase tracking-wider text-muted font-medium mb-4">
-                  Resolution Pipeline Progress
-                </h3>
-                <div className="p-4 bg-paper/60 border border-line rounded">
-                  <StatusRail
-                    orientation="vertical"
-                    currentStatus={selectedTask.status}
-                    statusHistory={selectedTask.statusHistory}
-                  />
-                </div>
               </div>
 
               {/* Technician Actions Area */}
@@ -337,7 +497,7 @@ const StaffTasksPage = () => {
                         Ready to begin repairs?
                       </span>
                       <span className="text-[11px] text-muted leading-relaxed">
-                        Transition this ticket to IN PROGRESS to let the student know technician is active on site.
+                        Transition this ticket to IN PROGRESS to notify the student that technician is on-site.
                       </span>
                     </div>
                     <Button
@@ -405,6 +565,39 @@ const StaffTasksPage = () => {
                     </p>
                   </div>
                 )}
+              </div>
+
+              {/* Live Ticket Rail & Timeline */}
+              <div className="space-y-4 pt-4 border-t border-line">
+                <div>
+                  <h3 className="text-xs font-mono uppercase tracking-wider text-muted font-medium mb-3">
+                    Resolution Pipeline Progress
+                  </h3>
+                  <div className="p-4 bg-paper/60 border border-line rounded">
+                    <StatusRail
+                      orientation="vertical"
+                      currentStatus={selectedTask.status}
+                      statusHistory={selectedTask.statusHistory}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center space-x-1.5 mb-3">
+                    <History size={14} className="text-brand" />
+                    <h3 className="text-xs font-mono uppercase tracking-wider text-muted font-medium">
+                      Activity Trail
+                    </h3>
+                  </div>
+                  <div className="p-4 bg-paper/60 border border-line rounded">
+                    <ActivityTimeline timeline={selectedTask.activityTimeline} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Staff Discussion / Comments */}
+              <div className="pt-4 border-t border-line">
+                <ComplaintComments complaintId={selectedTask._id} />
               </div>
             </Card>
           ) : (

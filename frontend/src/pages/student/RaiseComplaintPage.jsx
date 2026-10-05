@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import api from '../../services/api';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
 import Textarea from '../../components/Textarea';
 import { CATEGORIES } from '../../utils/categoryIcons';
-import { ArrowLeft, PlusCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, PlusCircle, AlertCircle, Upload, X, Image as ImageIcon } from 'lucide-react';
 
 const PRIORITIES = [
   { value: 'LOW', label: 'Low — Minor issue, minimal impact', dotColor: 'var(--priority-low)' },
@@ -15,6 +14,16 @@ const PRIORITIES = [
   { value: 'HIGH', label: 'High — Significant disruption to facilities', dotColor: 'var(--priority-high)' },
   { value: 'CRITICAL', label: 'Critical — Immediate hazard / urgent outage', dotColor: 'var(--priority-critical)' },
 ];
+
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_IMAGES = 5;
+const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+
+const formatSize = (bytes) => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
 
 const RaiseComplaintPage = () => {
   const navigate = useNavigate();
@@ -27,6 +36,8 @@ const RaiseComplaintPage = () => {
     description: '',
   });
 
+  const [images, setImages] = useState([]);
+  const [imageError, setImageError] = useState('');
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState('');
@@ -38,6 +49,49 @@ const RaiseComplaintPage = () => {
       setErrors((prev) => ({ ...prev, [id]: '' }));
     }
     if (apiError) setApiError('');
+  };
+
+  const handleImageChange = (e) => {
+    setImageError('');
+    const files = Array.from(e.target.files);
+
+    if (images.length + files.length > MAX_IMAGES) {
+      setImageError(`You can attach a maximum of ${MAX_IMAGES} images per complaint.`);
+      return;
+    }
+
+    const validNewImages = [];
+    for (const file of files) {
+      if (!ALLOWED_TYPES.includes(file.type.toLowerCase())) {
+        setImageError(`File "${file.name}" is not supported. Only JPEG, PNG, and WebP are allowed.`);
+        return;
+      }
+      if (file.size > MAX_IMAGE_SIZE) {
+        setImageError(`File "${file.name}" is too large (${formatSize(file.size)}). Max allowed is 5 MB.`);
+        return;
+      }
+
+      validNewImages.push({
+        file,
+        previewUrl: URL.createObjectURL(file),
+        name: file.name,
+        size: file.size,
+      });
+    }
+
+    setImages((prev) => [...prev, ...validNewImages]);
+    // Reset file input value so same file can be picked again if removed
+    e.target.value = '';
+  };
+
+  const handleRemoveImage = (index) => {
+    setImages((prev) => {
+      const removed = prev[index];
+      if (removed?.previewUrl) {
+        URL.revokeObjectURL(removed.previewUrl);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const validate = () => {
@@ -68,9 +122,22 @@ const RaiseComplaintPage = () => {
     setApiError('');
 
     try {
-      const res = await api.post('/complaints', formData);
+      const payload = new FormData();
+      payload.append('title', formData.title.trim());
+      payload.append('category', formData.category);
+      payload.append('location', formData.location.trim());
+      payload.append('priority', formData.priority);
+      payload.append('description', formData.description.trim());
+
+      for (const img of images) {
+        payload.append('images', img.file);
+      }
+
+      const res = await api.post('/complaints', payload, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
       if (res.data && res.data.complaint) {
-        // Direct redirect to detail & tracking view
         navigate(`/complaints/${res.data.complaint._id}`);
       }
     } catch (err) {
@@ -181,13 +248,86 @@ const RaiseComplaintPage = () => {
           <Textarea
             label="Detailed Description"
             id="description"
-            rows={5}
+            rows={4}
             placeholder="Describe what is broken, how long it has been occurring, and any hazard or disruption it causes..."
             value={formData.description}
             onChange={handleChange}
             error={errors.description}
             required
           />
+
+          {/* Image Attachments */}
+          <div className="space-y-2 text-left">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium tracking-wide text-ink">
+                Attach Images (Optional, max 5, up to 5 MB each)
+              </label>
+              <span className="text-[10px] font-mono text-muted">
+                {images.length}/5 attached
+              </span>
+            </div>
+
+            {imageError && (
+              <div className="p-2.5 rounded bg-priority-critical/10 text-priority-critical text-xs flex items-center space-x-1.5">
+                <AlertCircle size={13} className="shrink-0" />
+                <span>{imageError}</span>
+              </div>
+            )}
+
+            {/* Upload Drop Zone / Picker */}
+            {images.length < MAX_IMAGES && (
+              <label className="flex flex-col items-center justify-center p-4 border border-dashed border-line rounded-lg bg-paper hover:bg-line/20 transition-colors cursor-pointer group">
+                <Upload size={18} className="text-muted group-hover:text-brand transition-colors mb-1" />
+                <span className="text-xs font-medium text-ink">
+                  Click to select photos from device
+                </span>
+                <span className="text-[10px] font-mono text-muted mt-0.5">
+                  Supported: JPG, PNG, WebP (Max 5 MB)
+                </span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+              </label>
+            )}
+
+            {/* Selected Images Preview Grid */}
+            {images.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
+                {images.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className="relative rounded-lg border border-line bg-paper/60 overflow-hidden group"
+                  >
+                    <div className="aspect-video w-full bg-line/20 overflow-hidden flex items-center justify-center">
+                      <img
+                        src={img.previewUrl}
+                        alt={img.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-1.5 flex items-center justify-between text-[10px] font-mono">
+                      <span className="truncate max-w-[85px] text-ink" title={img.name}>
+                        {img.name}
+                      </span>
+                      <span className="text-muted">{formatSize(img.size)}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(idx)}
+                      className="absolute top-1.5 right-1.5 p-1 rounded-full bg-ink/70 hover:bg-priority-critical text-white transition-colors"
+                      title="Remove image"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div className="pt-3 border-t border-line flex flex-col sm:flex-row items-center justify-end gap-3">
             <Link to="/dashboard" className="w-full sm:w-auto">

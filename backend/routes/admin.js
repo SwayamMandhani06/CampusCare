@@ -11,6 +11,7 @@ const {
   assignStaff,
   updateComplaintStatus,
   getAllUsers,
+  exportAdminComplaintsCsv,
 } = require('../controllers/adminController');
 
 const { protect, authorize } = require('../middleware/auth');
@@ -20,6 +21,7 @@ router.use(protect);
 router.use(authorize('admin'));
 
 router.get('/dashboard', getAdminDashboard);
+router.get('/complaints/export', exportAdminComplaintsCsv);
 router.get('/complaints', getAllComplaints);
 router.put('/complaints/:id/assign', assignStaff);
 router.put('/complaints/:id/status', updateComplaintStatus);

@@ -62,3 +62,8 @@ values-secret.yml
 kubeconfig
 *.kubeconfig
 !k8s/secret.yaml
+
+# Uploads directory
+uploads/*
+**/uploads/*
+!**/uploads/.gitkeep

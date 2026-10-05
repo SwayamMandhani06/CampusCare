@@ -55,6 +55,15 @@ spec:
               value: "{{ .Values.mongodb.service.port | default 27017 }}"
             - name: MONGO_URI
               value: "mongodb://$(MONGO_INITDB_ROOT_USERNAME):$(MONGO_INITDB_ROOT_PASSWORD)@$(MONGO_HOST):$(MONGO_PORT)/campuscare?authSource=admin"
+            {{- if and .Values.backend.persistence .Values.backend.persistence.uploads.enabled }}
+            - name: UPLOAD_DIR
+              value: {{ .Values.backend.persistence.uploads.mountPath | default "/app/uploads" | quote }}
+            {{- end }}
+          {{- if and .Values.backend.persistence .Values.backend.persistence.uploads.enabled }}
+          volumeMounts:
+            - name: uploads-volume
+              mountPath: {{ .Values.backend.persistence.uploads.mountPath | default "/app/uploads" }}
+          {{- end }}
           resources:
             {{- toYaml .Values.backend.resources | nindent 12 }}
           readinessProbe:
@@ -73,3 +82,9 @@ spec:
             periodSeconds: {{ .Values.backend.probes.liveness.periodSeconds | default 15 }}
             timeoutSeconds: {{ .Values.backend.probes.liveness.timeoutSeconds | default 5 }}
             failureThreshold: {{ .Values.backend.probes.liveness.failureThreshold | default 3 }}
+      {{- if and .Values.backend.persistence .Values.backend.persistence.uploads.enabled }}
+      volumes:
+        - name: uploads-volume
+          persistentVolumeClaim:
+            claimName: campuscare-uploads-pvc
+      {{- end }}

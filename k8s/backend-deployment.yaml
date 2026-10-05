@@ -55,6 +55,11 @@ spec:
               value: "27017"
             - name: MONGO_URI
               value: "mongodb://$(MONGO_INITDB_ROOT_USERNAME):$(MONGO_INITDB_ROOT_PASSWORD)@$(MONGO_HOST):$(MONGO_PORT)/campuscare?authSource=admin"
+            - name: UPLOAD_DIR
+              value: "/app/uploads"
+          volumeMounts:
+            - name: uploads-volume
+              mountPath: /app/uploads
           resources:
             requests:
               memory: 256Mi
@@ -78,3 +83,7 @@ spec:
             periodSeconds: 15
             timeoutSeconds: 5
             failureThreshold: 3
+      volumes:
+        - name: uploads-volume
+          persistentVolumeClaim:
+            claimName: campuscare-uploads-pvc

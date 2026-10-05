@@ -1,0 +1,20 @@
+{{- if and .Values.backend.persistence .Values.backend.persistence.uploads.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: campuscare-uploads-pvc
+  namespace: {{ .Values.namespace | default "campuscare" }}
+  labels:
+    app.kubernetes.io/name: campuscare
+    app.kubernetes.io/component: uploads-storage
+    app.kubernetes.io/part-of: campuscare
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  accessModes:
+    - {{ .Values.backend.persistence.uploads.accessMode | default "ReadWriteOnce" }}
+  storageClassName: {{ .Values.backend.persistence.uploads.storageClass | default "local-path" }}
+  resources:
+    requests:
+      storage: {{ .Values.backend.persistence.uploads.size | default "2Gi" }}
+{{- end }}

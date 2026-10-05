@@ -1,27 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import Card from '../../components/Card';
 import Button from '../../components/Button';
 import StatusBadge from '../../components/StatusBadge';
 import PriorityBadge from '../../components/PriorityBadge';
 import StatusRail from '../../components/StatusRail';
+import ComplaintComments from '../../components/ComplaintComments';
+import ComplaintImageGallery from '../../components/ComplaintImageGallery';
+import ComplaintFeedback from '../../components/ComplaintFeedback';
+import ActivityTimeline from '../../components/ActivityTimeline';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import EmptyState from '../../components/EmptyState';
 import { CATEGORIES, getCategoryIcon } from '../../utils/categoryIcons';
 import { formatRelativeDate, formatFullDateTime } from '../../utils/formatDate';
 import {
   Search,
   ChevronLeft,
   ChevronRight,
-  Filter,
-  UserCheck,
   CheckCircle,
   X,
   MapPin,
-  Calendar,
-  User,
   Wrench,
   AlertCircle,
   Shield,
   RotateCcw,
+  Download,
+  History,
 } from 'lucide-react';
 
 const STATUS_OPTIONS = [
@@ -33,17 +36,30 @@ const STATUS_OPTIONS = [
   { value: 'RESOLVED', label: 'Resolved' },
 ];
 
+const PRIORITY_OPTIONS = [
+  { value: '', label: 'All Priorities' },
+  { value: 'LOW', label: 'Low' },
+  { value: 'MEDIUM', label: 'Medium' },
+  { value: 'HIGH', label: 'High' },
+  { value: 'CRITICAL', label: 'Critical' },
+];
+
 const AdminComplaintsPage = () => {
   const [complaints, setComplaints] = useState([]);
   const [staffUsers, setStaffUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 1 });
 
-  // Filters
+  // Advanced Filters
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [category, setCategory] = useState('');
   const [status, setStatus] = useState('');
+  const [priority, setPriority] = useState('');
+  const [assignedStaff, setAssignedStaff] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   // Selected Complaint for Drawer / Detail Modal
   const [selectedComplaint, setSelectedComplaint] = useState(null);
@@ -63,7 +79,7 @@ const AdminComplaintsPage = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-  // Fetch Staff users for assignment dropdown
+  // Fetch Staff users for assignment & filter dropdown
   useEffect(() => {
     const fetchStaff = async () => {
       try {
@@ -86,6 +102,10 @@ const AdminComplaintsPage = () => {
       if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
       if (category) params.category = category;
       if (status) params.status = status;
+      if (priority) params.priority = priority;
+      if (assignedStaff) params.assignedStaff = assignedStaff;
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
 
       const res = await api.get('/admin/complaints', { params });
       if (res.data && res.data.complaints) {
@@ -101,7 +121,52 @@ const AdminComplaintsPage = () => {
 
   useEffect(() => {
     fetchComplaints();
-  }, [debouncedSearch, category, status, pagination.page]);
+  }, [debouncedSearch, category, status, priority, assignedStaff, startDate, endDate, pagination.page]);
+
+  // CSV Export
+  const handleExportCsv = async () => {
+    setExporting(true);
+    try {
+      const params = {};
+      if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
+      if (category) params.category = category;
+      if (status) params.status = status;
+      if (priority) params.priority = priority;
+      if (assignedStaff) params.assignedStaff = assignedStaff;
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+
+      const res = await api.get('/admin/complaints/export', {
+        params,
+        responseType: 'blob',
+      });
+
+      const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `campuscare-admin-export-${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('[Export CSV] Error:', err);
+      alert('Failed to export complaints CSV.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleResetFilters = () => {
+    setSearch('');
+    setCategory('');
+    setStatus('');
+    setPriority('');
+    setAssignedStaff('');
+    setStartDate('');
+    setEndDate('');
+  };
 
   // Open detail modal and synchronize form states
   const openComplaintDrawer = (complaint) => {
@@ -139,7 +204,6 @@ const AdminComplaintsPage = () => {
         setSelectedComplaint(res.data.complaint);
         setSelectedStatus(res.data.complaint.status);
         setActionSuccess(`Assigned successfully to ${res.data.complaint.assignedTo?.name}`);
-        // Refresh table list in background
         fetchComplaints(pagination.page);
       }
     } catch (err) {
@@ -205,10 +269,12 @@ const AdminComplaintsPage = () => {
     }
   };
 
-  const hasActiveFilters = Boolean(search || category || status);
+  const hasActiveFilters = Boolean(
+    search || category || status || priority || assignedStaff || startDate || endDate
+  );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 w-full">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 w-full text-left">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-line gap-4">
         <div>
@@ -223,77 +289,158 @@ const AdminComplaintsPage = () => {
           </p>
         </div>
 
-        <div className="flex items-center space-x-2 text-xs font-mono text-muted">
-          <span>Total: <strong className="text-ink font-medium">{pagination.total}</strong> tickets</span>
+        <div className="flex items-center space-x-3">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleExportCsv}
+            disabled={exporting || complaints.length === 0}
+            className="text-xs font-mono"
+            title="Export filtered records to CSV"
+          >
+            <Download size={13} className="mr-1.5" />
+            <span>{exporting ? 'Exporting...' : 'Export CSV'}</span>
+          </Button>
+          <span className="text-xs font-mono text-muted">
+            Total: <strong className="text-ink font-medium">{pagination.total}</strong> tickets
+          </span>
         </div>
       </div>
 
-      {/* Filters Toolbar */}
-      <div className="my-6 p-4 bg-paper border border-line rounded-lg flex flex-col md:flex-row items-stretch md:items-center gap-3">
-        {/* Search */}
-        <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-          <input
-            type="text"
-            placeholder="Search complaints by title, location or description..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 bg-paper text-xs text-ink border border-line rounded focus:border-brand focus-visible:outline-brand"
-          />
+      {/* Advanced Filters Toolbar */}
+      <div className="my-6 p-4 bg-paper border border-line rounded-lg space-y-3">
+        {/* Row 1: Search & Category & Status */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+          {/* Search */}
+          <div className="md:col-span-6 relative">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+            <input
+              type="text"
+              placeholder="Search by title, location or description..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 bg-paper text-xs text-ink border border-line rounded focus:border-brand focus-visible:outline-brand"
+            />
+          </div>
+
+          {/* Category */}
+          <div className="md:col-span-3">
+            <select
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                setPagination((prev) => ({ ...prev, page: 1 }));
+              }}
+              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand"
+            >
+              <option value="">All Categories</option>
+              {CATEGORIES.map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Status */}
+          <div className="md:col-span-3">
+            <select
+              value={status}
+              onChange={(e) => {
+                setStatus(e.target.value);
+                setPagination((prev) => ({ ...prev, page: 1 }));
+              }}
+              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand font-mono"
+            >
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        {/* Category */}
-        <div className="w-full md:w-52">
-          <select
-            value={category}
-            onChange={(e) => {
-              setCategory(e.target.value);
-              setPagination((prev) => ({ ...prev, page: 1 }));
-            }}
-            className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand"
-          >
-            <option value="">All Categories</option>
-            {CATEGORIES.map((c) => (
-              <option key={c.name} value={c.name}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Row 2: Priority, Staff, Date Range, Reset */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 pt-2 border-t border-line/60 items-center">
+          {/* Priority */}
+          <div className="md:col-span-3">
+            <select
+              value={priority}
+              onChange={(e) => {
+                setPriority(e.target.value);
+                setPagination((prev) => ({ ...prev, page: 1 }));
+              }}
+              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand font-mono"
+            >
+              {PRIORITY_OPTIONS.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        {/* Status */}
-        <div className="w-full md:w-44">
-          <select
-            value={status}
-            onChange={(e) => {
-              setStatus(e.target.value);
-              setPagination((prev) => ({ ...prev, page: 1 }));
-            }}
-            className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand font-mono"
-          >
-            {STATUS_OPTIONS.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </select>
-        </div>
+          {/* Assigned Staff */}
+          <div className="md:col-span-3">
+            <select
+              value={assignedStaff}
+              onChange={(e) => {
+                setAssignedStaff(e.target.value);
+                setPagination((prev) => ({ ...prev, page: 1 }));
+              }}
+              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand"
+            >
+              <option value="">All Staff</option>
+              <option value="unassigned">-- Unassigned Tickets --</option>
+              {staffUsers.map((s) => (
+                <option key={s._id} value={s._id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setSearch('');
-              setCategory('');
-              setStatus('');
-            }}
-            className="text-xs font-mono text-muted shrink-0"
-          >
-            <RotateCcw size={12} />
-            <span>Reset</span>
-          </Button>
-        )}
+          {/* Date Range */}
+          <div className="md:col-span-4 flex items-center space-x-2">
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setPagination((prev) => ({ ...prev, page: 1 }));
+              }}
+              className="w-1/2 px-2.5 py-1.5 bg-paper text-xs text-ink border border-line rounded font-mono"
+              title="Start date"
+            />
+            <span className="text-muted text-xs font-mono">to</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setPagination((prev) => ({ ...prev, page: 1 }));
+              }}
+              className="w-1/2 px-2.5 py-1.5 bg-paper text-xs text-ink border border-line rounded font-mono"
+              title="End date"
+            />
+          </div>
+
+          {/* Reset Filters */}
+          <div className="md:col-span-2 flex justify-end">
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleResetFilters}
+                className="text-xs font-mono text-muted hover:text-ink w-full md:w-auto"
+              >
+                <RotateCcw size={12} className="mr-1" />
+                <span>Reset Filters</span>
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Dense Administrative Table */}
@@ -315,19 +462,29 @@ const AdminComplaintsPage = () => {
             <tbody className="divide-y divide-line">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-muted font-mono">
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
-                      <span>Loading complaint registry...</span>
-                    </div>
+                  <td colSpan={8} className="py-12 text-center text-muted">
+                    <LoadingSpinner label="Loading complaint registry..." size={20} />
                   </td>
                 </tr>
               ) : complaints.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-muted font-mono">
-                    {hasActiveFilters
-                      ? 'No complaints found matching current query filters.'
-                      : 'No complaints in the registry yet.'}
+                  <td colSpan={8} className="py-10">
+                    <EmptyState
+                      title="No Complaints Found"
+                      message={
+                        hasActiveFilters
+                          ? 'No tickets match the selected search, status, staff, or date criteria.'
+                          : 'No complaints registered in the system yet.'
+                      }
+                      action={
+                        hasActiveFilters && (
+                          <Button variant="secondary" size="sm" onClick={handleResetFilters} className="text-xs">
+                            <RotateCcw size={12} className="mr-1" />
+                            Clear Filters
+                          </Button>
+                        )
+                      }
+                    />
                   </td>
                 </tr>
               ) : (
@@ -438,7 +595,7 @@ const AdminComplaintsPage = () => {
       {/* Admin Action Drawer / Modal */}
       {selectedComplaint && (
         <div className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm flex justify-end animate-in fade-in duration-150">
-          <div className="w-full max-w-xl bg-paper h-full shadow-xl border-l border-line flex flex-col overflow-y-auto">
+          <div className="w-full max-w-2xl bg-paper h-full shadow-2xl border-l border-line flex flex-col overflow-y-auto">
             {/* Drawer Header */}
             <div className="p-6 border-b border-line flex items-center justify-between sticky top-0 bg-paper z-10">
               <div className="flex items-center space-x-2">
@@ -490,7 +647,7 @@ const AdminComplaintsPage = () => {
               </div>
 
               {/* Submitter Details */}
-              <div className="p-3 bg-paper/60 border border-line rounded text-xs space-y-1">
+              <div className="p-3.5 bg-paper/60 border border-line rounded-lg text-xs space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-muted font-mono uppercase text-[10px]">Logged By</span>
                   <span className="font-mono text-muted text-[11px]">
@@ -512,10 +669,20 @@ const AdminComplaintsPage = () => {
                 <h3 className="text-xs font-mono uppercase tracking-wider text-muted font-medium mb-1.5">
                   Detailed Complaint
                 </h3>
-                <p className="text-xs text-ink leading-relaxed p-3.5 rounded bg-paper/40 border border-line whitespace-pre-line">
+                <p className="text-xs text-ink leading-relaxed p-3.5 rounded-lg bg-paper/40 border border-line whitespace-pre-line">
                   {selectedComplaint.description}
                 </p>
               </div>
+
+              {/* Attached Images */}
+              {selectedComplaint.images && selectedComplaint.images.length > 0 && (
+                <div className="pt-2">
+                  <ComplaintImageGallery
+                    complaintId={selectedComplaint._id}
+                    images={selectedComplaint.images}
+                  />
+                </div>
+              )}
 
               {/* Admin Actions: Assignment & Status Override */}
               <div className="p-4 border border-line rounded-lg bg-paper/80 space-y-4">
@@ -618,18 +785,48 @@ const AdminComplaintsPage = () => {
                 </div>
               </div>
 
-              {/* Live Ticket Rail Audit Timeline */}
-              <div className="pt-2">
-                <h3 className="text-xs font-mono uppercase tracking-wider text-muted font-medium mb-3">
-                  Live Resolution Timeline
-                </h3>
-                <div className="p-4 bg-paper/60 border border-line rounded">
-                  <StatusRail
-                    orientation="vertical"
-                    currentStatus={selectedComplaint.status}
-                    statusHistory={selectedComplaint.statusHistory}
+              {/* Feedback Summary (if submitted) */}
+              {selectedComplaint.feedback && (
+                <div className="pt-2">
+                  <ComplaintFeedback
+                    complaintId={selectedComplaint._id}
+                    existingFeedback={selectedComplaint.feedback}
+                    isOwner={false}
                   />
                 </div>
+              )}
+
+              {/* Live Ticket Rail & Detailed Activity History */}
+              <div className="space-y-4 pt-2">
+                <div>
+                  <h3 className="text-xs font-mono uppercase tracking-wider text-muted font-medium mb-3">
+                    Live Resolution Rail
+                  </h3>
+                  <div className="p-4 bg-paper/60 border border-line rounded-lg">
+                    <StatusRail
+                      orientation="vertical"
+                      currentStatus={selectedComplaint.status}
+                      statusHistory={selectedComplaint.statusHistory}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center space-x-1.5 mb-3">
+                    <History size={14} className="text-brand" />
+                    <h3 className="text-xs font-mono uppercase tracking-wider text-muted font-medium">
+                      Audit Trail
+                    </h3>
+                  </div>
+                  <div className="p-4 bg-paper/60 border border-line rounded-lg">
+                    <ActivityTimeline timeline={selectedComplaint.activityTimeline} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Discussion Thread */}
+              <div className="pt-4 border-t border-line">
+                <ComplaintComments complaintId={selectedComplaint._id} />
               </div>
             </div>
 

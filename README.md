@@ -427,14 +427,140 @@ CampusCare features an automated, production-style **Declarative Jenkins CI/CD P
 
 ## 🔑 Demo Credentials & Evaluation Guide
 
-The database seeder (`node seed.js`) pre-populates three distinct role profiles for evaluation:
+The database seeder (`npm run seed:demo` or `node seed.js`) pre-populates deterministic, realistic demo accounts:
 
 | Role | Email | Password | Access / Purpose |
 |:---|:---|:---|:---|
-| **Campus Administrator** | `admin@pccoepune.org` | `Admin@12345` | Full administrative console, triage workbench, analytics, user directory |
-| **Maintenance Staff** | `staff@pccoepune.org` | `Staff@12345` | Priority task queue, work status transitions, resolution reporting |
-| **Student (Demo 1)** | `aarav.sharma@pccoepune.org` | `Student@12345` | Complaint submission, active ticket tracking, personal dashboard |
-| **Student (Demo 2)** | `neha.patil@pccoepune.org` | `Student@12345` | Secondary student account for multi-user testing |
+| **Campus Administrator** | `admin@pccoepune.org` | `CampusCare@2026` / `Admin@12345` | Chief Facilities Officer - triage, dispatch, overrides, analytics, CSV export |
+| **Deputy Administrator** | `deputy.admin@pccoepune.org` | `CampusCare@2026` | Deputy Operations Director - full admin privileges |
+| **Electrical Staff** | `electrical.staff@pccoepune.org` | `CampusCare@2026` | Senior Electrical Technician |
+| **Plumbing Staff** | `plumbing.staff@pccoepune.org` | `CampusCare@2026` | Campus Master Plumber |
+| **Civil Staff** | `civil.staff@pccoepune.org` | `CampusCare@2026` | Civil & Structural Maintenance Engineer |
+| **IT Support Staff** | `itsupport.staff@pccoepune.org` | `CampusCare@2026` | Network & IT Systems Administrator |
+| **Sanitation Staff** | `cleaning.staff@pccoepune.org` | `CampusCare@2026` | Sanitation & Housekeeping Lead |
+| **Security Staff** | `security.staff@pccoepune.org` | `CampusCare@2026` | Security Systems & Access Controller |
+| **Furniture Staff** | `furniture.staff@pccoepune.org` | `CampusCare@2026` | Furniture & Carpentry Specialist |
+| **General Staff** | `general.staff@pccoepune.org` | `CampusCare@2026` | General Campus Facility Engineer |
+| **Legacy Staff** | `staff@pccoepune.org` | `CampusCare@2026` / `Staff@12345` | Senior Maintenance Specialist |
+| **Students (12 Accounts)** | `aarav.sharma@pccoepune.org`, `neha.patil@pccoepune.org`, etc. | `CampusCare@2026` / `Student@12345` | Student ticket raising, feedback rating, comments, image uploads |
+
+---
+
+## 🚀 CampusCare 2.0 — Batch 1 Architecture & Features
+
+CampusCare 2.0 Batch 1 introduces enterprise collaboration, media attachment, observability, and usability enhancements while maintaining complete backward compatibility with the existing single-node k3s / Helm / Jenkins / Prometheus deployment.
+
+### 📋 12 Implemented Features
+
+1. **Complaint Discussion & Comments (`Feature 1`)**:
+   - Threaded discussion on complaints between students, assigned staff, and administrators.
+   - Role-based authorization: students can comment on their own complaints, staff on assigned complaints, admins on any complaint.
+   - Input length validation, trimming, sanitization, and duplicate submission prevention.
+2. **Complaint Image Uploads (`Feature 2`)**:
+   - Attach up to 5 images per complaint (JPEG, PNG, WebP) with a 5 MB maximum size limit per image.
+   - Multi-layer validation: MIME type check and binary magic bytes/signature verification (`FF D8 FF`, `89 50 4E 47`, `RIFF...WEBP`).
+   - Stored with secure random UUID filenames in persistent storage (`/app/uploads`).
+   - Secure authenticated retrieval endpoint: `GET /api/complaints/:id/images/:imageId` with strict ownership and authorization checks.
+3. **In-App Notification Center (`Feature 3`)**:
+   - Real-time in-app notification center tracking 6 lifecycle events: complaint creation, staff assignment, status change, resolution, new comments, and feedback ratings.
+   - Header notification bell with unread badge counter, dropdown preview, mark single as read, and mark all as read.
+4. **Email Notifications Infrastructure (`Feature 4`)**:
+   - Provider-agnostic Nodemailer SMTP integration.
+   - Disabled by default via `EMAIL_ENABLED=false` for local, CI, and test environments.
+   - Fully asynchronous and non-blocking — email failures never interrupt API responses or database transactions.
+5. **Advanced Search & Multi-Parametric Filtering (`Feature 5`)**:
+   - Keyword search across ticket title, description, location, and ticket ID.
+   - Dropdown filtering by Category, Status, Priority, Assigned Staff, and Date Range (`startDate` to `endDate`).
+   - Applied consistently across Admin, Student, and Staff portals.
+6. **Complaint Feedback & 5-Star Rating (`Feature 6`)**:
+   - Post-resolution rating system allowing the complaint owner to submit 1-5 star ratings and comments.
+   - Strictly enforced state validation: only available after ticket reaches `RESOLVED`.
+   - Idempotent and protected against duplicate or unauthorized rating submissions.
+7. **Comprehensive Activity Timeline & Audit History (`Feature 7`)**:
+   - Visual activity stream logging each lifecycle transition, staff dispatch, comment addition, resolution notes, and feedback submission.
+   - Preserves existing `statusHistory` array while maintaining the `activityTimeline` log.
+8. **RFC 4180 CSV Complaint Export (`Feature 8`)**:
+   - Server-side CSV generation with proper RFC 4180 quoting and character escaping.
+   - Role-scoped: Admins export all filtered complaints, Students export their own complaints, Staff export assigned tasks.
+   - Direct download via `Content-Disposition: attachment; filename=...`.
+9. **Dark / Light / System Theme Support (`Feature 9`)**:
+   - Class-based Tailwind dark mode (`darkMode: 'class'`).
+   - Persistent preference stored in `localStorage` with real-time `prefers-color-scheme` system detection.
+   - Theme toggle button integrated into the global navigation bar.
+10. **Standardized Loading, Error & Empty States (`Feature 10`)**:
+    - Reusable components (`LoadingSpinner`, `LoadingSkeleton`, `ErrorState`, `EmptyState`) deployed across all portal views.
+    - Eliminates blank screens and provides clear guidance when filters return no matches.
+11. **Idempotent Realistic Demo Dataset (`Feature 11`)**:
+    - Seed script (`npm run seed:demo`) that safely upserts 2 Admins, 8 Staff, 12 Students, and 28 Complaints with rich comments, timeline events, notifications, and feedback ratings.
+12. **Multi-Staff Departmental Integration (`Feature 12`)**:
+    - Specialized accounts across 8 operational campus facilities (Electrical, Plumbing, Civil, IT Support, Cleaning, Security, Furniture, General Facilities).
+    - Verified against staff authentication, work order queue, state transitions, and comment threads.
+
+---
+
+### 📡 New REST APIs (Batch 1)
+
+| Method | Endpoint | Access | Description |
+|:---|:---|:---|:---|
+| `POST` | `/api/complaints/:id/comments` | Authenticated (Owner, Assigned Staff, Admin) | Post comment to complaint thread |
+| `GET` | `/api/complaints/:id/comments` | Authenticated (Owner, Assigned Staff, Admin) | Get all comments for complaint |
+| `GET` | `/api/complaints/:id/images/:imageId` | Authenticated (Owner, Assigned Staff, Admin) | Securely retrieve uploaded image |
+| `POST` | `/api/complaints/:id/feedback` | Authenticated (Student Owner only) | Submit 1-5 star resolution rating |
+| `GET` | `/api/complaints/export` | Authenticated (Student) | Export student's complaints to CSV |
+| `GET` | `/api/admin/complaints/export` | Admin only | Export filtered campus complaints to CSV |
+| `GET` | `/api/staff/tasks/export` | Staff only | Export assigned technician tasks to CSV |
+| `GET` | `/api/notifications` | Authenticated (Own notifications) | Get recent notifications |
+| `GET` | `/api/notifications/unread-count` | Authenticated (Own count) | Get count of unread notifications |
+| `PATCH` | `/api/notifications/:id/read` | Authenticated (Own notification) | Mark specific notification as read |
+| `PATCH` | `/api/notifications/read-all` | Authenticated (Own notifications) | Mark all notifications as read |
+
+---
+
+### ⚙️ New Environment Variables
+
+```bash
+# Upload Configuration
+UPLOAD_DIR=/app/uploads
+MAX_IMAGE_SIZE_MB=5
+
+# Email Notification Configuration (Optional)
+EMAIL_ENABLED=false
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASSWORD=
+EMAIL_FROM="CampusCare Notifications" <no-reply@campuscare.local>
+
+# Demo Seeding Password (Optional)
+DEMO_PASSWORD=CampusCare@2026
+```
+
+---
+
+### 🧪 Automated Testing
+
+Run the complete test suite (151 tests across 4 suites):
+
+```bash
+cd backend
+npm test
+```
+
+Or run individual suites:
+```bash
+npm run test:auth        # 28 authentication & RBAC tests
+npm run test:complaints  # 49 complaint lifecycle tests
+npm run test:metrics     # 19 Prometheus observability tests
+npm run test:batch1      # 55 Batch 1 end-to-end feature tests
+```
+
+Frontend lint & production build:
+```bash
+cd frontend
+npm run lint             # Oxlint static analysis
+npm run build            # Vite production bundle build
+```
 
 ---
 

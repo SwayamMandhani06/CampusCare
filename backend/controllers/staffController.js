@@ -1,17 +1,19 @@
 /**
  * Staff Controller
- * Operations for maintenance personnel: viewing assigned tasks, setting progress, and resolving tickets with notes.
+ * Operations for maintenance personnel: viewing assigned tasks, setting progress, resolving tickets, and CSV export.
  */
 const Complaint = require('../models/Complaint');
+const notificationService = require('../utils/notificationService');
+const { formatComplaintsCsv } = require('../utils/csvExport');
 
 /**
- * @desc    Get all complaints assigned to logged-in staff
+ * @desc    Get all complaints assigned to logged-in staff with advanced filtering
  * @route   GET /api/staff/tasks
  * @access  Private (Staff only)
  */
 const getStaffTasks = async (req, res) => {
   try {
-    const { status, priority, search } = req.query;
+    const { status, category, priority, search, startDate, endDate } = req.query;
 
     const query = { assignedTo: req.user._id };
 
@@ -19,8 +21,22 @@ const getStaffTasks = async (req, res) => {
       query.status = status.toUpperCase();
     }
 
+    if (category) {
+      query.category = category;
+    }
+
     if (priority) {
       query.priority = priority.toUpperCase();
+    }
+
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) query.createdAt.$gte = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = end;
+      }
     }
 
     if (search) {
@@ -34,6 +50,7 @@ const getStaffTasks = async (req, res) => {
     const tasks = await Complaint.find(query)
       .populate('createdBy', 'name email studentId')
       .populate('statusHistory.changedBy', 'name email role')
+      .populate('activityTimeline.actor', 'name email role')
       .sort({ updatedAt: -1 });
 
     return res.status(200).json({
@@ -99,14 +116,26 @@ const updateTaskStatus = async (req, res) => {
       });
     }
 
+    const now = new Date();
     complaint.status = upperStatus;
 
     // Append to status history
     complaint.statusHistory.push({
       status: upperStatus,
-      changedAt: new Date(),
+      changedAt: now,
       changedBy: req.user._id,
       notes: notes || `Status updated to ${upperStatus} by staff`,
+    });
+
+    // Append to activity timeline
+    complaint.activityTimeline.push({
+      eventType: upperStatus === 'RESOLVED' ? 'RESOLVED' : 'STATUS_CHANGED',
+      actor: req.user._id,
+      actorName: req.user.name,
+      actorRole: req.user.role,
+      message: notes || `Status updated to ${upperStatus} by technician`,
+      timestamp: now,
+      metadata: { status: upperStatus },
     });
 
     await complaint.save();
@@ -114,7 +143,24 @@ const updateTaskStatus = async (req, res) => {
     const populatedComplaint = await Complaint.findById(id)
       .populate('createdBy', 'name email studentId')
       .populate('assignedTo', 'name email role')
-      .populate('statusHistory.changedBy', 'name email role');
+      .populate('statusHistory.changedBy', 'name email role')
+      .populate('activityTimeline.actor', 'name email role');
+
+    // Notify student
+    if (upperStatus === 'RESOLVED') {
+      notificationService.notifyComplaintResolved(
+        populatedComplaint,
+        populatedComplaint.createdBy,
+        notes
+      );
+    } else {
+      notificationService.notifyComplaintStatusChanged(
+        populatedComplaint,
+        populatedComplaint.createdBy,
+        upperStatus,
+        notes
+      );
+    }
 
     return res.status(200).json({
       success: true,
@@ -167,15 +213,27 @@ const resolveTask = async (req, res) => {
       });
     }
 
+    const now = new Date();
     complaint.status = 'RESOLVED';
     complaint.resolutionNotes = resolutionNotes || 'Resolved by staff';
 
     // Append to status timeline
     complaint.statusHistory.push({
       status: 'RESOLVED',
-      changedAt: new Date(),
+      changedAt: now,
       changedBy: req.user._id,
       notes: resolutionNotes ? `Resolved: ${resolutionNotes}` : 'Resolved by staff',
+    });
+
+    // Append to activity timeline
+    complaint.activityTimeline.push({
+      eventType: 'RESOLVED',
+      actor: req.user._id,
+      actorName: req.user.name,
+      actorRole: req.user.role,
+      message: resolutionNotes ? `Resolved: ${resolutionNotes}` : 'Resolved by technician',
+      timestamp: now,
+      metadata: { resolutionNotes: complaint.resolutionNotes },
     });
 
     await complaint.save();
@@ -183,7 +241,15 @@ const resolveTask = async (req, res) => {
     const populatedComplaint = await Complaint.findById(id)
       .populate('createdBy', 'name email studentId')
       .populate('assignedTo', 'name email role')
-      .populate('statusHistory.changedBy', 'name email role');
+      .populate('statusHistory.changedBy', 'name email role')
+      .populate('activityTimeline.actor', 'name email role');
+
+    // Notify student that ticket is resolved
+    notificationService.notifyComplaintResolved(
+      populatedComplaint,
+      populatedComplaint.createdBy,
+      complaint.resolutionNotes
+    );
 
     return res.status(200).json({
       success: true,
@@ -206,8 +272,63 @@ const resolveTask = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Export assigned tasks as CSV
+ * @route   GET /api/staff/tasks/export
+ * @access  Private (Staff only)
+ */
+const exportStaffTasksCsv = async (req, res) => {
+  try {
+    const { status, category, priority, search, startDate, endDate } = req.query;
+
+    const query = { assignedTo: req.user._id };
+
+    if (status) query.status = status.toUpperCase();
+    if (category) query.category = category;
+    if (priority) query.priority = priority.toUpperCase();
+
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) query.createdAt.$gte = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = end;
+      }
+    }
+
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { location: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const tasks = await Complaint.find(query)
+      .populate('createdBy', 'name email')
+      .populate('assignedTo', 'name email')
+      .sort({ updatedAt: -1 });
+
+    const csvContent = formatComplaintsCsv(tasks);
+    const filename = `staff-tasks-${new Date().toISOString().slice(0, 10)}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    return res.status(200).send(csvContent);
+  } catch (error) {
+    console.error(`[Staff Export Tasks Error] ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error exporting tasks CSV',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getStaffTasks,
   updateTaskStatus,
   resolveTask,
+  exportStaffTasksCsv,
 };

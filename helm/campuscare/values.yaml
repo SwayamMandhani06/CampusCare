@@ -60,6 +60,13 @@ backend:
     pullPolicy: IfNotPresent
   service:
     port: 5000
+  persistence:
+    uploads:
+      enabled: true
+      storageClass: local-path
+      accessMode: ReadWriteOnce
+      size: 2Gi
+      mountPath: /app/uploads
   resources:
     requests:
       cpu: 250m

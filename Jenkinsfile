@@ -3,7 +3,7 @@
 // =============================================================================
 // Target Architecture: Single-node k3s on AWS EC2 (t3.small)
 // Orchestration: Helm 3 chart (helm/campuscare)
-// Components: React Frontend (Nginx), Express Backend (Node.js), MongoDB 7
+// Microservices: React Frontend (Nginx), Express Backend (Node.js), MongoDB 7
 // Ingress: Traefik Ingress Controller (Localhost port 80 routing / and /api)
 // =============================================================================
 
@@ -20,6 +20,9 @@ pipeline {
     }
 
     environment {
+        // Explicitly set KUBECONFIG for k3s Kubernetes and Helm operations
+        KUBECONFIG        = '/etc/rancher/k3s/k3s.yaml'
+
         // Docker Hub credentials and image registry configuration
         DOCKER_CREDS_ID   = 'dockerhub-creds'
         DOCKER_ORG        = 'swayammandhani06'
@@ -34,9 +37,6 @@ pipeline {
         // Local ingress health verification endpoint (Traefik Ingress on EC2 host)
         HEALTH_ENDPOINT   = 'http://localhost/api/health'
         FRONTEND_ENDPOINT = 'http://localhost/'
-
-        // Immutable Git SHA image tag dynamically resolved in Checkout stage
-        IMAGE_TAG         = ''
     }
 
     stages {
@@ -50,18 +50,14 @@ pipeline {
                 echo '=========================================================='
                 checkout scm
                 script {
-                    // Extract immutable short 7-character commit SHA
-                    if (env.GIT_COMMIT) {
-                        env.IMAGE_TAG = env.GIT_COMMIT.take(7)
-                    } else {
-                        env.IMAGE_TAG = sh(
-                            script: 'git rev-parse --short=7 HEAD',
-                            returnStdout: true
-                        ).trim()
-                    }
+                    // Deterministically derive immutable Git SHA tag (7 chars) from git rev-parse
+                    env.IMAGE_TAG = sh(
+                        script: 'git rev-parse --short=7 HEAD',
+                        returnStdout: true
+                    ).trim()
                     def currentBranch = env.BRANCH_NAME ?: env.GIT_BRANCH ?: 'main'
-                    echo "[INFO] Active Branch    : ${currentBranch}"
-                    echo "[INFO] Immutable Tag    : ${env.IMAGE_TAG}"
+                    echo "[INFO] Active Branch : ${currentBranch}"
+                    echo "[INFO] Immutable Tag : ${env.IMAGE_TAG}"
                 }
             }
         }
@@ -137,15 +133,13 @@ pipeline {
                     echo "[BUILD 1/2] Building Backend Docker Image: ${BACKEND_IMAGE}:${IMAGE_TAG}..."
                     docker build \
                         -t "${BACKEND_IMAGE}:${IMAGE_TAG}" \
-                        -f backend/Dockerfile \
-                        backend
+                        ./backend
 
                     echo "[BUILD 2/2] Building Frontend Docker Image: ${FRONTEND_IMAGE}:${IMAGE_TAG}..."
                     docker build \
                         --build-arg VITE_API_URL=/api \
                         -t "${FRONTEND_IMAGE}:${IMAGE_TAG}" \
-                        -f frontend/Dockerfile \
-                        frontend
+                        ./frontend
 
                     echo "[INFO] Built Docker images:"
                     docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" | grep "campuscare" || true
@@ -285,13 +279,18 @@ pipeline {
                 sh '''
                     set -e
 
-                    echo "[ROLLOUT 1/2] Waiting for Backend deployment rollout..."
+                    echo "[ROLLOUT 1/3] Waiting for Backend deployment rollout..."
                     kubectl rollout status deployment/campuscare-backend \
                         --namespace "${KUBE_NAMESPACE}" \
                         --timeout=180s
 
-                    echo "[ROLLOUT 2/2] Waiting for Frontend deployment rollout..."
+                    echo "[ROLLOUT 2/3] Waiting for Frontend deployment rollout..."
                     kubectl rollout status deployment/campuscare-frontend \
+                        --namespace "${KUBE_NAMESPACE}" \
+                        --timeout=180s
+
+                    echo "[ROLLOUT 3/3] Waiting for MongoDB deployment rollout..."
+                    kubectl rollout status deployment/campuscare-mongodb \
                         --namespace "${KUBE_NAMESPACE}" \
                         --timeout=180s
 
@@ -328,13 +327,12 @@ pipeline {
 
                     echo "[INFO] Probing ${HEALTH_ENDPOINT} (max ${MAX_RETRIES} attempts)..."
                     for i in $(seq 1 $MAX_RETRIES); do
-                        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${HEALTH_ENDPOINT}" || true)
-                        if [ "$HTTP_CODE" = "200" ]; then
+                        if curl -fsS "${HEALTH_ENDPOINT}" > /dev/null 2>&1; then
                             echo "[SUCCESS] Health check PASSED on attempt ${i} (HTTP 200 OK)!"
                             SUCCESS=1
                             break
                         else
-                            echo "[WAIT] Attempt ${i}/${MAX_RETRIES}: Received HTTP ${HTTP_CODE}. Retrying in ${RETRY_INTERVAL}s..."
+                            echo "[WAIT] Attempt ${i}/${MAX_RETRIES}: Endpoint not ready. Retrying in ${RETRY_INTERVAL}s..."
                             sleep $RETRY_INTERVAL
                         fi
                     done
@@ -347,16 +345,12 @@ pipeline {
                     fi
 
                     echo "[INFO] Health check response payload:"
-                    curl -s "${HEALTH_ENDPOINT}" || true
+                    curl -fsS "${HEALTH_ENDPOINT}"
                     echo ""
 
                     echo "[INFO] Probing Frontend root endpoint (${FRONTEND_ENDPOINT})..."
-                    FE_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${FRONTEND_ENDPOINT}" || true)
-                    if [ "$FE_CODE" = "200" ]; then
-                        echo "[SUCCESS] Frontend root returned HTTP 200 OK!"
-                    else
-                        echo "[WARN] Frontend returned HTTP ${FE_CODE}."
-                    fi
+                    curl -fsSI "${FRONTEND_ENDPOINT}"
+                    echo "[SUCCESS] Frontend root returned HTTP 200 OK!"
                 '''
             }
         }

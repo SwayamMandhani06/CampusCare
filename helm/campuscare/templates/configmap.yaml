@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: campuscare-config
+  namespace: {{ .Values.namespace | default "campuscare" }}
+  labels:
+    app.kubernetes.io/name: campuscare
+    app.kubernetes.io/component: configuration
+    app.kubernetes.io/part-of: campuscare
+data:
+  NODE_ENV: {{ .Values.config.nodeEnv | quote }}
+  PORT: {{ .Values.config.port | quote }}
+  MONGO_HOST: {{ .Values.config.mongoHost | quote }}

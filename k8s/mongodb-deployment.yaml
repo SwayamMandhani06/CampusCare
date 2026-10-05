@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: campuscare-mongodb
+  namespace: campuscare
+  labels:
+    app.kubernetes.io/name: campuscare
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: campuscare
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: campuscare-mongodb
+  template:
+    metadata:
+      labels:
+        app: campuscare-mongodb
+        app.kubernetes.io/name: campuscare
+        app.kubernetes.io/component: database
+        app.kubernetes.io/part-of: campuscare
+    spec:
+      containers:
+        - name: mongodb
+          image: mongo:7
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 27017
+              name: mongodb
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: campuscare-secret
+                  key: MONGO_INITDB_ROOT_USERNAME
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: campuscare-secret
+                  key: MONGO_INITDB_ROOT_PASSWORD
+          volumeMounts:
+            - name: mongodb-storage
+              mountPath: /data/db
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 250m
+            limits:
+              memory: 512Mi
+              cpu: 500m
+          readinessProbe:
+            tcpSocket:
+              port: 27017
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: 27017
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+      volumes:
+        - name: mongodb-storage
+          persistentVolumeClaim:
+            claimName: campuscare-mongodb-pvc

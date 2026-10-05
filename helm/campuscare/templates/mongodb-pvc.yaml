@@ -1,0 +1,18 @@
+{{- if and .Values.mongodb.enabled .Values.mongodb.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: campuscare-mongodb-pvc
+  namespace: {{ .Values.namespace | default "campuscare" }}
+  labels:
+    app.kubernetes.io/name: campuscare
+    app.kubernetes.io/component: database-storage
+    app.kubernetes.io/part-of: campuscare
+spec:
+  accessModes:
+    - {{ .Values.mongodb.persistence.accessMode | default "ReadWriteOnce" }}
+  storageClassName: {{ .Values.mongodb.persistence.storageClass | default "local-path" }}
+  resources:
+    requests:
+      storage: {{ .Values.mongodb.persistence.size | default "2Gi" }}
+{{- end }}

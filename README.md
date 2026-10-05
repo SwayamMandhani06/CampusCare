@@ -388,6 +388,43 @@ npm run lint
 
 ---
 
+## 🔄 Continuous Integration & Deployment (Jenkins CI/CD Pipeline)
+
+CampusCare features an automated, production-grade **Declarative Jenkins CI/CD Pipeline** (`Jenkinsfile`) designed for single-node **k3s Kubernetes** deployments on AWS EC2 (`t3.small`). The pipeline ensures that every commit to `main` undergoes automated verification, deterministic container builds, secure registry pushes, and zero-downtime rolling upgrades managed by **Helm 3**.
+
+```
+  ┌──────────────┐     ┌──────────────────────┐     ┌────────────────┐
+  │ 1. Checkout  │ ──> │ 2. Install Deps (CI) │ ──> │ 3. Test Suites │
+  └──────────────┘     └──────────────────────┘     └────────────────┘
+                                                            │
+  ┌──────────────┐     ┌──────────────────────┐             │
+  │ 6. Helm      │ <── │ 5. Docker Push       │ <── ┌────────────────┐
+  │   Deploy     │     │    (dockerhub-creds) │     │ 4. Build Img   │
+  └──────────────┘     └──────────────────────┘     │   (Git SHA)    │
+         │                                          └────────────────┘
+         ▼
+  ┌──────────────┐     ┌──────────────────────┐     ┌────────────────┐
+  │ 7. Rollout   │ ──> │ 8. Ingress Health    │ ──> │ 9. Post &      │
+  │   Status     │     │    Check (localhost) │     │    Cleanup     │
+  └──────────────┘     └──────────────────────┘     └────────────────┘
+```
+
+### 📋 Pipeline Stages
+
+| Stage | Responsibility | Enforcement / Tools |
+|:---|:---|:---|
+| **1. Checkout** | Clones the repository and dynamically resolves the immutable 7-character Git commit SHA (`IMAGE_TAG`). | `checkout scm`, `git rev-parse --short=7 HEAD` |
+| **2. Install Dependencies** | Cleanly installs production and test dependencies using strict lockfiles. | `npm ci` across `/backend` and `/frontend` |
+| **3. Test** | Executes backend authentication, role authorization, and complaint lifecycle tests alongside frontend static analysis. | `npm run test:auth`, `npm run test:complaints`, `npm run lint` |
+| **4. Docker Build** | Builds backend and frontend production images sequentially to respect EC2 `t3.small` resource limits. Tags with Git SHA. | `docker build` (`VITE_API_URL=/api`) |
+| **5. Docker Push** | Authenticates securely with Docker Hub using Jenkins credentials (`dockerhub-creds`) without leaking tokens via process table or logs. *(Restricted to `main` branch)* | `withCredentials`, `docker login --password-stdin`, `docker push` |
+| **6. Kubernetes Deploy** | Atomically deploys workloads via Helm chart (`helm/campuscare`) into `campuscare` namespace with immutable image tags. Safely reuses existing secrets or adopts existing resources. | `helm upgrade --install --reuse-values` |
+| **7. Rollout Verification** | Confirms all replicas of `campuscare-backend` and `campuscare-frontend` achieve `Ready` state within 180 seconds. | `kubectl rollout status deployment/... -n campuscare` |
+| **8. Health Check** | Verifies live application functionality by probing Traefik Ingress on the local host with automatic retries. | `curl -s http://localhost/api/health` (HTTP 200) |
+| **9. Post & Cleanup** | Emits success/failure reports and purges temporary build artifacts to conserve host disk space. | `deleteDir()`, `docker logout` |
+
+---
+
 ## 🔑 Demo Credentials & Evaluation Guide
 
 The database seeder (`node seed.js`) pre-populates three distinct role profiles for evaluation:
@@ -406,10 +443,11 @@ The database seeder (`node seed.js`) pre-populates three distinct role profiles 
 ```text
 CampusCare/
 ├── 📁 .github/                  # GitHub workflows & templates
-├── 📁 ansible/                  # Ansible automation & configuration management
+├── 📁 ansible/                  # Ansible automation & configuration management (GCP)
 │   ├── ansible.cfg              # Ansible configuration & SSH settings
 │   ├── deploy.yml               # Production deployment playbook
 │   └── inventory.ini            # Target host inventory file
+├── 📁 ansible-aws/              # Ansible base host automation & Docker setup (AWS EC2)
 ├── 📁 backend/                  # Node.js & Express.js REST API
 │   ├── config/                  # Database connection (Mongoose / MongoDB)
 │   ├── controllers/             # Request handlers (auth, complaints, admin, staff)
@@ -437,15 +475,26 @@ CampusCare/
 │   ├── package.json             # Frontend dependencies & build scripts
 │   ├── tailwind.config.js       # Tailwind CSS configuration
 │   └── vite.config.js           # Vite build configuration
+├── 📁 helm/                     # Production Helm 3 chart (Phase 4)
+│   └── campuscare/              # Parameterized templates, values.yaml, and Chart.yaml
+├── 📁 k8s/                      # Kubernetes raw manifests (Phase 3)
+│   ├── backend-deployment.yaml  # Backend deployment manifest (2 replicas)
+│   ├── backend-service.yaml     # Backend ClusterIP service
+│   ├── configmap.yaml           # Non-sensitive configuration
+│   ├── frontend-deployment.yaml # Frontend deployment manifest (2 replicas)
+│   ├── frontend-service.yaml    # Frontend ClusterIP service
+│   ├── ingress.yaml             # Traefik Ingress routing / and /api
+│   ├── mongodb-deployment.yaml  # MongoDB database deployment
+│   ├── mongodb-pvc.yaml         # PersistentVolumeClaim for MongoDB data
+│   ├── mongodb-service.yaml     # MongoDB ClusterIP service
+│   ├── namespace.yaml           # campuscare namespace
+│   └── secret.yaml              # Application secret definitions
 ├── 📁 terraform/                # Infrastructure as Code (Google Cloud Platform)
-│   ├── main.tf                  # GCP Compute Engine instance & firewall rules
-│   ├── outputs.tf               # Terraform output values (Public IP, SSH command)
-│   ├── providers.tf             # Google provider specification
-│   ├── terraform.tfvars.example # Variables configuration template
-│   └── variables.tf             # Configurable infrastructure variables
+├── 📁 terraform-aws/            # Infrastructure as Code (AWS EC2 t3.small in ap-south-1)
 ├── .env.example                 # Root environment variables template
 ├── .gitignore                   # Git ignore patterns
 ├── docker-compose.yml           # Multi-container orchestration specification
+├── Jenkinsfile                  # Production Declarative CI/CD Pipeline (Phase 5)
 ├── LICENSE                      # MIT Open-Source License
 └── README.md                    # Project documentation
 ```

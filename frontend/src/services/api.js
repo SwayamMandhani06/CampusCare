@@ -1,7 +1,10 @@
 import axios from 'axios';
 
-// Base URL falls back to local backend port 5000 in dev
-const rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// In development, default to local backend (http://localhost:5000/api).
+// In production (behind Ingress / Nginx reverse proxy), default to relative path '/api'.
+// Explicit VITE_API_URL environment variable always takes precedence if provided.
+const defaultApiUrl = import.meta.env.DEV ? 'http://localhost:5000/api' : '/api';
+const rawUrl = import.meta.env.VITE_API_URL || defaultApiUrl;
 const API_BASE_URL = rawUrl.endsWith('/api') ? rawUrl : `${rawUrl.replace(/\/+$/, '')}/api`;
 
 const api = axios.create({

@@ -52,3 +52,14 @@ build/
 PLAN.md
 VERIFICATION_REPORT.md
 DEMO_SCRIPT.md
+
+# Kubernetes & Helm Secrets
+*.secret.yaml
+*.secret.yml
+*secret*.local.yaml
+*secret*.local.yml
+values-secret.yaml
+values-secret.yml
+kubeconfig
+*.kubeconfig
+!k8s/secret.yaml

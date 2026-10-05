@@ -12,8 +12,8 @@ RUN npm ci
 # Copy frontend source code
 COPY . .
 
-# Accept build-time API URL argument and set as environment variable for Vite
-ARG VITE_API_URL
+# Accept build-time API URL argument and set as environment variable for Vite (defaults to /api for Traefik Ingress)
+ARG VITE_API_URL=/api
 ENV VITE_API_URL=$VITE_API_URL
 
 # Build production bundle into /app/dist

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespace | default "campuscare" }}
+  labels:
+    app.kubernetes.io/name: campuscare
+    app.kubernetes.io/part-of: campuscare
+    app.kubernetes.io/managed-by: Helm

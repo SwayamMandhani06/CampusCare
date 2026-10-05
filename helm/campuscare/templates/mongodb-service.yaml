@@ -1,0 +1,20 @@
+{{- if .Values.mongodb.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: campuscare-mongodb-service
+  namespace: {{ .Values.namespace | default "campuscare" }}
+  labels:
+    app.kubernetes.io/name: campuscare
+    app.kubernetes.io/component: database-service
+    app.kubernetes.io/part-of: campuscare
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.mongodb.service.port | default 27017 }}
+      targetPort: {{ .Values.mongodb.service.port | default 27017 }}
+      protocol: TCP
+      name: mongodb
+  selector:
+    app: campuscare-mongodb
+{{- end }}

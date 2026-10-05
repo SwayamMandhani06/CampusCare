@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: campuscare-backend
+  namespace: {{ .Values.namespace | default "campuscare" }}
+  labels:
+    app.kubernetes.io/name: campuscare
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: campuscare
+spec:
+  replicas: {{ .Values.backend.replicaCount | default 2 }}
+  selector:
+    matchLabels:
+      app: campuscare-backend
+  template:
+    metadata:
+      labels:
+        app: campuscare-backend
+        app.kubernetes.io/name: campuscare
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: campuscare
+    spec:
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - containerPort: {{ .Values.backend.service.port | default 5000 }}
+              name: http-api
+          envFrom:
+            - configMapRef:
+                name: campuscare-config
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: campuscare-secret
+                  key: MONGO_INITDB_ROOT_USERNAME
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: campuscare-secret
+                  key: MONGO_INITDB_ROOT_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: campuscare-secret
+                  key: JWT_SECRET
+            - name: MONGO_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: campuscare-config
+                  key: MONGO_HOST
+            - name: MONGO_PORT
+              value: "{{ .Values.mongodb.service.port | default 27017 }}"
+            - name: MONGO_URI
+              value: "mongodb://$(MONGO_INITDB_ROOT_USERNAME):$(MONGO_INITDB_ROOT_PASSWORD)@$(MONGO_HOST):$(MONGO_PORT)/campuscare?authSource=admin"
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.backend.probes.readiness.path | default "/api/health" }}
+              port: {{ .Values.backend.service.port | default 5000 }}
+            initialDelaySeconds: {{ .Values.backend.probes.readiness.initialDelaySeconds | default 15 }}
+            periodSeconds: {{ .Values.backend.probes.readiness.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.backend.probes.readiness.timeoutSeconds | default 5 }}
+            failureThreshold: {{ .Values.backend.probes.readiness.failureThreshold | default 3 }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.backend.probes.liveness.path | default "/api/health" }}
+              port: {{ .Values.backend.service.port | default 5000 }}
+            initialDelaySeconds: {{ .Values.backend.probes.liveness.initialDelaySeconds | default 30 }}
+            periodSeconds: {{ .Values.backend.probes.liveness.periodSeconds | default 15 }}
+            timeoutSeconds: {{ .Values.backend.probes.liveness.timeoutSeconds | default 5 }}
+            failureThreshold: {{ .Values.backend.probes.liveness.failureThreshold | default 3 }}

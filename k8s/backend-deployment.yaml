@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: campuscare-backend
+  namespace: campuscare
+  labels:
+    app.kubernetes.io/name: campuscare
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: campuscare
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: campuscare-backend
+  template:
+    metadata:
+      labels:
+        app: campuscare-backend
+        app.kubernetes.io/name: campuscare
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: campuscare
+    spec:
+      containers:
+        - name: backend
+          image: swayammandhani06/campuscare-backend:manual-test
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+              name: http-api
+          envFrom:
+            - configMapRef:
+                name: campuscare-config
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: campuscare-secret
+                  key: MONGO_INITDB_ROOT_USERNAME
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: campuscare-secret
+                  key: MONGO_INITDB_ROOT_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: campuscare-secret
+                  key: JWT_SECRET
+            - name: MONGO_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: campuscare-config
+                  key: MONGO_HOST
+            - name: MONGO_PORT
+              value: "27017"
+            - name: MONGO_URI
+              value: "mongodb://$(MONGO_INITDB_ROOT_USERNAME):$(MONGO_INITDB_ROOT_PASSWORD)@$(MONGO_HOST):$(MONGO_PORT)/campuscare?authSource=admin"
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 250m
+            limits:
+              memory: 512Mi
+              cpu: 500m
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3

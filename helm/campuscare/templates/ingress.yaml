@@ -1,0 +1,34 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: campuscare-ingress
+  namespace: {{ .Values.namespace | default "campuscare" }}
+  labels:
+    app.kubernetes.io/name: campuscare
+    app.kubernetes.io/component: ingress
+    app.kubernetes.io/part-of: campuscare
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className | default "traefik" }}
+  rules:
+    - http:
+        paths:
+          - path: {{ .Values.ingress.paths.api | default "/api" }}
+            pathType: Prefix
+            backend:
+              service:
+                name: campuscare-backend-service
+                port:
+                  number: {{ .Values.backend.service.port | default 5000 }}
+          - path: {{ .Values.ingress.paths.frontend | default "/" }}
+            pathType: Prefix
+            backend:
+              service:
+                name: campuscare-frontend-service
+                port:
+                  number: {{ .Values.frontend.service.port | default 80 }}
+{{- end }}

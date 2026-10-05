@@ -1,0 +1,267 @@
+---
+# ==============================================================================
+# CampusCare FA2 — Phase 2: Base Server & Docker Provisioning Playbook
+# ==============================================================================
+# Target: Ubuntu 22.04 LTS on AWS EC2 (t3.micro, ~1 GB RAM, 30 GB Root Volume)
+# Purpose: Prepares a clean, idempotent base server for subsequent Kubernetes,
+#          Jenkins, CI/CD, and monitoring phases.
+# ==============================================================================
+
+- name: Configure CampusCare AWS EC2 Base Server
+  hosts: campuscare
+  become: yes
+  gather_facts: yes
+
+  vars:
+    swap_file_path: "/swapfile"
+    swap_size_mb: 2048
+    app_base_dir: "/opt/campuscare"
+    deploy_user: "ubuntu"
+    base_packages:
+      - curl
+      - wget
+      - git
+      - unzip
+      - ca-certificates
+      - gnupg
+      - lsb-release
+      - apt-transport-https
+      - software-properties-common
+      - python3
+      - python3-pip
+      - python3-venv
+
+  handlers:
+    - name: Restart Docker
+      ansible.builtin.service:
+        name: docker
+        state: restarted
+
+  tasks:
+    # --------------------------------------------------------------------------
+    # 1. System Information & Validation
+    # --------------------------------------------------------------------------
+    - name: Display target host environment facts
+      ansible.builtin.debug:
+        msg:
+          - "Configuring Host: {{ inventory_hostname }} ({{ ansible_host }})"
+          - "OS: {{ ansible_distribution }} {{ ansible_distribution_version }} ({{ ansible_distribution_release }})"
+          - "Architecture: {{ ansible_architecture }}"
+          - "Total RAM: {{ ansible_memtotal_mb }} MB"
+
+    # --------------------------------------------------------------------------
+    # 2. APT Package Cache & Base Prerequisites
+    # --------------------------------------------------------------------------
+    - name: Update apt package cache
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install required lightweight base packages
+      ansible.builtin.apt:
+        name: "{{ base_packages }}"
+        state: present
+
+    # --------------------------------------------------------------------------
+    # 3. Swap Space Configuration (Crucial for 1 GB RAM t3.micro)
+    # --------------------------------------------------------------------------
+    # A 2 GB swapfile provides memory headroom to prevent the Linux OOM-killer
+    # from terminating services during bursts without exhausting the 30 GB disk.
+    - name: Query currently active swap devices
+      ansible.builtin.command: swapon --show --noheadings
+      register: active_swap
+      changed_when: false
+
+    - name: Check if swapfile exists on disk
+      ansible.builtin.stat:
+        path: "{{ swap_file_path }}"
+      register: swapfile_stat
+
+    - name: Create 2 GB swapfile using dd if no swap exists
+      ansible.builtin.command: >
+        dd if=/dev/zero of={{ swap_file_path }} bs=1M count={{ swap_size_mb }} status=none
+      args:
+        creates: "{{ swap_file_path }}"
+      register: swapfile_created
+      when:
+        - not swapfile_stat.stat.exists
+        - active_swap.stdout == ""
+
+    - name: Ensure secure permissions on swapfile (0600)
+      ansible.builtin.file:
+        path: "{{ swap_file_path }}"
+        owner: root
+        group: root
+        mode: '0600'
+      when: swapfile_stat.stat.exists or (swapfile_created is defined and swapfile_created is changed)
+
+    - name: Check swapfile filesystem signature
+      ansible.builtin.command: "blkid -s TYPE -o value {{ swap_file_path }}"
+      register: swap_type
+      changed_when: false
+      failed_when: false
+      when: swapfile_stat.stat.exists or (swapfile_created is defined and swapfile_created is changed)
+
+    - name: Format swapfile with mkswap if newly created or unformatted
+      ansible.builtin.command: "mkswap {{ swap_file_path }}"
+      when:
+        - (swapfile_created is defined and swapfile_created is changed) or (swap_type is defined and swap_type.stdout != 'swap')
+
+    - name: Activate swapfile if not already active
+      ansible.builtin.command: "swapon {{ swap_file_path }}"
+      when:
+        - (swap_file_path not in active_swap.stdout)
+        - (swapfile_stat.stat.exists or (swapfile_created is defined and swapfile_created is changed))
+
+    - name: Persist swap entry in /etc/fstab
+      ansible.posix.mount:
+        path: none
+        src: "{{ swap_file_path }}"
+        fstype: swap
+        opts: sw
+        state: present
+
+    - name: Set conservative vm.swappiness (prefer RAM, swap on burst)
+      ansible.posix.sysctl:
+        name: vm.swappiness
+        value: "10"
+        state: present
+        sysctl_set: yes
+        reload: yes
+
+    # --------------------------------------------------------------------------
+    # 4. Docker Engine Installation (Official Docker Apt Repo - No snap)
+    # --------------------------------------------------------------------------
+    - name: Create directory for APT keyrings
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Download official Docker GPG key
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: '0644'
+        force: false
+
+    - name: Add official Docker APT repository
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        filename: docker
+        state: present
+        update_cache: yes
+
+    - name: Install Docker CE and Compose plugin packages
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+
+    - name: Ensure /etc/docker configuration directory exists
+      ansible.builtin.file:
+        path: /etc/docker
+        state: directory
+        mode: '0755'
+
+    - name: Configure Docker daemon settings (cgroupdriver, log rotation)
+      ansible.builtin.copy:
+        dest: /etc/docker/daemon.json
+        content: |
+          {
+            "exec-opts": ["native.cgroupdriver=systemd"],
+            "log-driver": "json-file",
+            "log-opts": {
+              "max-size": "10m",
+              "max-file": "3"
+            },
+            "storage-driver": "overlay2"
+          }
+        mode: '0644'
+      notify: Restart Docker
+
+    - name: Flush handlers to restart Docker if daemon.json changed
+      ansible.builtin.meta: flush_handlers
+
+    - name: Ensure Docker and containerd services are enabled and started
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop:
+        - containerd
+        - docker
+
+    - name: Add deploy user (ubuntu) to docker group
+      ansible.builtin.user:
+        name: "{{ deploy_user }}"
+        groups: docker
+        append: yes
+
+    # --------------------------------------------------------------------------
+    # 5. Application Base Directory
+    # --------------------------------------------------------------------------
+    - name: Create CampusCare application base directory (/opt/campuscare)
+      ansible.builtin.file:
+        path: "{{ app_base_dir }}"
+        state: directory
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+        mode: '0755'
+
+    # --------------------------------------------------------------------------
+    # 6. Verification & Health Checks
+    # --------------------------------------------------------------------------
+    - name: Verify Docker binary version
+      ansible.builtin.command: docker --version
+      register: docker_ver
+      changed_when: false
+
+    - name: Verify Docker Compose plugin version
+      ansible.builtin.command: docker compose version
+      register: compose_ver
+      changed_when: false
+
+    - name: Check system memory allocation
+      ansible.builtin.command: free -h
+      register: mem_summary
+      changed_when: false
+
+    - name: Check root disk usage
+      ansible.builtin.command: df -h /
+      register: disk_summary
+      changed_when: false
+
+    - name: Check active swap status
+      ansible.builtin.command: swapon --show
+      register: swap_summary
+      changed_when: false
+
+    # --------------------------------------------------------------------------
+    # 7. Summary Output
+    # --------------------------------------------------------------------------
+    - name: Display Phase 2 Provisioning Summary
+      ansible.builtin.debug:
+        msg:
+          - "=========================================================="
+          - "   CampusCare FA2 — Phase 2 Server Provisioning Complete   "
+          - "=========================================================="
+          - "Hostname:       {{ ansible_hostname }}"
+          - "OS:             {{ ansible_distribution }} {{ ansible_distribution_version }}"
+          - "Docker:         {{ docker_ver.stdout }}"
+          - "Docker Compose: {{ compose_ver.stdout }}"
+          - "App Directory:  {{ app_base_dir }} (owner: {{ deploy_user }})"
+          - "----------------------------------------------------------"
+          - "Memory Summary:"
+          - "{{ mem_summary.stdout_lines }}"
+          - "----------------------------------------------------------"
+          - "Disk Usage:"
+          - "{{ disk_summary.stdout_lines }}"
+          - "----------------------------------------------------------"
+          - "Swap Status:"
+          - "{{ swap_summary.stdout_lines }}"
+          - "=========================================================="

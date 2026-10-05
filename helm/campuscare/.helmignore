@@ -1,0 +1,16 @@
+# ==============================================================================
+# CampusCare Helm Chart Ignore Rules
+# ==============================================================================
+.git/
+.gitignore
+*.swp
+*.bak
+*.tmp
+*~
+.DS_Store
+.idea/
+.vscode/
+*.secret.yaml
+*.secret.yml
+values-secret.yaml
+values-secret.yml

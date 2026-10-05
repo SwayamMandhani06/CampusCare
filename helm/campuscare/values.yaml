@@ -1,0 +1,126 @@
+# ==============================================================================
+# CampusCare — Production Helm Chart Default Values
+# ==============================================================================
+
+# Target Kubernetes Namespace (default: campuscare)
+namespace: campuscare
+
+# ------------------------------------------------------------------------------
+# Global ConfigMap Values (Non-sensitive Application Settings)
+# ------------------------------------------------------------------------------
+config:
+  nodeEnv: "production"
+  port: "5000"
+  mongoHost: "campuscare-mongodb-service"
+
+# ------------------------------------------------------------------------------
+# Sensitive Secrets (Placeholders / Templates)
+# NOTE: Never commit real production credentials to Git.
+# Supply real values via:
+#   helm install --set secrets.mongoRootPassword="<pass>" ...
+#   or via a private values-secret.yaml file ignored by Git.
+# ------------------------------------------------------------------------------
+secrets:
+  mongoRootUsername: "campuscare_admin"
+  mongoRootPassword: "CHANGE_ME_SECURE_PASSWORD_2026"
+  jwtSecret: "CHANGE_ME_JWT_SECRET_KEY_CAMPUSCARE_2026"
+
+# ------------------------------------------------------------------------------
+# MongoDB Database Service Configuration
+# ------------------------------------------------------------------------------
+mongodb:
+  enabled: true
+  image:
+    repository: mongo
+    tag: "7"
+    pullPolicy: IfNotPresent
+  service:
+    port: 27017
+  persistence:
+    enabled: true
+    storageClass: local-path
+    accessMode: ReadWriteOnce
+    size: 2Gi
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# ------------------------------------------------------------------------------
+# Backend REST API Service Configuration
+# ------------------------------------------------------------------------------
+backend:
+  replicaCount: 2
+  image:
+    repository: swayammandhani06/campuscare-backend
+    tag: "manual-test"
+    pullPolicy: IfNotPresent
+  service:
+    port: 5000
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  probes:
+    readiness:
+      path: /api/health
+      initialDelaySeconds: 15
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    liveness:
+      path: /api/health
+      initialDelaySeconds: 30
+      periodSeconds: 15
+      timeoutSeconds: 5
+      failureThreshold: 3
+
+# ------------------------------------------------------------------------------
+# Frontend React SPA Service Configuration
+# ------------------------------------------------------------------------------
+frontend:
+  replicaCount: 2
+  image:
+    repository: swayammandhani06/campuscare-frontend
+    tag: "manual-test-v2"
+    pullPolicy: IfNotPresent
+  service:
+    port: 80
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+  probes:
+    readiness:
+      path: /
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      timeoutSeconds: 3
+      failureThreshold: 3
+    liveness:
+      path: /
+      initialDelaySeconds: 15
+      periodSeconds: 15
+      timeoutSeconds: 3
+      failureThreshold: 3
+
+# ------------------------------------------------------------------------------
+# Traefik Ingress Configuration
+# ------------------------------------------------------------------------------
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+  paths:
+    api: /api
+    frontend: /

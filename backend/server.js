@@ -6,6 +6,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
+const { metricsMiddleware, metricsHandler } = require('./metrics');
 
 // Load environment variables from .env file
 dotenv.config();
@@ -19,6 +20,12 @@ const app = express();
 app.use(cors()); // Enable Cross-Origin Resource Sharing
 app.use(express.json()); // Body parser for incoming JSON payloads
 app.use(express.urlencoded({ extended: true }));
+
+// Prometheus Metrics Middleware
+app.use(metricsMiddleware);
+
+// Prometheus Scrape Endpoint (unauthenticated for internal Kubernetes cluster scraping)
+app.get('/metrics', metricsHandler);
 
 // Health check route
 app.get('/api/health', (req, res) => {

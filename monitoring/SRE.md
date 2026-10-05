@@ -1,6 +1,6 @@
 # CampusCare Site Reliability Engineering (SRE) Framework
 
-This document outlines the Service Level Indicators (SLI), Service Level Objectives (SLO), Error Budget governance, automated alerting rules, incident response runbooks, and Kubernetes self-healing architecture for the CampusCare microservices platform.
+This document outlines the Service Level Indicators (SLI), Service Level Objectives (SLO), Error Budget governance, automated alerting rules, incident response runbooks, and Kubernetes self-healing architecture for the CampusCare multi-container modular application.
 
 ---
 
@@ -46,7 +46,7 @@ This document outlines the Service Level Indicators (SLI), Service Level Objecti
 
 ## 2. Service Level Indicator (SLI)
 
-The primary Service Level Indicator for CampusCare is **Application Availability**, defined as the proportion of successful HTTP transactions served by the backend microservice over a measurement window:
+The primary Service Level Indicator for CampusCare is **Application Availability**, defined as the proportion of successful HTTP transactions served by the backend service over a measurement window:
 
 $$\text{Availability SLI} = \frac{\text{Successful HTTP Requests (HTTP 2xx, 3xx)}}{\text{Total Valid HTTP Requests}} \times 100$$
 

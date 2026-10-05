@@ -144,7 +144,7 @@ stateDiagram-v2
 | **Backend API** | [Node.js](https://nodejs.org/) & [Express](https://expressjs.com/) | `v18+` / `4.21` | RESTful API server with modular route controllers |
 | **Database** | [MongoDB](https://www.mongodb.com/) & [Mongoose](https://mongoosejs.com/) | `7.0` / `8.9` | NoSQL document database with schema validation |
 | **Security & Auth** | [JWT](https://jwt.io/) & [bcryptjs](https://github.com/dcodeIO/bcrypt.js) | `9.0` / `2.4` | Stateless bearer token authentication & password hashing |
-| **Containers** | [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/) | `v2+` | Multi-stage container builds and microservice orchestration |
+| **Containers** | [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/) | `v2+` | Multi-stage container builds and containerized application orchestration |
 | **Web Server** | [NGINX](https://nginx.org/) | `Alpine` | Production reverse proxy, static asset server, SPA routing |
 | **IaC** | [Terraform](https://www.terraform.io/) | `v1.5+` | Declarative cloud resource provisioning on GCP |
 | **Config Mgmt** | [Ansible](https://www.ansible.com/) | `v2.15+` | Automated host configuration, Docker setup, and deployment |
@@ -390,7 +390,7 @@ npm run lint
 
 ## 🔄 Continuous Integration & Deployment (Jenkins CI/CD Pipeline)
 
-CampusCare features an automated, production-grade **Declarative Jenkins CI/CD Pipeline** (`Jenkinsfile`) designed for single-node **k3s Kubernetes** deployments on AWS EC2 (`t3.small`). The pipeline ensures that every commit to `main` undergoes automated verification, deterministic container builds, secure registry pushes, and zero-downtime rolling upgrades managed by **Helm 3**.
+CampusCare features an automated, production-style **Declarative Jenkins CI/CD Pipeline** (`Jenkinsfile`) designed for single-node **k3s Kubernetes** deployments on AWS EC2 (`t3.small`). The pipeline ensures that every commit to `main` undergoes automated verification, deterministic container builds, secure registry pushes, and zero-downtime rolling upgrades managed by **Helm 3**.
 
 ```
   ┌──────────────┐     ┌──────────────────────┐     ┌────────────────┐

@@ -1,9 +1,9 @@
 // =============================================================================
-// CampusCare — Production Declarative Jenkins CI/CD Pipeline
+// CampusCare — Production-Style Declarative Jenkins CI/CD Pipeline
 // =============================================================================
 // Target Architecture: Single-node k3s on AWS EC2 (t3.small)
 // Orchestration: Helm 3 chart (helm/campuscare)
-// Microservices: React Frontend (Nginx), Express Backend (Node.js), MongoDB 7
+// Multi-Container Modular Architecture: React Frontend (Nginx), Express Backend (Node.js), MongoDB 7
 // Ingress: Traefik Ingress Controller (Localhost port 80 routing / and /api)
 // =============================================================================
 

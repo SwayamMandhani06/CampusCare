@@ -5,7 +5,7 @@ This directory contains the declarative Kubernetes manifests for running **Campu
 > [!NOTE]
 > **Phase 3 Scope Boundary:**
 > - These manifests establish the baseline Kubernetes resources (**Namespace, ConfigMap, Secret, PVC, Deployments, Services, and Ingress**).
-> - **Phase 4** will subsequently package and parameterize these manifests into a production-grade **Helm Chart**.
+> - **Phase 4** subsequently packages and parameterizes these manifests into a production-style **Helm Chart**.
 > - CI/CD automation (**Jenkins**), container registry pipelines (**Docker Hub**), and monitoring (**Prometheus & Grafana**) will be implemented in later phases.
 
 ---

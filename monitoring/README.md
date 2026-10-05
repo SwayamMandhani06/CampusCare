@@ -16,7 +16,7 @@ This directory contains the Helm values, architecture specifications, dashboard 
   - Conservative Grafana deployment via official Helm chart in namespace `monitoring`.
   - Prometheus datasource provisioning and automated dashboard ingestion via ConfigMap.
 - **Phase 4D — Alerting & SRE Observability:** `COMPLETE`
-  - Production-grade alerting rules configured directly in Prometheus (`CampusCareBackendDown`, `CampusCareHighErrorRate`, `CampusCareHighLatency`, `CampusCarePodHealth`).
+  - Production-style alerting rules configured directly in Prometheus optimized for the academic AWS environment (`CampusCareBackendDown`, `CampusCareHighErrorRate`, `CampusCareHighLatency`, `CampusCarePodHealth`).
   - Grafana dashboard enhanced to **CampusCare — DevOps Observability & SRE** with 14 panels including SLI, SLO (99%), Error Budget (1%), Alert states, and runtime telemetry.
   - End-to-end Kubernetes self-healing demonstrated under controlled single-replica termination with zero application downtime.
   - Comprehensive SRE runbook and operational models documented in [`monitoring/SRE.md`](file:///d:/Projects/CampusCare/monitoring/SRE.md).
@@ -109,6 +109,12 @@ Alert rules are configured in `monitoring/prometheus-values.yaml` and loaded int
 | **`CampusCareHighErrorRate`** | `warning` | `(sum(rate(campuscare_http_errors_total[5m])) / sum(rate(campuscare_http_requests_total[5m]))) > 0.05` | `5m` | Sustained 4xx/5xx error rate exceeds 5% of all traffic. |
 | **`CampusCareHighLatency`** | `warning` | `histogram_quantile(0.95, sum by (le) (rate(campuscare_http_request_duration_seconds_bucket[5m]))) > 1` | `5m` | p95 HTTP response latency exceeds 1.0 second. |
 | **`CampusCarePodHealth`** | `warning` | `count(count by (pod) (container_memory_working_set_bytes{container="backend",namespace="campuscare"})) < 2` | `2m` | Running backend pod replica count falls below desired 2. |
+
+### Live Alert Evaluation States
+- **`CampusCareBackendDown`:** Evaluated successfully; currently `inactive`/Normal (target is UP).
+- **`CampusCareHighErrorRate`:** Configured and evaluated successfully; currently `inactive`/Normal because the current error rate is below the configured threshold.
+- **`CampusCareHighLatency`:** Configured and evaluated successfully; currently `inactive`/Normal because p95 latency is below the configured threshold.
+- **`CampusCarePodHealth`:** Evaluated successfully; currently `inactive`/Normal (2 running backend replicas).
 
 ---
 

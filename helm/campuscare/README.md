@@ -1,12 +1,12 @@
-# CampusCare — Production Helm Chart
+# CampusCare — Production-Style Helm Chart
 
-This directory contains the production-grade **Helm 3** chart for **CampusCare**, parameterizing and packaging the verified Kubernetes manifests (Phase 3) into a reusable, upgradeable release package (Phase 4).
+This directory contains the production-style **Helm 3** chart for **CampusCare**, parameterizing and packaging the verified Kubernetes manifests into a reusable, upgradeable release package.
 
 ---
 
 ## 1. Chart Purpose & Overview
 
-The `campuscare` chart automates the deployment and lifecycle management of the CampusCare microservices architecture on single-node or multi-node Kubernetes clusters (tested and verified on **k3s with Traefik**):
+The `campuscare` chart automates the deployment and lifecycle management of the CampusCare multi-container modular application on single-node or multi-node Kubernetes clusters (tested and verified on **k3s with Traefik**):
 
 - **Declarative Configuration:** Replaces static manifests with parameterized, environment-specific values (`values.yaml`).
 - **Zero-Downtime Rollouts:** Manages rolling updates across multi-replica deployments (**2 backend replicas, 2 frontend replicas**).

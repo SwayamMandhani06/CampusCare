@@ -1,5 +1,5 @@
 # =============================================================================
-# CampusCare — Prometheus Helm Values Configuration (Phase 4B)
+# CampusCare — Prometheus Helm Values Configuration (Phase 4B & 4D)
 # =============================================================================
 # Target Architecture: Single-node k3s on AWS EC2 (t3.small, 2 GiB RAM)
 # Chart: prometheus-community/prometheus
@@ -51,6 +51,48 @@ server:
     limits:
       cpu: 250m
       memory: 256Mi
+
+# Alerting Rules Configuration (Phase 4D)
+serverFiles:
+  alerting_rules.yml:
+    groups:
+      - name: campuscare-sre-alerts
+        rules:
+          - alert: CampusCareBackendDown
+            expr: up{job="campuscare-backend"} < 1
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "CampusCare backend is unavailable"
+              description: "CampusCare backend Prometheus target has been down for more than 1 minute."
+
+          - alert: CampusCareHighErrorRate
+            expr: (sum(rate(campuscare_http_errors_total[5m])) / sum(rate(campuscare_http_requests_total[5m]))) > 0.05
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "CampusCare high HTTP error rate"
+              description: "HTTP error rate exceeds 5% over a 5-minute rolling window."
+
+          - alert: CampusCareHighLatency
+            expr: histogram_quantile(0.95, sum(rate(campuscare_http_request_duration_seconds_bucket[5m])) by (le)) > 1
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "CampusCare high p95 request latency"
+              description: "95th percentile request latency exceeds 1 second over 5 minutes."
+
+          - alert: CampusCarePodHealth
+            expr: count(count by (pod) (container_memory_working_set_bytes{namespace="campuscare", container="backend"})) < 2
+            for: 2m
+            labels:
+              severity: warning
+            annotations:
+              summary: "CampusCare backend replica count degraded"
+              description: "Active backend pods count is below the desired count of 2."
 
 # CampusCare Application Metrics Scrape Configuration
 # Scrapes the backend service using internal Kubernetes DNS

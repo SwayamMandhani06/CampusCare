@@ -1,188 +1,174 @@
 # CampusCare Observability & Monitoring Infrastructure
 
-This directory contains the Helm values, architecture specifications, dashboard definitions, and operational runbooks for the Prometheus and Grafana observability stack deployed on the CampusCare Kubernetes cluster.
+This directory contains the Helm values, architecture specifications, dashboard definitions, operational runbooks, and SRE documentation for the Prometheus and Grafana observability and alerting stack deployed on the CampusCare Kubernetes cluster.
 
 ---
 
 ## 1. Project Phase Tracker
 
 - **Phase 4A — Application Metrics:** `COMPLETE`
-  - Node.js Prometheus client (`prom-client`) instrumentation in CampusCare backend.
-  - Standard runtime telemetry and custom application metrics exported on `/metrics`.
+  - Node.js Prometheus client (`prom-client`) instrumentation in CampusCare backend (`src/server.js`, `src/utils/metrics.js`).
+  - Standard runtime telemetry and custom application metrics exported on `/metrics` (`campuscare_http_requests_total`, `campuscare_http_errors_total`, `campuscare_http_request_duration_seconds`).
 - **Phase 4B — Prometheus Monitoring:** `COMPLETE`
   - Resource-conscious Prometheus server deployed via Helm in namespace `monitoring`.
   - Service-based scraping of `campuscare-backend-service:5000/metrics`.
 - **Phase 4C — Grafana Observability Dashboard:** `COMPLETE`
   - Conservative Grafana deployment via official Helm chart in namespace `monitoring`.
-  - Prometheus datasource provisioning and automated dashboard ingestion.
-  - 9-panel real-time operational dashboard visualizing application health, throughput, errors, latency, and node metrics.
-- **Phase 4D — Alerting & SRE:** `UPCOMING`
-  - Alertmanager configuration, Slack/email notifications, and SLO-based alerting.
+  - Prometheus datasource provisioning and automated dashboard ingestion via ConfigMap.
+- **Phase 4D — Alerting & SRE Observability:** `COMPLETE`
+  - Production-grade alerting rules configured directly in Prometheus (`CampusCareBackendDown`, `CampusCareHighErrorRate`, `CampusCareHighLatency`, `CampusCarePodHealth`).
+  - Grafana dashboard enhanced to **CampusCare — DevOps Observability & SRE** with 14 panels including SLI, SLO (99%), Error Budget (1%), Alert states, and runtime telemetry.
+  - End-to-end Kubernetes self-healing demonstrated under controlled single-replica termination with zero application downtime.
+  - Comprehensive SRE runbook and operational models documented in [`monitoring/SRE.md`](file:///d:/Projects/CampusCare/monitoring/SRE.md).
 
 ---
 
-## 2. End-to-End Observability Architecture
+## 2. End-to-End DevOps & Observability Architecture
 
 ```
-[ Public Users / Browsers ]
-             │
-             ▼ (HTTP 80 / 443)
-  [ Traefik Ingress Controller ]
-        ├── /api/*  ──► [ CampusCare Backend Service:5000 ]
-        └── /*      ──► [ CampusCare Frontend Service:80 ]
-
-──────────────────────── Internal Kubernetes Network ────────────────────────
-
- [ CampusCare Backend Pods ]
-   (campuscare-backend-service.campuscare.svc.cluster.local:5000/metrics)
-             │
-             │ Scrape (HTTP GET /metrics every 15s)
-             ▼
-  [ Prometheus Server ] (Namespace: monitoring)
-   (prometheus-server.monitoring.svc.cluster.local:80)
-             │
-             │ PromQL Queries
-             ▼
-      [ Grafana ] (Namespace: monitoring)
-   (grafana.monitoring.svc.cluster.local:80)
-             │
-             └──► CampusCare — DevOps Observability Dashboard
-
-──────────────────────── Security Perimeter ────────────────────────
-  • Prometheus: ClusterIP only (No external port / No Ingress)
-  • Grafana:    ClusterIP only (Accessible exclusively via SSH / kubectl port-forward)
-  • MongoDB:    ClusterIP only (No public exposure)
+Developer
+   ↓ (git commit & push)
+GitHub
+   ↓ (webhook / SCM poll)
+Jenkins CI/CD (Pipeline)
+   ├── Build & Test Backend / Frontend
+   ├── Build Docker Images (immutable git SHA tags)
+   ├── Push to Docker Hub (SwayamMandhani06/campuscare-backend / frontend)
+   └── Helm Upgrade (campuscare release)
+   ↓
+Docker Hub
+   ↓
+Helm
+   ↓
+k3s (Single-Node Kubernetes on AWS EC2 t3.small)
+   ↓
+CampusCare Application (Namespace: campuscare)
+   ├── campuscare-backend (2 replicas, ClusterIP:5000)
+   ├── campuscare-frontend (2 replicas, ClusterIP:80)
+   ├── campuscare-mongodb (1 replica, ClusterIP:27017, PVC 2Gi Bound)
+   └── Traefik Ingress (Public HTTP 80 / HTTPS 443)
+         │
+         ▼ /metrics
+Prometheus Server (Namespace: monitoring, ClusterIP:80)
+   ├── Scrape Config (campuscare-backend, kubernetes nodes/pods)
+   ├── Alert Rules (alerting_rules.yml)
+   └── PromQL Evaluations
+         │
+         ▼ PromQL API Proxy
+Grafana (Namespace: monitoring, ClusterIP:80)
+   ├── Datasource: CampusCare Prometheus
+   ├── Dashboard: CampusCare — DevOps Observability & SRE (UID: campuscare-devops)
+   └── Alerts & SRE Panels (SLI, SLO, Error Budget, Active Alerts)
 ```
 
----
-
-## 3. Helm Deployments & Releases
-
-Both monitoring components reside in the dedicated `monitoring` namespace and are managed via declarative Helm charts:
-
-| Component | Helm Release | Chart | Namespace | Service Type | Internal Port | Storage (PVC) |
-|---|---|---|---|---|---|---|
-| **Prometheus** | `prometheus` | `prometheus-community/prometheus` (v29.35.0) | `monitoring` | `ClusterIP` | `80` (target `9090`) | `2Gi` (`local-path`) |
-| **Grafana** | `grafana` | `grafana/grafana` (v10.5.15) | `monitoring` | `ClusterIP` | `80` (target `3000`) | `1Gi` (`local-path`) |
+### Security Perimeter
+- **Prometheus:** `ClusterIP` only (No public exposure, no external Ingress).
+- **Grafana:** `ClusterIP` only (Access via secure SSH / kubectl port-forward).
+- **Backend:** `ClusterIP` only (Port 5000 reachable internally; external traffic routed strictly via Traefik Ingress on `/api/`).
+- **MongoDB:** `ClusterIP` only (Port 27017 strictly isolated within cluster; PVC protected).
+- **Zero Committed Secrets:** Credentials managed exclusively in Kubernetes Secrets (`grafana-admin-secret`, `campuscare-secret`).
 
 ---
 
-## 4. Resource-Conscious Design for AWS `t3.small` (2 GiB RAM)
+## 3. SRE Reliability Model: SLI, SLO & Error Budget
 
-The production environment operates on a single AWS EC2 `t3.small` node with 2 vCPUs and ~2.0 GiB RAM. To guarantee cluster stability and ensure zero degradation of the core CampusCare application, monitoring workloads are constrained strictly:
+Full mathematical and operational details are documented in [`monitoring/SRE.md`](file:///d:/Projects/CampusCare/monitoring/SRE.md).
 
-### Resource Allocation Matrix
+### Service Level Indicator (SLI)
+Availability is measured as the ratio of successful HTTP transactions to total requests processed:
 
-| Workload | CPU Requests | CPU Limits | Memory Requests | Memory Limits |
+$$\text{Availability SLI} = \frac{\sum(\text{HTTP 2xx} + \text{HTTP 3xx})}{\sum(\text{Total HTTP Requests})} \times 100$$
+
+**PromQL Expression:**
+```promql
+100 * (
+  sum(rate(campuscare_http_requests_total{status_code=~"[23].."}[5m]))
+  /
+  sum(rate(campuscare_http_requests_total[5m]))
+)
+```
+
+### Service Level Objective (SLO)
+- **Target:** **99.0%** availability over any rolling 30-day evaluation window.
+- *Clarification:* This is the defined organizational SLO target, not a claim of historical compliance across prior months.
+
+### Error Budget
+- **Budget:** $100\% - 99\% = \mathbf{1.0\%}$ permitted unreliability.
+- **30-Day Budget:** $30 \times 24 \times 60 \times 0.01 = \mathbf{432\text{ minutes}}$ ($\mathbf{7\text{ hours } 12\text{ minutes}}$).
+- **Daily Budget Equivalent:** $24 \times 60 \times 0.01 = \mathbf{14.4\text{ minutes/day}}$.
+
+---
+
+## 4. Alerting Rules Catalog
+
+Alert rules are configured in `monitoring/prometheus-values.yaml` and loaded into `/etc/config/alerting_rules.yml` within the Prometheus server pod.
+
+| Alert Name | Severity | Condition / PromQL | Duration (`for`) | Operational Meaning |
 |---|---|---|---|---|
-| **Prometheus Server** | `100m` | `250m` | `128Mi` | `256Mi` |
-| **Grafana Server** | `50m` | `200m` | `64Mi` | `256Mi` |
-| **Backend (2 pods)** | `100m` each | `200m` each | `128Mi` each | `256Mi` each |
-| **Frontend (2 pods)** | `50m` each | `100m` each | `64Mi` each | `128Mi` each |
-| **MongoDB (1 pod)** | `100m` | `250m` | `128Mi` | `256Mi` |
-
-### Architectural Optimizations
-1. **Disabled Ancillary Exporters:** Disabled standalone `node-exporter`, `kube-state-metrics`, and `alertmanager` sub-charts. Node and pod telemetry are scraped directly from the existing kubelet cAdvisor endpoint.
-2. **Conservative Retention:** Prometheus TSDB retention is capped at 3 days (`3d`) to minimize memory footprint and disk IOPS.
-3. **Dedicated PVCs:** Isolated PersistentVolumeClaims backed by k3s `local-path` provisioner ensure state retention without risking application storage (`campuscare-mongodb-pvc`).
+| **`CampusCareBackendDown`** | `critical` | `up{job="campuscare-backend"} < 1` | `1m` | Scrape target is unreachable or returning connection errors. |
+| **`CampusCareHighErrorRate`** | `warning` | `(sum(rate(campuscare_http_errors_total[5m])) / sum(rate(campuscare_http_requests_total[5m]))) > 0.05` | `5m` | Sustained 4xx/5xx error rate exceeds 5% of all traffic. |
+| **`CampusCareHighLatency`** | `warning` | `histogram_quantile(0.95, sum by (le) (rate(campuscare_http_request_duration_seconds_bucket[5m]))) > 1` | `5m` | p95 HTTP response latency exceeds 1.0 second. |
+| **`CampusCarePodHealth`** | `warning` | `count(count by (pod) (container_memory_working_set_bytes{container="backend",namespace="campuscare"})) < 2` | `2m` | Running backend pod replica count falls below desired 2. |
 
 ---
 
-## 5. Security & Admin Credential Governance
+## 5. Grafana Dashboard Specification: DevOps Observability & SRE
 
-1. **Zero Hardcoded Credentials:** No admin passwords, tokens, or JWT secrets are stored in Git or version-controlled values files.
-2. **Kubernetes Secret Integration:** Grafana retrieves admin credentials directly at runtime from the Kubernetes Secret `grafana-admin-secret` via `existingSecret` binding:
-   ```yaml
-   admin:
-     existingSecret: "grafana-admin-secret"
-     userKey: "admin-user"
-     passwordKey: "admin-password"
-   ```
-3. **Strict Network Isolation (ClusterIP):** Neither Prometheus nor Grafana has a public Ingress route, LoadBalancer, or NodePort. Public AWS Security Groups remain locked to ports 22, 80, and 443 only.
-4. **Zero PII Exposure:** Telemetry metrics use low-cardinality route patterns (e.g. `/api/health`, `/api/complaints`) and contain no user IDs, emails, query strings, or sensitive payloads.
-
----
-
-## 6. Prometheus Datasource Configuration
-
-Grafana automatically provisions the Prometheus datasource using internal Kubernetes Service DNS resolution:
-
-- **Name:** `CampusCare Prometheus`
-- **UID:** `campuscare-prometheus`
-- **Type:** `prometheus`
-- **URL:** `http://prometheus-server.monitoring.svc.cluster.local:80`
-- **Default:** `true`
-- **Scrape Time Interval:** `15s`
+- **Title:** `CampusCare — DevOps Observability & SRE`
+- **UID:** `campuscare-devops`
+- **ConfigMap:** `campuscare-grafana-dashboard` (auto-provisioned into `/var/lib/grafana/dashboards/default`)
+- **Panels (14 Total):**
+  1. **SLO Availability Target** (Stat, `99%` target display)
+  2. **Current Availability (SLI)** (Stat, dynamic calculated percentage from Prometheus)
+  3. **Error Budget (Allowed)** (Stat, `1%` allowed budget display)
+  4. **Backend Target Health** (Stat, binary `up{job="campuscare-backend"}`)
+  5. **Backend Alert Status** (Stat, alert firing indicator)
+  6. **Firing Alerts** (Stat, count of currently active alerts)
+  7. **Backend Pod Availability** (Stat, active container count)
+  8. **Total HTTP Requests** (Stat, counter gauge)
+  9. **Node CPU Usage** (Gauge, cAdvisor host percentage)
+  10. **Node Memory Usage** (Gauge, cAdvisor host percentage)
+  11. **HTTP Request Rate** (Time Series, throughput req/sec)
+  12. **HTTP Request Error Rate** (Time Series, error rate req/sec)
+  13. **HTTP Latency p95** (Time Series, 95th percentile latency)
+  14. **HTTP Status Distribution** (Bar Gauge, 200 vs 404 vs 500)
 
 ---
 
-## 7. CampusCare Observability Dashboard Specification
+## 6. Kubernetes Self-Healing & High Availability Demonstration
 
-The dashboard **CampusCare — DevOps Observability** (`UID: campuscare-devops`) is automatically provisioned into Grafana via Kubernetes ConfigMap (`campuscare-grafana-dashboard`).
+A controlled self-healing verification was executed on the live cluster to prove zero-downtime fault tolerance and automatic replica recovery:
 
-### Panel Catalog & PromQL Queries
-
-| # | Panel Name | Visualization | PromQL Query | Unit / Purpose |
-|---|---|---|---|---|
-| **1** | **Backend Availability** | Stat | `up{job="campuscare-backend"}` | Binary service availability (`1` = UP, `0` = DOWN). |
-| **2** | **Backend Pod Availability** | Stat | `count(count by (pod) (container_memory_working_set_bytes{namespace="campuscare", container="backend"}))` | Active running backend replicas in the cluster. |
-| **3** | **Total HTTP Requests** | Stat | `sum(campuscare_http_requests_total)` | Cumulative HTTP requests processed since deployment. |
-| **4** | **Node CPU Usage** | Gauge | `100 * (rate(container_cpu_usage_seconds_total{id="/"}[2m]) / on(instance) machine_cpu_cores)` | EC2 node CPU utilization percentage from cAdvisor. |
-| **5** | **Node Memory Usage** | Gauge | `100 * (container_memory_working_set_bytes{id="/"} / on(instance) machine_memory_bytes)` | EC2 node memory utilization percentage from cAdvisor. |
-| **6** | **HTTP Request Rate** | Time Series | `sum(rate(campuscare_http_requests_total[1m]))` | Throughput (requests per second) across all API endpoints. |
-| **7** | **HTTP Error Rate** | Time Series | `sum(rate(campuscare_http_errors_total[1m]))` | Rate of 4xx and 5xx responses per second. |
-| **8** | **HTTP Latency p95** | Time Series | `histogram_quantile(0.95, sum(rate(campuscare_http_request_duration_seconds_bucket[1m])) by (le))` | 95th percentile response latency in seconds. |
-| **9** | **HTTP Status Distribution** | Bar Gauge | `sum by (status_code) (campuscare_http_requests_total)` | Request distribution categorized by HTTP status code. |
-
-- **Default Time Range:** Last 15 minutes (`now-15m` to `now`).
-- **Auto-Refresh Rate:** `10s`.
+### Execution Trace
+1. **Initial State:** 2 backend replicas healthy (`campuscare-backend-6dc7cbc9d5-fmgl8`, `campuscare-backend-6dc7cbc9d5-97xdk`).
+2. **Controlled Fault Injection:** Pod `campuscare-backend-6dc7cbc9d5-97xdk` was deleted via `kubectl delete pod`.
+3. **Automatic Self-Healing:** The Kubernetes ReplicaSet controller instantly detected the deviation between desired (2) and actual (1) pod counts and spawned replacement pod `campuscare-backend-6dc7cbc9d5-mlx4n`.
+4. **Zero-Downtime Traffic Preservation:** Continuous HTTP probes to `http://localhost/api/health` and `http://16.4.36.223/api/health` during pod replacement returned **HTTP 200** with zero dropped packets, routed cleanly by `campuscare-backend-service` to the surviving replica `fmgl8`.
+5. **Replica Restoration:** Replacement pod entered `Running (1/1 Ready)` within 18 seconds. `kubectl rollout status deployment/campuscare-backend` confirmed clean 2/2 replica restoration.
+6. **Prometheus Target Resilience:** Scrape target `job="campuscare-backend"` remained continuous `health: up` throughout the event.
 
 ---
 
-## 8. Operational Runbook: Accessing Grafana
+## 7. Controlled Alert Lifecycle Demonstration
 
-Because Grafana is deployed as an internal `ClusterIP` service for security, administrators access the UI via secure port-forwarding over SSH or kubectl.
-
-### Secure Access Procedure
-
-1. **Initiate Port-Forward:**
-   ```bash
-   kubectl port-forward -n monitoring svc/grafana 3000:80
-   ```
-2. **Access Dashboard:**
-   Open a web browser and navigate to:
-   ```
-   http://localhost:3000
-   ```
-3. **Authentication:**
-   Grafana is installed and secured with administrative credentials managed in the Kubernetes cluster. Log in using the generated admin credentials.
-
-4. **Navigate to Dashboard:**
-   Go to **Dashboards** > **CampusCare — DevOps Observability** to view live telemetry.
-
-5. **Terminate Port-Forward:**
-   Once observability inspection is complete, terminate the port-forward session (`Ctrl + C`) to ensure no local listening ports remain open.
+A controlled test verified that Prometheus alerting rules evaluate and fire as designed:
+1. **Target Fault Simulation:** The Prometheus scrape target was temporarily pointed to an inactive port (`5001`).
+2. **Alert Activation:** Within 60 seconds, Prometheus flagged `up{job="campuscare-backend"} = 0` and triggered `CampusCareBackendDown` into `state: firing` (`severity: critical`).
+3. **Zero Impact on Production:** Concurrently, probes to `http://16.4.36.223/api/health` confirmed the real application remained 100% online (HTTP 200).
+4. **Resolution:** Scrape configuration was restored to port 5000. On the subsequent evaluation cycle, `CampusCareBackendDown` resolved cleanly back to `state: inactive` (Normal), with 0 active alerts.
+5. **Error Rate Tracking:** Controlled invalid requests generated HTTP 404 responses, validating that `campuscare_http_errors_total` accurately increments and feeds into the error-rate alert query.
 
 ---
 
-## 9. Verification & Maintenance Commands
+## 8. Resource Stability on AWS `t3.small`
 
-### Verify Monitoring Pods & Services
-```bash
-kubectl get pods,svc,pvc -n monitoring
-```
+Host and pod resource consumption during steady-state monitoring operations:
+- **Host Memory:** ~1.3 GiB used / 1.9 GiB total (71% utilization, healthy buffer).
+- **Disk (`/dev/root`):** 11 GiB used of 29 GiB (38% utilization, 18 GiB available).
+- **Backend Pods:** ~30 MiB RAM, 5m CPU each.
+- **Frontend Pods:** ~3 MiB RAM, 1m CPU each.
+- **MongoDB:** ~80 MiB RAM, 5m CPU.
+- **Prometheus Server:** ~240 MiB RAM, 4m CPU.
+- **Grafana Server:** ~106 MiB RAM, 3m CPU.
 
-### Check Grafana Datasource Health via API
-```bash
-kubectl port-forward -n monitoring svc/grafana 3000:80 &
-curl -fsS http://localhost:3000/api/health
-curl -fsS -u "admin:<PASSWORD>" http://localhost:3000/api/datasources/uid/campuscare-prometheus/health
-kill %1
-```
-
-### Upgrade / Update Grafana Configuration
-```bash
-helm upgrade --install grafana grafana/grafana \
-  --namespace monitoring \
-  -f monitoring/grafana-values.yaml
-```
+All workloads run comfortably within assigned requests and limits.

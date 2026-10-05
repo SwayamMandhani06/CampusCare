@@ -14,7 +14,7 @@
       }
     ]
   },
-  "description": "Production Observability Dashboard for CampusCare Microservices",
+  "description": "Production Observability & SRE Dashboard for CampusCare Microservices",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -25,19 +25,218 @@
     {
       "collapsed": false,
       "gridPos": {
-        "h": 6,
+        "h": 5,
         "w": 4,
         "x": 0,
         "y": 0
       },
       "id": 1,
-      "title": "Backend Availability",
+      "title": "SLO Availability Target",
       "type": "stat",
       "datasource": {
         "type": "prometheus",
         "uid": "campuscare-prometheus"
       },
-      "description": "Current availability status of CampusCare backend service target",
+      "description": "Defined Service Level Objective (SLO) for monthly service availability",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "fixed"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "campuscare-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "vector(99)",
+          "instant": true,
+          "legendFormat": "SLO Target",
+          "range": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 5,
+        "w": 5,
+        "x": 4,
+        "y": 0
+      },
+      "id": 2,
+      "title": "Current Availability (SLI)",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "campuscare-prometheus"
+      },
+      "description": "Real-time Service Level Indicator: (2xx+3xx requests / total requests) * 100",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 95
+              },
+              {
+                "color": "green",
+                "value": 99
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "campuscare-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "((sum(campuscare_http_requests_total{status_code=~\"[23]..\"}) or on() vector(0)) / (sum(campuscare_http_requests_total) or on() vector(1))) * 100",
+          "instant": true,
+          "legendFormat": "Current SLI",
+          "range": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 9,
+        "y": 0
+      },
+      "id": 3,
+      "title": "Error Budget (Allowed)",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "campuscare-prometheus"
+      },
+      "description": "Defined monthly error budget: 1.0% (432 minutes / 30-day month)",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "orange",
+            "mode": "fixed"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "campuscare-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "vector(1.0)",
+          "instant": true,
+          "legendFormat": "Error Budget",
+          "range": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 13,
+        "y": 0
+      },
+      "id": 4,
+      "title": "Backend Target Health",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "campuscare-prometheus"
+      },
+      "description": "Scrape status of campuscare-backend-service endpoint",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -99,7 +298,7 @@
           "editorMode": "code",
           "expr": "up{job=\"campuscare-backend\"}",
           "instant": true,
-          "legendFormat": "Backend Target",
+          "legendFormat": "Target Health",
           "range": false,
           "refId": "A"
         }
@@ -108,19 +307,169 @@
     {
       "collapsed": false,
       "gridPos": {
-        "h": 6,
+        "h": 5,
         "w": 4,
-        "x": 4,
+        "x": 17,
         "y": 0
       },
-      "id": 2,
+      "id": 5,
+      "title": "Backend Alert Status",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "campuscare-prometheus"
+      },
+      "description": "Live state of CampusCareBackendDown alert rule",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "NORMAL"
+                },
+                "1": {
+                  "color": "red",
+                  "index": 1,
+                  "text": "FIRING"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "campuscare-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "ALERTS{alertname=\"CampusCareBackendDown\", alertstate=\"firing\"} or on() vector(0)",
+          "instant": true,
+          "legendFormat": "Alert State",
+          "range": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 21,
+        "y": 0
+      },
+      "id": 6,
+      "title": "Firing Alerts",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "campuscare-prometheus"
+      },
+      "description": "Total active firing alerts in the cluster",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "campuscare-prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(ALERTS{alertstate=\"firing\"}) or on() vector(0)",
+          "instant": true,
+          "legendFormat": "Firing Alerts",
+          "range": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 5
+      },
+      "id": 7,
       "title": "Backend Pod Availability",
       "type": "stat",
       "datasource": {
         "type": "prometheus",
         "uid": "campuscare-prometheus"
       },
-      "description": "Number of active backend pods serving requests in campuscare namespace",
+      "description": "Active backend pods serving traffic in campuscare namespace",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -179,12 +528,12 @@
     {
       "collapsed": false,
       "gridPos": {
-        "h": 6,
-        "w": 4,
-        "x": 8,
-        "y": 0
+        "h": 5,
+        "w": 6,
+        "x": 6,
+        "y": 5
       },
-      "id": 3,
+      "id": 8,
       "title": "Total HTTP Requests",
       "type": "stat",
       "datasource": {
@@ -243,19 +592,19 @@
     {
       "collapsed": false,
       "gridPos": {
-        "h": 6,
+        "h": 5,
         "w": 6,
         "x": 12,
-        "y": 0
+        "y": 5
       },
-      "id": 4,
+      "id": 9,
       "title": "Node CPU Usage",
       "type": "gauge",
       "datasource": {
         "type": "prometheus",
         "uid": "campuscare-prometheus"
       },
-      "description": "Overall EC2 node CPU usage percentage (from cAdvisor)",
+      "description": "EC2 node CPU utilization percentage from cAdvisor",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -314,19 +663,19 @@
     {
       "collapsed": false,
       "gridPos": {
-        "h": 6,
+        "h": 5,
         "w": 6,
         "x": 18,
-        "y": 0
+        "y": 5
       },
-      "id": 5,
+      "id": 10,
       "title": "Node Memory Usage",
       "type": "gauge",
       "datasource": {
         "type": "prometheus",
         "uid": "campuscare-prometheus"
       },
-      "description": "Overall EC2 node working memory utilization percentage (from cAdvisor)",
+      "description": "EC2 node working memory utilization percentage from cAdvisor",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -385,12 +734,12 @@
     {
       "collapsed": false,
       "gridPos": {
-        "h": 8,
+        "h": 7,
         "w": 12,
         "x": 0,
-        "y": 6
+        "y": 10
       },
-      "id": 6,
+      "id": 11,
       "title": "HTTP Request Rate",
       "type": "timeseries",
       "datasource": {
@@ -481,19 +830,19 @@
     {
       "collapsed": false,
       "gridPos": {
-        "h": 8,
+        "h": 7,
         "w": 12,
         "x": 12,
-        "y": 6
+        "y": 10
       },
-      "id": 7,
-      "title": "HTTP Error Rate",
+      "id": 12,
+      "title": "HTTP Request Error Rate",
       "type": "timeseries",
       "datasource": {
         "type": "prometheus",
         "uid": "campuscare-prometheus"
       },
-      "description": "HTTP error rate (4xx and 5xx responses per second)",
+      "description": "HTTP error rate percentage with SLO threshold alert boundary (5%)",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -504,7 +853,7 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "errors/sec",
+            "axisLabel": "Error %",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -528,7 +877,7 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "off"
+              "mode": "line"
             }
           },
           "mappings": [],
@@ -536,12 +885,16 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "green",
                 "value": null
+              },
+              {
+                "color": "red",
+                "value": 5
               }
             ]
           },
-          "unit": "reqps"
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -568,8 +921,8 @@
             "uid": "campuscare-prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(campuscare_http_errors_total[2m])) or on() vector(0)",
-          "legendFormat": "Errors/s",
+          "expr": "((sum(rate(campuscare_http_errors_total[2m])) or on() vector(0)) / (sum(rate(campuscare_http_requests_total[2m])) or on() vector(1))) * 100",
+          "legendFormat": "Error Rate %",
           "range": true,
           "refId": "A"
         }
@@ -578,19 +931,19 @@
     {
       "collapsed": false,
       "gridPos": {
-        "h": 8,
+        "h": 7,
         "w": 12,
         "x": 0,
-        "y": 14
+        "y": 17
       },
-      "id": 8,
+      "id": 13,
       "title": "HTTP Latency p95",
       "type": "timeseries",
       "datasource": {
         "type": "prometheus",
         "uid": "campuscare-prometheus"
       },
-      "description": "95th percentile response latency for CampusCare HTTP requests",
+      "description": "95th percentile response latency with SLO threshold alert boundary (1.0s)",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -600,7 +953,7 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "latency",
+            "axisLabel": "Latency (s)",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -624,7 +977,7 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "off"
+              "mode": "line"
             }
           },
           "mappings": [],
@@ -634,10 +987,6 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 0.5
               },
               {
                 "color": "red",
@@ -672,7 +1021,7 @@
             "uid": "campuscare-prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(campuscare_http_request_duration_seconds_bucket[1m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(campuscare_http_request_duration_seconds_bucket[2m])) by (le))",
           "legendFormat": "p95 Latency",
           "range": true,
           "refId": "A"
@@ -682,19 +1031,19 @@
     {
       "collapsed": false,
       "gridPos": {
-        "h": 8,
+        "h": 7,
         "w": 12,
         "x": 12,
-        "y": 14
+        "y": 17
       },
-      "id": 9,
+      "id": 14,
       "title": "HTTP Status Distribution",
       "type": "bargauge",
       "datasource": {
         "type": "prometheus",
         "uid": "campuscare-prometheus"
       },
-      "description": "Total count of processed requests broken down by HTTP status code",
+      "description": "Total processed requests partitioned by HTTP status code",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -760,7 +1109,9 @@
   "tags": [
     "campuscare",
     "observability",
-    "devops"
+    "devops",
+    "sre",
+    "alerts"
   ],
   "time": {
     "from": "now-15m",
@@ -777,7 +1128,7 @@
     ]
   },
   "timezone": "browser",
-  "title": "CampusCare — DevOps Observability",
+  "title": "CampusCare — DevOps Observability & SRE",
   "uid": "campuscare-devops",
-  "version": 1
+  "version": 2
 }

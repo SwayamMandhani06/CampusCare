@@ -20,6 +20,7 @@ const http = require('http');
 
 // Load environment variables
 require('dotenv').config();
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'campuscare_test_jwt_secret_key_2026';
 
 const User = require('./models/User');
 const authRoutes = require('./routes/auth');

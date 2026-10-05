@@ -37,6 +37,9 @@ pipeline {
         // Local ingress health verification endpoint (Traefik Ingress on EC2 host)
         HEALTH_ENDPOINT   = 'http://localhost/api/health'
         FRONTEND_ENDPOINT = 'http://localhost/'
+
+        // Default JWT secret for automated backend test suite verification in CI
+        JWT_SECRET        = 'campuscare_test_jwt_secret_key_2026'
     }
 
     stages {

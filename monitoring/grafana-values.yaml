@@ -58,3 +58,6 @@ dashboardProviders:
 
 dashboardsConfigMaps:
   default: "campuscare-grafana-dashboard"
+
+initChownData:
+  enabled: false

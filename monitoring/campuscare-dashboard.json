@@ -568,7 +568,7 @@
             "uid": "campuscare-prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(campuscare_http_errors_total[1m]))",
+          "expr": "sum(rate(campuscare_http_errors_total[2m])) or on() vector(0)",
           "legendFormat": "Errors/s",
           "range": true,
           "refId": "A"

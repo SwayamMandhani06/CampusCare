@@ -223,6 +223,16 @@ pipeline {
                         kubectl create namespace "${KUBE_NAMESPACE}"
                     fi
 
+                    # Adopt namespace into Helm ownership if previously managed externally
+                    kubectl annotate namespace "${KUBE_NAMESPACE}" meta.helm.sh/release-name="${HELM_RELEASE}" meta.helm.sh/release-namespace="${KUBE_NAMESPACE}" --overwrite > /dev/null 2>&1 || true
+                    kubectl label namespace "${KUBE_NAMESPACE}" app.kubernetes.io/managed-by=Helm --overwrite > /dev/null 2>&1 || true
+
+                    # Determine if Helm supports --take-ownership
+                    EXTRA_ARGS=""
+                    if helm upgrade --help | grep -q -- '--take-ownership'; then
+                        EXTRA_ARGS="--take-ownership"
+                    fi
+
                     # Safely handle existing vs initial Helm release
                     if helm status "${HELM_RELEASE}" --namespace "${KUBE_NAMESPACE}" > /dev/null 2>&1; then
                         echo "[INFO] Existing Helm release '${HELM_RELEASE}' detected."
@@ -230,14 +240,11 @@ pipeline {
                         helm upgrade "${HELM_RELEASE}" "${HELM_CHART_PATH}" \
                             --namespace "${KUBE_NAMESPACE}" \
                             --reuse-values \
+                            ${EXTRA_ARGS} \
                             --set backend.image.tag="${IMAGE_TAG}" \
                             --set frontend.image.tag="${IMAGE_TAG}"
                     else
                         echo "[INFO] Helm release '${HELM_RELEASE}' not found. Installing initial release..."
-                        EXTRA_ARGS=""
-                        if helm upgrade --help | grep -q -- '--take-ownership'; then
-                            EXTRA_ARGS="--take-ownership"
-                        fi
 
                         # Guard existing MongoDB credentials if campuscare-secret already exists in the cluster
                         SECRET_ARGS=""

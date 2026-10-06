@@ -75,7 +75,7 @@ const ActivityTimeline = ({ timeline = [] }) => {
       {timeline.map((event, index) => (
         <div key={event._id || index} className="relative group">
           {/* Node Icon */}
-          <div className="absolute -left-6 mt-0.5 w-5 h-5 rounded-full bg-paper border border-line flex items-center justify-center shadow-xs">
+          <div className="absolute -left-6 mt-0.5 w-5 h-5 rounded-full bg-surface border border-line flex items-center justify-center shadow-xs">
             {getEventIcon(event.eventType)}
           </div>
 

@@ -153,11 +153,13 @@ const StaffDashboard = () => {
       >
         {/* Total Assigned */}
         <Card className="p-5">
-          <div className="flex items-center justify-between text-muted">
-            <span className="text-xs font-mono uppercase tracking-wider font-medium">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono uppercase tracking-wider font-medium text-muted">
               Assigned Tasks
             </span>
-            <Inbox size={16} />
+            <div className="w-8 h-8 rounded-lg bg-brand/10 text-brand flex items-center justify-center">
+              <Inbox size={16} />
+            </div>
           </div>
           <div className="text-3xl font-medium text-ink mt-2">
             <AnimatedCounter value={totalAssigned} />
@@ -169,11 +171,13 @@ const StaffDashboard = () => {
 
         {/* Pending Action */}
         <Card className="p-5">
-          <div className="flex items-center justify-between text-status-assigned">
-            <span className="text-xs font-mono uppercase tracking-wider font-medium">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono uppercase tracking-wider font-medium text-status-assigned">
               Pending Action
             </span>
-            <Clock size={16} />
+            <div className="w-8 h-8 rounded-lg bg-status-assigned/10 text-status-assigned flex items-center justify-center">
+              <Clock size={16} />
+            </div>
           </div>
           <div className="text-3xl font-medium text-ink mt-2">
             <AnimatedCounter value={pendingAction} />
@@ -185,11 +189,13 @@ const StaffDashboard = () => {
 
         {/* In Progress */}
         <Card className="p-5">
-          <div className="flex items-center justify-between text-status-progress">
-            <span className="text-xs font-mono uppercase tracking-wider font-medium">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono uppercase tracking-wider font-medium text-status-progress">
               In Progress
             </span>
-            <AlertCircle size={16} />
+            <div className="w-8 h-8 rounded-lg bg-status-progress/10 text-status-progress flex items-center justify-center">
+              <AlertCircle size={16} />
+            </div>
           </div>
           <div className="text-3xl font-medium text-ink mt-2">
             <AnimatedCounter value={inProgress} />
@@ -201,11 +207,13 @@ const StaffDashboard = () => {
 
         {/* Completed */}
         <Card className="p-5">
-          <div className="flex items-center justify-between text-status-resolved">
-            <span className="text-xs font-mono uppercase tracking-wider font-medium">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono uppercase tracking-wider font-medium text-status-resolved">
               Completed
             </span>
-            <CheckCircle2 size={16} />
+            <div className="w-8 h-8 rounded-lg bg-status-resolved/10 text-status-resolved flex items-center justify-center">
+              <CheckCircle2 size={16} />
+            </div>
           </div>
           <div className="text-3xl font-medium text-ink mt-2">
             <AnimatedCounter value={completed} />
@@ -225,7 +233,7 @@ const StaffDashboard = () => {
                 Active Tasks Needing Attention
               </h2>
               {activeTasks.length > 0 && (
-                <span className="px-2 py-0.5 rounded text-[11px] font-mono uppercase bg-line text-ink">
+                <span className="px-2 py-0.5 rounded text-[11px] font-mono uppercase bg-subtle text-ink border border-line">
                   {activeTasks.length} active
                 </span>
               )}
@@ -247,7 +255,7 @@ const StaffDashboard = () => {
         {/* Empty State */}
         {activeTasks.length === 0 ? (
           <Card className="p-12 text-center border-dashed">
-            <div className="w-10 h-10 rounded-full bg-line/50 mx-auto flex items-center justify-center text-muted mb-3">
+            <div className="w-10 h-10 rounded-full bg-subtle mx-auto flex items-center justify-center text-muted mb-3 border border-line">
               <Wrench size={18} />
             </div>
             <h3 className="text-sm font-medium text-ink">Nothing assigned right now.</h3>
@@ -257,7 +265,7 @@ const StaffDashboard = () => {
           </Card>
         ) : (
           /* Priority Ranked Task Rows */
-          <div className="border border-line rounded-lg divide-y divide-line bg-paper overflow-hidden shadow-sm">
+          <div className="border border-line rounded-xl divide-y divide-line bg-surface overflow-hidden shadow-xs">
             {activeTasks.map((task) => (
               <Link
                 key={task._id}

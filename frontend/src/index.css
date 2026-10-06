@@ -13,38 +13,54 @@
 @tailwind utilities;
 
 :root {
-  /* Core Neutrals */
-  --ink: #14161A;
-  --paper: #F5F6F4;
-  --muted: #6B7280;
-  --line: #E3E5E1;
-  --brand: #3D5A80;
-  --brand-hover: #2F4767;
+  /* Core Neutrals & Surfaces (Light Mode) */
+  --ink: #0F172A;
+  --paper: #F8F9FA;
+  --surface: #FFFFFF;
+  --surface-elevated: #FFFFFF;
+  --subtle: #F1F3F5;
+  --muted: #64748B;
+  --line: #E2E8F0;
+  --line-strong: #CBD5E1;
+
+  /* Brand Accents */
+  --brand: #2563EB;
+  --brand-hover: #1D4ED8;
+  --brand-light: #EFF6FF;
+  --brand-contrast: #FFFFFF;
 
   /* Semantic Status Colors */
-  --status-pending: #8A8F98;
-  --status-reviewed: #4A6FA1;
-  --status-assigned: #C9A227;
-  --status-progress: #C2683D;
-  --status-resolved: #6B8F71;
+  --status-pending: #64748B;
+  --status-reviewed: #2563EB;
+  --status-assigned: #D97706;
+  --status-progress: #EA580C;
+  --status-resolved: #16A34A;
 
   /* Semantic Priority Colors */
-  --priority-low: #6B8F71;
-  --priority-medium: #C9A227;
-  --priority-high: #C2683D;
-  --priority-critical: #B14A4A;
+  --priority-low: #16A34A;
+  --priority-medium: #D97706;
+  --priority-high: #EA580C;
+  --priority-critical: #DC2626;
 }
 
 .dark {
-  /* Dark Mode Neutrals */
-  --ink: #F3F4F6;
-  --paper: #0F172A;
+  /* Dark Mode Neutrals & Surfaces (Near-Black Base + Very Dark Charcoal Surfaces + White Contrast) */
+  --ink: #F8FAFC;
+  --paper: #090B0E;
+  --surface: #12151C;
+  --surface-elevated: #181C26;
+  --subtle: #171B24;
   --muted: #94A3B8;
-  --line: #334155;
-  --brand: #60A5FA;
-  --brand-hover: #3B82F6;
+  --line: #202532;
+  --line-strong: #2D3546;
 
-  /* Semantic Status Colors in Dark Mode */
+  /* Brand Accents in Dark Mode */
+  --brand: #3B82F6;
+  --brand-hover: #60A5FA;
+  --brand-light: #1E293B;
+  --brand-contrast: #FFFFFF;
+
+  /* Semantic Status Colors in Dark Mode (High contrast against dark charcoal) */
   --status-pending: #94A3B8;
   --status-reviewed: #60A5FA;
   --status-assigned: #FBBF24;
@@ -61,7 +77,7 @@
 /* Base resets & typography */
 html {
   scroll-behavior: smooth;
-  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Geist', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--paper);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
@@ -74,12 +90,25 @@ body {
   background-color: var(--paper);
   color: var(--ink);
   min-height: 100vh;
+  line-height: 1.5;
+}
+
+/* Typographic hierarchy scale */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 /* Selection highlight */
 ::selection {
-  background-color: #3D5A8025;
+  background-color: rgba(37, 99, 235, 0.2);
   color: var(--ink);
+}
+
+.dark ::selection {
+  background-color: rgba(59, 130, 246, 0.3);
+  color: #FFFFFF;
 }
 
 /* Focus styles: intentional hairline outline in brand */
@@ -96,6 +125,25 @@ a:focus-visible {
 .border-hairline {
   border-width: 1px;
   border-color: var(--line);
+}
+
+/* Minimal Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--paper);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
 }
 
 /* Accessible reduced motion */

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import api from '../../services/api';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
@@ -24,15 +23,12 @@ import {
   CartesianGrid,
 } from 'recharts';
 import {
-  BarChart2,
   Calendar,
   Download,
   RefreshCw,
   TrendingUp,
   TrendingDown,
   Clock,
-  CheckCircle2,
-  AlertTriangle,
   AlertOctagon,
   Users,
   MapPin,
@@ -297,15 +293,15 @@ const AdminAnalyticsPage = () => {
         {/* Global Toolbar */}
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Date Range Selector Pills */}
-          <div className="inline-flex rounded-md border border-line bg-paper/80 p-0.5 shadow-xs">
+          <div className="inline-flex rounded-lg border border-line bg-surface p-0.5 shadow-2xs">
             {DATE_RANGES.map((r) => (
               <button
                 key={r.value}
                 type="button"
                 onClick={() => setRange(r.value)}
-                className={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${
+                className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
                   range === r.value
-                    ? 'bg-ink text-paper shadow-xs font-semibold'
+                    ? 'bg-brand text-white shadow-xs font-semibold'
                     : 'text-muted hover:text-ink'
                 }`}
               >
@@ -343,7 +339,7 @@ const AdminAnalyticsPage = () => {
 
       {/* Custom Date Range Picker (Conditional) */}
       {range === 'custom' && (
-        <Card className="p-4 bg-paper/60 border-brand/30">
+        <Card className="p-4 bg-surface border border-brand/30 rounded-xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center space-x-2 text-xs text-ink font-medium">
               <Calendar size={14} className="text-brand" />
@@ -355,14 +351,14 @@ const AdminAnalyticsPage = () => {
                 type="date"
                 value={customStart}
                 onChange={(e) => setCustomStart(e.target.value)}
-                className="px-2.5 py-1 border border-line rounded bg-paper text-ink font-mono text-xs focus:outline-hidden focus:border-brand"
+                className="px-2.5 py-1 border border-line rounded-lg bg-surface text-ink font-mono text-xs focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
               />
               <label className="text-muted text-[11px] font-mono">To:</label>
               <input
                 type="date"
                 value={customEnd}
                 onChange={(e) => setCustomEnd(e.target.value)}
-                className="px-2.5 py-1 border border-line rounded bg-paper text-ink font-mono text-xs focus:outline-hidden focus:border-brand"
+                className="px-2.5 py-1 border border-line rounded-lg bg-surface text-ink font-mono text-xs focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
               />
               <Button
                 variant="secondary"
@@ -378,7 +374,7 @@ const AdminAnalyticsPage = () => {
       )}
 
       {/* 2. Granular Operational Filters Bar */}
-      <Card className="p-4 bg-paper border-line shadow-xs">
+      <Card className="p-4 bg-surface border border-line rounded-xl shadow-xs">
         <div className="flex flex-col space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 text-xs font-medium text-ink">
@@ -402,7 +398,7 @@ const AdminAnalyticsPage = () => {
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="w-full text-xs py-1.5 px-2 rounded border border-line bg-paper text-ink focus:outline-hidden focus:border-brand"
+                className="w-full text-xs py-1.5 px-2 rounded-lg border border-line bg-surface text-ink focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
               >
                 <option value="">All Categories</option>
                 {CATEGORIES.map((c) => (
@@ -419,7 +415,7 @@ const AdminAnalyticsPage = () => {
               <select
                 value={filterPriority}
                 onChange={(e) => setFilterPriority(e.target.value)}
-                className="w-full text-xs py-1.5 px-2 rounded border border-line bg-paper text-ink focus:outline-hidden focus:border-brand"
+                className="w-full text-xs py-1.5 px-2 rounded-lg border border-line bg-surface text-ink focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
               >
                 <option value="">All Priorities</option>
                 <option value="LOW">Low</option>
@@ -435,7 +431,7 @@ const AdminAnalyticsPage = () => {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full text-xs py-1.5 px-2 rounded border border-line bg-paper text-ink focus:outline-hidden focus:border-brand"
+                className="w-full text-xs py-1.5 px-2 rounded-lg border border-line bg-surface text-ink focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
               >
                 <option value="">All Statuses</option>
                 <option value="PENDING">Pending</option>
@@ -452,7 +448,7 @@ const AdminAnalyticsPage = () => {
               <select
                 value={filterSlaStatus}
                 onChange={(e) => setFilterSlaStatus(e.target.value)}
-                className="w-full text-xs py-1.5 px-2 rounded border border-line bg-paper text-ink focus:outline-hidden focus:border-brand"
+                className="w-full text-xs py-1.5 px-2 rounded-lg border border-line bg-surface text-ink focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
               >
                 <option value="">All SLA States</option>
                 <option value="ON_TRACK">On Track</option>
@@ -470,7 +466,7 @@ const AdminAnalyticsPage = () => {
                 placeholder="e.g. Hostel A"
                 value={filterLocation}
                 onChange={(e) => setFilterLocation(e.target.value)}
-                className="w-full text-xs py-1.5 px-2 rounded border border-line bg-paper text-ink focus:outline-hidden focus:border-brand"
+                className="w-full text-xs py-1.5 px-2 rounded-lg border border-line bg-surface text-ink focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
               />
             </div>
 
@@ -480,7 +476,7 @@ const AdminAnalyticsPage = () => {
               <select
                 value={filterStaff}
                 onChange={(e) => setFilterStaff(e.target.value)}
-                className="w-full text-xs py-1.5 px-2 rounded border border-line bg-paper text-ink focus:outline-hidden focus:border-brand"
+                className="w-full text-xs py-1.5 px-2 rounded-lg border border-line bg-surface text-ink focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
               >
                 <option value="">All Personnel</option>
                 <option value="unassigned">Unassigned Only</option>
@@ -661,7 +657,7 @@ const AdminAnalyticsPage = () => {
                     <h3 className="text-sm font-medium text-ink">Complaint Volume Over Time</h3>
                     <p className="text-xs text-muted">Created vs Resolved historical trajectory</p>
                   </div>
-                  <span className="text-[10px] font-mono text-muted bg-paper px-2 py-0.5 rounded border border-line">
+                  <span className="text-[10px] font-mono text-muted bg-subtle/60 px-2 py-0.5 rounded border border-line">
                     Interval: {analytics.period?.interval || 'day'}
                   </span>
                 </div>
@@ -669,11 +665,19 @@ const AdminAnalyticsPage = () => {
                   {analytics.volumeTrends && analytics.volumeTrends.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={analytics.volumeTrends} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-                        <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#6B7280' }} />
-                        <YAxis tick={{ fontSize: 10, fill: '#6B7280' }} allowDecimals={false} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" vertical={false} />
+                        <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'var(--muted)', fontFamily: 'JetBrains Mono, monospace' }} />
+                        <YAxis tick={{ fontSize: 10, fill: 'var(--muted)', fontFamily: 'JetBrains Mono, monospace' }} allowDecimals={false} />
                         <Tooltip
-                          contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', fontSize: 12 }}
+                          contentStyle={{
+                            backgroundColor: 'var(--surface)',
+                            borderColor: 'var(--line)',
+                            borderRadius: 8,
+                            fontSize: 12,
+                            fontFamily: 'JetBrains Mono, monospace',
+                            color: 'var(--ink)',
+                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
+                          }}
                         />
                         <Legend wrapperStyle={{ fontSize: 11 }} />
                         <Line
@@ -748,11 +752,19 @@ const AdminAnalyticsPage = () => {
                             { color: SLA_PALETTE.BREACHED },
                             { color: SLA_PALETTE.RESOLVED },
                           ].map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
+                            <Cell key={`cell-${index}`} fill={entry.color} stroke="var(--surface)" strokeWidth={2} />
                           ))}
                         </Pie>
                         <Tooltip
-                          contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', fontSize: 12 }}
+                          contentStyle={{
+                            backgroundColor: 'var(--surface)',
+                            borderColor: 'var(--line)',
+                            borderRadius: 8,
+                            fontSize: 12,
+                            fontFamily: 'JetBrains Mono, monospace',
+                            color: 'var(--ink)',
+                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
+                          }}
                         />
                         <Legend wrapperStyle={{ fontSize: 11 }} />
                       </PieChart>
@@ -784,17 +796,25 @@ const AdminAnalyticsPage = () => {
                         data={analytics.categoryDistribution}
                         margin={{ top: 5, right: 10, left: -20, bottom: 25 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" vertical={false} />
                         <XAxis
                           dataKey="category"
-                          tick={{ fontSize: 9, fill: '#6B7280' }}
+                          tick={{ fontSize: 9, fill: 'var(--muted)', fontFamily: 'Plus Jakarta Sans, sans-serif' }}
                           interval={0}
                           angle={-25}
                           textAnchor="end"
                         />
-                        <YAxis tick={{ fontSize: 10, fill: '#6B7280' }} allowDecimals={false} />
+                        <YAxis tick={{ fontSize: 10, fill: 'var(--muted)', fontFamily: 'JetBrains Mono, monospace' }} allowDecimals={false} />
                         <Tooltip
-                          contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', fontSize: 12 }}
+                          contentStyle={{
+                            backgroundColor: 'var(--surface)',
+                            borderColor: 'var(--line)',
+                            borderRadius: 8,
+                            fontSize: 12,
+                            fontFamily: 'JetBrains Mono, monospace',
+                            color: 'var(--ink)',
+                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
+                          }}
                           formatter={(val, name, item) => [
                             `${val} complaints (${item.payload.percentage}%)`,
                             item.payload.category,
@@ -839,11 +859,19 @@ const AdminAnalyticsPage = () => {
                         data={analytics.priorityDistribution}
                         margin={{ top: 5, right: 10, left: -20, bottom: 5 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-                        <XAxis dataKey="priority" tick={{ fontSize: 10, fill: '#6B7280' }} />
-                        <YAxis tick={{ fontSize: 10, fill: '#6B7280' }} allowDecimals={false} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" vertical={false} />
+                        <XAxis dataKey="priority" tick={{ fontSize: 10, fill: 'var(--muted)', fontFamily: 'JetBrains Mono, monospace' }} />
+                        <YAxis tick={{ fontSize: 10, fill: 'var(--muted)', fontFamily: 'JetBrains Mono, monospace' }} allowDecimals={false} />
                         <Tooltip
-                          contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', fontSize: 12 }}
+                          contentStyle={{
+                            backgroundColor: 'var(--surface)',
+                            borderColor: 'var(--line)',
+                            borderRadius: 8,
+                            fontSize: 12,
+                            fontFamily: 'JetBrains Mono, monospace',
+                            color: 'var(--ink)',
+                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
+                          }}
                         />
                         <Bar
                           dataKey="count"
@@ -889,16 +917,24 @@ const AdminAnalyticsPage = () => {
                         data={analytics.locationHotspots.slice(0, 8)}
                         margin={{ top: 5, right: 20, left: 40, bottom: 5 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" horizontal={false} />
-                        <XAxis type="number" tick={{ fontSize: 10, fill: '#6B7280' }} allowDecimals={false} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" horizontal={false} />
+                        <XAxis type="number" tick={{ fontSize: 10, fill: 'var(--muted)', fontFamily: 'JetBrains Mono, monospace' }} allowDecimals={false} />
                         <YAxis
                           type="category"
                           dataKey="location"
-                          tick={{ fontSize: 9, fill: '#4B5563' }}
+                          tick={{ fontSize: 9, fill: 'var(--ink)' }}
                           width={110}
                         />
                         <Tooltip
-                          contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', fontSize: 12 }}
+                          contentStyle={{
+                            backgroundColor: 'var(--surface)',
+                            borderColor: 'var(--line)',
+                            borderRadius: 8,
+                            fontSize: 12,
+                            fontFamily: 'JetBrains Mono, monospace',
+                            color: 'var(--ink)',
+                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
+                          }}
                           formatter={(val, name, item) => [
                             `${val} total (${item.payload.highPriorityCount} High/Crit, ${item.payload.breachCount} breaches)`,
                             item.payload.location,
@@ -947,11 +983,19 @@ const AdminAnalyticsPage = () => {
                         ]}
                         margin={{ top: 5, right: 10, left: -20, bottom: 5 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-                        <XAxis dataKey="stars" tick={{ fontSize: 10, fill: '#6B7280' }} />
-                        <YAxis tick={{ fontSize: 10, fill: '#6B7280' }} allowDecimals={false} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" vertical={false} />
+                        <XAxis dataKey="stars" tick={{ fontSize: 10, fill: 'var(--muted)', fontFamily: 'JetBrains Mono, monospace' }} />
+                        <YAxis tick={{ fontSize: 10, fill: 'var(--muted)', fontFamily: 'JetBrains Mono, monospace' }} allowDecimals={false} />
                         <Tooltip
-                          contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', fontSize: 12 }}
+                          contentStyle={{
+                            backgroundColor: 'var(--surface)',
+                            borderColor: 'var(--line)',
+                            borderRadius: 8,
+                            fontSize: 12,
+                            fontFamily: 'JetBrains Mono, monospace',
+                            color: 'var(--ink)',
+                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
+                          }}
                         />
                         <Bar dataKey="count" fill="#C9A227" radius={[4, 4, 0, 0]} />
                       </BarChart>
@@ -984,7 +1028,7 @@ const AdminAnalyticsPage = () => {
             <div className="overflow-x-auto mt-4">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-line text-[10px] font-mono uppercase text-muted">
+                  <tr className="border-b border-line text-[10px] font-mono uppercase text-muted bg-subtle/50">
                     <th className="py-2.5 px-3 cursor-pointer" onClick={() => toggleSort('name')}>
                       Technician {sortField === 'name' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
                     </th>
@@ -1016,7 +1060,7 @@ const AdminAnalyticsPage = () => {
                   {sortedStaff.map((s) => (
                     <tr
                       key={s.staffId}
-                      className="hover:bg-paper/80 transition-colors"
+                      className="hover:bg-subtle/40 transition-colors"
                     >
                       <td className="py-3 px-3">
                         <div className="font-medium text-ink">{s.name}</div>
@@ -1025,10 +1069,10 @@ const AdminAnalyticsPage = () => {
                       <td className="py-3 px-3 text-center font-mono font-medium">{s.assignedCount}</td>
                       <td className="py-3 px-3 text-center">
                         <span
-                          className={`inline-block px-2 py-0.5 rounded font-mono text-[11px] ${
+                          className={`inline-block px-2 py-0.5 rounded-md font-mono text-[11px] ${
                             s.activeCount >= 4
                               ? 'bg-[#C2683D]/15 text-[#8B3416] border border-[#C2683D]/30 font-semibold'
-                              : 'bg-paper text-ink border border-line'
+                              : 'bg-surface text-ink border border-line'
                           }`}
                         >
                           {s.activeCount}

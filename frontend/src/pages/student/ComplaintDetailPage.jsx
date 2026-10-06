@@ -274,7 +274,7 @@ const ComplaintDetailPage = () => {
                     <select
                       value={editForm.category}
                       onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                      className="w-full px-3 py-2 bg-paper text-sm text-ink border border-line rounded"
+                      className="w-full px-3 py-2 bg-surface text-sm text-ink border border-line rounded-lg focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
                     >
                       {CATEGORIES.map((c) => (
                         <option key={c.name} value={c.name}>
@@ -289,7 +289,7 @@ const ComplaintDetailPage = () => {
                     <select
                       value={editForm.priority}
                       onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })}
-                      className="w-full px-3 py-2 bg-paper text-sm text-ink border border-line rounded font-mono text-xs"
+                      className="w-full px-3 py-2 bg-surface text-sm text-ink border border-line rounded-lg font-mono text-xs focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
                     >
                       {PRIORITIES.map((p) => (
                         <option key={p.value} value={p.value}>
@@ -350,14 +350,14 @@ const ComplaintDetailPage = () => {
 
                 {/* Estimated Resolution SLA Indicator */}
                 {isResolved ? (
-                  <div className="p-3.5 rounded-lg bg-emerald-500/10 border border-emerald-500/25 flex items-center space-x-2.5 text-xs font-mono text-emerald-600">
+                  <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center space-x-2.5 text-xs font-mono text-emerald-600 dark:text-emerald-400">
                     <Check size={15} className="shrink-0" />
                     <span>
                       Resolved on {formatFullDateTime(complaint.sla?.resolutionAt || complaint.updatedAt)}
                     </span>
                   </div>
                 ) : complaint.sla?.status === 'BREACHED' || complaint.sla?.resolutionBreached ? (
-                  <div className="p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/25 flex items-center space-x-2.5 text-xs font-mono text-amber-600">
+                  <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center space-x-2.5 text-xs font-mono text-amber-600 dark:text-amber-400">
                     <AlertTriangle size={15} className="shrink-0" />
                     <div>
                       <span className="font-medium block">This complaint is currently delayed.</span>
@@ -367,7 +367,7 @@ const ComplaintDetailPage = () => {
                     </div>
                   </div>
                 ) : complaint.sla?.resolutionDeadline ? (
-                  <div className="p-3.5 rounded-lg bg-paper/60 border border-line flex items-center space-x-2.5 text-xs font-mono text-ink">
+                  <div className="p-3.5 rounded-xl bg-subtle/40 border border-line flex items-center space-x-2.5 text-xs font-mono text-ink">
                     <Clock size={15} className="text-brand shrink-0" />
                     <div>
                       <span>Expected resolution by: <strong>{formatFullDateTime(complaint.sla.resolutionDeadline)}</strong></span>
@@ -380,7 +380,7 @@ const ComplaintDetailPage = () => {
                   <h3 className="text-xs font-mono uppercase tracking-wider text-muted font-medium mb-1.5">
                     Issue Description
                   </h3>
-                  <p className="text-sm text-ink leading-relaxed whitespace-pre-line bg-paper/60 p-4 rounded-lg border border-line">
+                  <p className="text-sm text-ink leading-relaxed whitespace-pre-line bg-subtle/30 p-4 rounded-xl border border-line">
                     {complaint.description}
                   </p>
                 </div>
@@ -398,8 +398,8 @@ const ComplaintDetailPage = () => {
                     Assigned Technician
                   </h3>
                   {complaint.assignedTo ? (
-                    <div className="flex items-center space-x-3 p-3.5 rounded-lg bg-paper/60 border border-line">
-                      <div className="w-8 h-8 rounded bg-status-assigned/10 text-status-assigned flex items-center justify-center shrink-0">
+                    <div className="flex items-center space-x-3 p-3.5 rounded-xl bg-subtle/30 border border-line">
+                      <div className="w-8 h-8 rounded-lg bg-status-assigned/10 text-status-assigned flex items-center justify-center shrink-0 border border-status-assigned/20">
                         <Wrench size={16} />
                       </div>
                       <div>
@@ -412,7 +412,7 @@ const ComplaintDetailPage = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="p-3.5 rounded-lg bg-paper/40 border border-line text-xs text-muted flex items-center space-x-2">
+                    <div className="p-3.5 rounded-xl bg-subtle/20 border border-line text-xs text-muted flex items-center space-x-2">
                       <User size={14} className="text-muted shrink-0" />
                       <span>Pending technician dispatch by campus administration.</span>
                     </div>
@@ -425,7 +425,7 @@ const ComplaintDetailPage = () => {
                     <h3 className="text-xs font-mono uppercase tracking-wider text-status-resolved font-medium mb-2">
                       Technician Resolution Notes
                     </h3>
-                    <div className="p-4 rounded-lg bg-status-resolved/10 border border-status-resolved/30 text-xs text-ink leading-relaxed whitespace-pre-line">
+                    <div className="p-4 rounded-xl bg-status-resolved/10 border border-status-resolved/30 text-xs text-ink leading-relaxed whitespace-pre-line">
                       {complaint.resolutionNotes}
                     </div>
                   </div>
@@ -449,7 +449,7 @@ const ComplaintDetailPage = () => {
                       </Button>
                     </>
                   ) : (
-                    <div className="flex items-center space-x-2 text-xs text-muted bg-line/20 p-2.5 rounded w-full">
+                    <div className="flex items-center space-x-2 text-xs text-muted bg-subtle/30 p-2.5 rounded-lg border border-line w-full">
                       <Lock size={14} className="shrink-0 text-muted" />
                       <span>
                         This complaint is being processed by campus facilities and can no longer be edited.

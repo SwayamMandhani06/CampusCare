@@ -40,7 +40,7 @@ const ComplaintImageGallery = ({ complaintId, images = [] }) => {
             <div
               key={img.imageId || img._id}
               onClick={() => setSelectedImage(img)}
-              className="group relative rounded-lg border border-line bg-paper/60 overflow-hidden cursor-pointer hover:border-brand/40 hover:shadow-sm transition-all"
+              className="group relative rounded-xl border border-line bg-surface overflow-hidden cursor-pointer hover:border-brand/40 hover:shadow-xs transition-all"
             >
               <div className="aspect-video w-full bg-line/20 flex items-center justify-center overflow-hidden">
                 <img
@@ -82,11 +82,11 @@ const ComplaintImageGallery = ({ complaintId, images = [] }) => {
           onClick={() => setSelectedImage(null)}
         >
           <div
-            className="relative max-w-4xl max-h-[90vh] bg-paper rounded-lg border border-line shadow-2xl overflow-hidden flex flex-col"
+            className="relative max-w-4xl max-h-[90vh] bg-surface rounded-xl border border-line shadow-2xl overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="px-4 py-3 border-b border-line flex items-center justify-between bg-paper">
+            <div className="px-4 py-3 border-b border-line flex items-center justify-between bg-surface">
               <div className="flex items-center space-x-2 truncate">
                 <ImageIcon size={15} className="text-brand" />
                 <span className="text-xs font-mono font-medium text-ink truncate">

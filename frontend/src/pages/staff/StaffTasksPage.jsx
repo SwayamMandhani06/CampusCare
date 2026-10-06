@@ -333,7 +333,7 @@ const StaffTasksPage = () => {
       </div>
 
       {/* Filter Toolbar */}
-      <div className="my-6 p-4 bg-paper border border-line rounded-lg space-y-3">
+      <div className="my-6 p-4 bg-surface border border-line rounded-xl space-y-3 shadow-xs">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
           {/* Search */}
           <div className="md:col-span-3 relative">
@@ -346,7 +346,7 @@ const StaffTasksPage = () => {
               placeholder="Search tasks..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-paper text-xs text-ink border border-line rounded focus:border-brand focus-visible:outline-brand"
+              className="w-full pl-9 pr-3 py-2 bg-surface text-xs text-ink border border-line rounded-lg focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
             />
           </div>
 
@@ -355,7 +355,7 @@ const StaffTasksPage = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand font-mono"
+              className="w-full px-3 py-2 bg-surface text-xs text-ink border border-line rounded-lg cursor-pointer focus:border-brand focus:ring-1 focus:ring-brand/30 font-mono transition-colors"
             >
               {STATUS_FILTERS.map((s) => (
                 <option key={s.value} value={s.value}>
@@ -370,7 +370,7 @@ const StaffTasksPage = () => {
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand font-mono"
+              className="w-full px-3 py-2 bg-surface text-xs text-ink border border-line rounded-lg cursor-pointer focus:border-brand focus:ring-1 focus:ring-brand/30 font-mono transition-colors"
             >
               {PRIORITY_OPTIONS.map((p) => (
                 <option key={p.value} value={p.value}>
@@ -385,7 +385,7 @@ const StaffTasksPage = () => {
             <select
               value={slaFilter}
               onChange={(e) => setSlaFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand font-mono"
+              className="w-full px-3 py-2 bg-surface text-xs text-ink border border-line rounded-lg cursor-pointer focus:border-brand focus:ring-1 focus:ring-brand/30 font-mono transition-colors"
             >
               {SLA_FILTERS.map((sla) => (
                 <option key={sla.value} value={sla.value}>
@@ -400,7 +400,7 @@ const StaffTasksPage = () => {
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand"
+              className="w-full px-3 py-2 bg-surface text-xs text-ink border border-line rounded-lg cursor-pointer focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
             >
               <option value="">All Categories</option>
               {CATEGORIES.map((c) => (
@@ -439,7 +439,7 @@ const StaffTasksPage = () => {
           </div>
 
           {loading ? (
-            <div className="py-12 border border-line rounded-lg bg-paper">
+            <div className="py-12 border border-line rounded-xl bg-surface">
               <LoadingSpinner label="Loading tasks..." size={18} />
             </div>
           ) : tasks.length === 0 ? (
@@ -460,7 +460,7 @@ const StaffTasksPage = () => {
               }
             />
           ) : (
-            <div className="border border-line rounded-lg divide-y divide-line bg-paper overflow-hidden shadow-sm max-h-[750px] overflow-y-auto">
+            <div className="border border-line rounded-xl divide-y divide-line bg-surface overflow-hidden shadow-xs max-h-[750px] overflow-y-auto">
               {tasks.map((task) => {
                 const isSelected = selectedTask?._id === task._id;
                 return (
@@ -566,14 +566,14 @@ const StaffTasksPage = () => {
                 <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-ink">
                   {selectedTask.title}
                 </h2>
-                <div className="flex items-center text-xs text-muted mt-2 font-mono bg-paper/60 p-2.5 rounded border border-line">
+                <div className="flex items-center text-xs text-muted mt-2 font-mono bg-subtle/30 p-2.5 rounded-lg border border-line">
                   <MapPin size={14} className="mr-2 text-brand shrink-0" />
                   <span>{selectedTask.location}</span>
                 </div>
               </div>
 
               {/* SLA Target & Deadlines Banner */}
-              <div className="p-4 rounded-lg border border-line bg-paper/60 space-y-3">
+              <div className="p-4 rounded-xl border border-line bg-subtle/30 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center space-x-2">
                     <Clock size={15} className="text-brand" />

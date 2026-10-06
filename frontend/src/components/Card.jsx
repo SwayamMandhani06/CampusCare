@@ -2,14 +2,14 @@ import React from 'react';
 
 /**
  * Card Component
- * Quiet, purposeful container with hairline borders
+ * Surface container with subtle hairline border and elevation
  */
 const Card = ({ children, className = '', hover = false, onClick, ...props }) => {
   return (
     <div
       onClick={onClick}
-      className={`bg-paper border border-line rounded-lg p-6 transition-all duration-150 ${
-        hover ? 'hover:border-muted/40 hover:shadow-sm cursor-pointer' : ''
+      className={`bg-surface border border-line rounded-xl p-6 transition-all duration-200 shadow-xs ${
+        hover ? 'hover:border-line-strong hover:shadow-md hover:-translate-y-0.5 cursor-pointer' : ''
       } ${className}`}
       {...props}
     >

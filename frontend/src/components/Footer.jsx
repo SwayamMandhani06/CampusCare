@@ -71,12 +71,12 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/login" className="hover:text-ink transition-colors">
+                <Link to="/staff/login" className="hover:text-ink transition-colors">
                   Staff Task Portal
                 </Link>
               </li>
               <li>
-                <Link to="/login" className="hover:text-ink transition-colors">
+                <Link to="/admin/login" className="hover:text-ink transition-colors">
                   Administrator Console
                 </Link>
               </li>

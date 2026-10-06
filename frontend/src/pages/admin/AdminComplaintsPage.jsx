@@ -471,7 +471,7 @@ const AdminComplaintsPage = () => {
       </div>
 
       {/* Advanced Filters Toolbar */}
-      <div className="my-6 p-4 bg-paper border border-line rounded-lg space-y-3">
+      <div className="my-6 p-4 bg-surface border border-line rounded-xl space-y-3 shadow-xs">
         {/* Row 1: Search & Category & Status */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
           {/* Search */}
@@ -482,7 +482,7 @@ const AdminComplaintsPage = () => {
               placeholder="Search by title, location or description..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-paper text-xs text-ink border border-line rounded focus:border-brand focus-visible:outline-brand"
+              className="w-full pl-9 pr-3 py-2 bg-surface text-xs text-ink border border-line rounded-lg focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
             />
           </div>
 
@@ -494,7 +494,7 @@ const AdminComplaintsPage = () => {
                 setCategory(e.target.value);
                 setPagination((prev) => ({ ...prev, page: 1 }));
               }}
-              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand"
+              className="w-full px-3 py-2 bg-surface text-xs text-ink border border-line rounded-lg cursor-pointer focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
             >
               <option value="">All Categories</option>
               {CATEGORIES.map((c) => (
@@ -513,7 +513,7 @@ const AdminComplaintsPage = () => {
                 setStatus(e.target.value);
                 setPagination((prev) => ({ ...prev, page: 1 }));
               }}
-              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand font-mono"
+              className="w-full px-3 py-2 bg-surface text-xs text-ink border border-line rounded-lg cursor-pointer focus:border-brand focus:ring-1 focus:ring-brand/30 font-mono transition-colors"
             >
               {STATUS_OPTIONS.map((s) => (
                 <option key={s.value} value={s.value}>
@@ -534,7 +534,7 @@ const AdminComplaintsPage = () => {
                 setPriority(e.target.value);
                 setPagination((prev) => ({ ...prev, page: 1 }));
               }}
-              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand font-mono"
+              className="w-full px-3 py-2 bg-surface text-xs text-ink border border-line rounded-lg cursor-pointer focus:border-brand focus:ring-1 focus:ring-brand/30 font-mono transition-colors"
             >
               {PRIORITY_OPTIONS.map((p) => (
                 <option key={p.value} value={p.value}>
@@ -552,7 +552,7 @@ const AdminComplaintsPage = () => {
                 setAssignedStaff(e.target.value);
                 setPagination((prev) => ({ ...prev, page: 1 }));
               }}
-              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand"
+              className="w-full px-3 py-2 bg-surface text-xs text-ink border border-line rounded-lg cursor-pointer focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
             >
               <option value="">All Staff</option>
               <option value="unassigned">-- Unassigned Tickets --</option>
@@ -573,7 +573,7 @@ const AdminComplaintsPage = () => {
                 setStartDate(e.target.value);
                 setPagination((prev) => ({ ...prev, page: 1 }));
               }}
-              className="w-1/2 px-2.5 py-1.5 bg-paper text-xs text-ink border border-line rounded font-mono"
+              className="w-1/2 px-2.5 py-1.5 bg-surface text-xs text-ink border border-line rounded-lg font-mono focus:border-brand transition-colors"
               title="Start date"
             />
             <span className="text-muted text-xs font-mono">to</span>
@@ -584,7 +584,7 @@ const AdminComplaintsPage = () => {
                 setEndDate(e.target.value);
                 setPagination((prev) => ({ ...prev, page: 1 }));
               }}
-              className="w-1/2 px-2.5 py-1.5 bg-paper text-xs text-ink border border-line rounded font-mono"
+              className="w-1/2 px-2.5 py-1.5 bg-surface text-xs text-ink border border-line rounded-lg font-mono focus:border-brand transition-colors"
               title="End date"
             />
           </div>
@@ -600,7 +600,7 @@ const AdminComplaintsPage = () => {
                 setSlaStatus(e.target.value);
                 setPagination((prev) => ({ ...prev, page: 1 }));
               }}
-              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand font-mono"
+              className="w-full px-3 py-2 bg-surface text-xs text-ink border border-line rounded-lg cursor-pointer focus:border-brand focus:ring-1 focus:ring-brand/30 font-mono transition-colors"
             >
               {SLA_STATUS_OPTIONS.map((sla) => (
                 <option key={sla.value} value={sla.value}>
@@ -618,7 +618,7 @@ const AdminComplaintsPage = () => {
                 setPrioritySource(e.target.value);
                 setPagination((prev) => ({ ...prev, page: 1 }));
               }}
-              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand font-mono"
+              className="w-full px-3 py-2 bg-surface text-xs text-ink border border-line rounded-lg cursor-pointer focus:border-brand focus:ring-1 focus:ring-brand/30 font-mono transition-colors"
             >
               {PRIORITY_SOURCE_OPTIONS.map((src) => (
                 <option key={src.value} value={src.value}>
@@ -636,7 +636,7 @@ const AdminComplaintsPage = () => {
                 setEscalated(e.target.value);
                 setPagination((prev) => ({ ...prev, page: 1 }));
               }}
-              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand font-mono"
+              className="w-full px-3 py-2 bg-surface text-xs text-ink border border-line rounded-lg cursor-pointer focus:border-brand focus:ring-1 focus:ring-brand/30 font-mono transition-colors"
             >
               {ESCALATED_OPTIONS.map((esc) => (
                 <option key={esc.value} value={esc.value}>
@@ -664,11 +664,11 @@ const AdminComplaintsPage = () => {
       </div>
 
       {/* Dense Administrative Table */}
-      <div className="border border-line rounded-lg bg-paper overflow-hidden shadow-sm">
+      <div className="border border-line rounded-xl bg-surface overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-line bg-line/20 text-muted font-mono uppercase text-[11px] tracking-wider">
+              <tr className="border-b border-line bg-subtle/50 text-muted font-mono uppercase text-[11px] tracking-wider">
                 <th className="py-3 px-4 font-medium">Ticket ID</th>
                 <th className="py-3 px-4 font-medium">Title & Location</th>
                 <th className="py-3 px-4 font-medium">Category</th>
@@ -852,9 +852,9 @@ const AdminComplaintsPage = () => {
       {/* Admin Action Drawer / Modal */}
       {selectedComplaint && (
         <div className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm flex justify-end animate-in fade-in duration-150">
-          <div className="w-full max-w-2xl bg-paper h-full shadow-2xl border-l border-line flex flex-col overflow-y-auto">
+          <div className="w-full max-w-2xl bg-surface h-full shadow-2xl border-l border-line flex flex-col overflow-y-auto">
             {/* Drawer Header */}
-            <div className="p-6 border-b border-line flex items-center justify-between sticky top-0 bg-paper z-10">
+            <div className="p-6 border-b border-line flex items-center justify-between sticky top-0 bg-surface z-10">
               <div className="flex items-center space-x-2">
                 <span className="text-xs font-mono text-muted uppercase">
                   Ticket #{selectedComplaint._id.slice(-6).toUpperCase()}
@@ -904,7 +904,7 @@ const AdminComplaintsPage = () => {
               </div>
 
               {/* Submitter Details */}
-              <div className="p-3.5 bg-paper/60 border border-line rounded-lg text-xs space-y-1">
+              <div className="p-3.5 bg-subtle/30 border border-line rounded-xl text-xs space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-muted font-mono uppercase text-[10px]">Logged By</span>
                   <span className="font-mono text-muted text-[11px]">
@@ -926,7 +926,7 @@ const AdminComplaintsPage = () => {
                 <h3 className="text-xs font-mono uppercase tracking-wider text-muted font-medium mb-1.5">
                   Detailed Complaint
                 </h3>
-                <p className="text-xs text-ink leading-relaxed p-3.5 rounded-lg bg-paper/40 border border-line whitespace-pre-line">
+                <p className="text-xs text-ink leading-relaxed p-3.5 rounded-xl bg-subtle/20 border border-line whitespace-pre-line">
                   {selectedComplaint.description}
                 </p>
               </div>

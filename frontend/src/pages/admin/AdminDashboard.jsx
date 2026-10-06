@@ -257,7 +257,7 @@ const AdminDashboard = () => {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
           {/* 1. Active Unresolved */}
-          <Card className="p-3.5 bg-paper/80">
+          <Card className="p-3.5 bg-surface border border-line">
             <div className="flex items-center justify-between text-muted">
               <span className="text-[10px] font-mono uppercase tracking-wider">Active</span>
               <Activity size={13} />
@@ -270,11 +270,11 @@ const AdminDashboard = () => {
 
           {/* 2. On-Track */}
           <Card className="p-3.5 bg-emerald-500/5 border-emerald-500/20">
-            <div className="flex items-center justify-between text-emerald-600">
+            <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
               <span className="text-[10px] font-mono uppercase tracking-wider font-medium">On Track</span>
               <CheckCircle2 size={13} />
             </div>
-            <div className="text-xl sm:text-2xl font-medium text-emerald-600 mt-1.5">
+            <div className="text-xl sm:text-2xl font-medium text-emerald-600 dark:text-emerald-400 mt-1.5">
               <AnimatedCounter value={slaMetrics.onTrack} />
             </div>
             <span className="text-[10px] font-mono text-muted mt-0.5 block truncate">&gt;25% SLA left</span>
@@ -317,7 +317,7 @@ const AdminDashboard = () => {
           </Card>
 
           {/* 6. Avg Resolution Time */}
-          <Card className="p-3.5 bg-paper/80">
+          <Card className="p-3.5 bg-surface border border-line">
             <div className="flex items-center justify-between text-muted">
               <span className="text-[10px] font-mono uppercase tracking-wider">Avg Resolution</span>
               <Clock size={13} />
@@ -329,7 +329,7 @@ const AdminDashboard = () => {
           </Card>
 
           {/* 7. SLA Compliance % */}
-          <Card className="p-3.5 bg-paper/80">
+          <Card className="p-3.5 bg-surface border border-line">
             <div className="flex items-center justify-between text-muted">
               <span className="text-[10px] font-mono uppercase tracking-wider">Compliance</span>
               <TrendingUp size={13} className="text-emerald-500" />
@@ -366,7 +366,7 @@ const AdminDashboard = () => {
                 <BarChart data={categoryBarData} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
                   <XAxis
                     dataKey="category"
-                    tick={{ fontSize: 11, fontFamily: 'Geist Mono', fill: 'var(--muted)' }}
+                    tick={{ fontSize: 11, fontFamily: 'Plus Jakarta Sans, sans-serif', fill: 'var(--muted)' }}
                     angle={-25}
                     textAnchor="end"
                     interval={0}
@@ -374,19 +374,21 @@ const AdminDashboard = () => {
                   />
                   <YAxis
                     allowDecimals={false}
-                    tick={{ fontSize: 11, fontFamily: 'Geist Mono', fill: 'var(--muted)' }}
+                    tick={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace', fill: 'var(--muted)' }}
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: 'var(--paper)',
+                      backgroundColor: 'var(--surface)',
                       borderColor: 'var(--line)',
-                      borderRadius: 4,
+                      borderRadius: 8,
                       fontSize: 12,
-                      fontFamily: 'Geist Mono',
+                      fontFamily: 'JetBrains Mono, monospace',
+                      color: 'var(--ink)',
+                      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
                     }}
-                    cursor={{ fill: 'rgba(61, 90, 128, 0.05)' }}
+                    cursor={{ fill: 'rgba(61, 90, 128, 0.08)' }}
                   />
-                  <Bar dataKey="count" radius={[2, 2, 0, 0]}>
+                  <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                     {categoryBarData.map((_, index) => (
                       <Cell key={`cell-${index}`} fill="var(--brand)" />
                     ))}
@@ -427,16 +429,18 @@ const AdminDashboard = () => {
                     dataKey="value"
                   >
                     {statusPieData.map((entry, index) => (
-                      <Cell key={`slice-${index}`} fill={entry.color} stroke="var(--paper)" strokeWidth={2} />
+                      <Cell key={`slice-${index}`} fill={entry.color} stroke="var(--surface)" strokeWidth={2} />
                     ))}
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: 'var(--paper)',
+                      backgroundColor: 'var(--surface)',
                       borderColor: 'var(--line)',
-                      borderRadius: 4,
+                      borderRadius: 8,
                       fontSize: 12,
-                      fontFamily: 'Geist Mono',
+                      fontFamily: 'JetBrains Mono, monospace',
+                      color: 'var(--ink)',
+                      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
                     }}
                   />
                   <Legend

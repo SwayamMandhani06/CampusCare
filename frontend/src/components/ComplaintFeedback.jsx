@@ -86,7 +86,7 @@ const ComplaintFeedback = ({ complaintId, existingFeedback, isOwner, onFeedbackS
   // If not resolved or user is not the owner student, show awaiting feedback banner
   if (!isOwner) {
     return (
-      <div className="p-4 rounded-lg border border-line bg-paper/40 text-left text-xs text-muted">
+      <div className="p-4 rounded-xl border border-line bg-subtle/30 text-left text-xs text-muted">
         <span className="font-mono text-[11px] uppercase tracking-wider block text-muted mb-1">
           Service Feedback
         </span>
@@ -97,7 +97,7 @@ const ComplaintFeedback = ({ complaintId, existingFeedback, isOwner, onFeedbackS
 
   // Student Rating Form
   return (
-    <form onSubmit={handleSubmit} className="p-5 rounded-lg border border-line bg-paper space-y-3.5 text-left">
+    <form onSubmit={handleSubmit} className="p-5 rounded-xl border border-line bg-surface space-y-3.5 text-left shadow-2xs">
       <div>
         <h4 className="text-xs font-mono uppercase tracking-wider text-ink font-medium">
           Rate Service Resolution
@@ -108,7 +108,7 @@ const ComplaintFeedback = ({ complaintId, existingFeedback, isOwner, onFeedbackS
       </div>
 
       {error && (
-        <div className="p-2.5 rounded bg-priority-critical/10 text-priority-critical text-xs flex items-center space-x-1.5">
+        <div className="p-2.5 rounded-lg bg-priority-critical/10 text-priority-critical text-xs flex items-center space-x-1.5 border border-priority-critical/20">
           <AlertCircle size={13} className="shrink-0" />
           <span>{error}</span>
         </div>
@@ -155,7 +155,7 @@ const ComplaintFeedback = ({ complaintId, existingFeedback, isOwner, onFeedbackS
           onChange={(e) => setComment(e.target.value)}
           placeholder="Share feedback on speed, quality, or technician conduct..."
           maxLength={500}
-          className="w-full px-3 py-2 text-xs text-ink bg-paper border border-line rounded-lg focus:outline-none focus:ring-1 focus:ring-brand resize-none placeholder:text-muted/60"
+          className="w-full px-3 py-2 text-xs text-ink bg-surface border border-line rounded-lg focus:outline-none focus:ring-1 focus:ring-brand/30 focus:border-brand resize-none placeholder:text-muted/60 transition-colors"
         />
       </div>
 

@@ -2,6 +2,7 @@ import React from 'react';
 
 /**
  * Select Component
+ * Refined dropdown surface with clear dark mode styling
  */
 const Select = ({
   label,
@@ -16,21 +17,23 @@ const Select = ({
   return (
     <div className="w-full flex flex-col space-y-1.5 text-left">
       {label && (
-        <label htmlFor={id} className="text-xs font-medium tracking-wide text-ink">
-          {label} {required && <span className="text-priority-critical">*</span>}
+        <label htmlFor={id} className="text-xs font-medium text-ink tracking-tight flex items-center justify-between">
+          <span>
+            {label} {required && <span className="text-priority-critical font-bold">*</span>}
+          </span>
         </label>
       )}
       <select
         id={id}
-        className={`w-full px-3 py-2 bg-paper text-sm text-ink border rounded transition-all duration-150 cursor-pointer ${
+        className={`w-full px-3.5 py-2.5 bg-surface text-sm text-ink border rounded-lg transition-all duration-150 cursor-pointer shadow-2xs ${
           error
-            ? 'border-priority-critical focus:border-priority-critical focus-visible:outline-priority-critical'
-            : 'border-line hover:border-muted/50 focus:border-brand focus-visible:outline-brand'
+            ? 'border-priority-critical focus:border-priority-critical focus-visible:outline-priority-critical focus:ring-1 focus:ring-priority-critical/30'
+            : 'border-line hover:border-line-strong focus:border-brand focus-visible:outline-brand focus:ring-1 focus:ring-brand/30'
         } ${className}`}
         {...props}
       >
         {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
+          <option key={opt.value} value={opt.value} className="bg-surface text-ink py-1">
             {opt.label}
           </option>
         ))}

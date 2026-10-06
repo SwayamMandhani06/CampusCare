@@ -165,9 +165,9 @@ const NotificationBell = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-lg bg-paper border border-line shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+        <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-xl bg-surface border border-line shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
           {/* Header */}
-          <div className="px-4 py-3 border-b border-line flex items-center justify-between bg-paper/90 backdrop-blur-sm">
+          <div className="px-4 py-3 border-b border-line flex items-center justify-between bg-surface/95 backdrop-blur-sm">
             <div className="flex items-center space-x-2">
               <span className="text-xs font-mono font-medium uppercase tracking-wider text-ink">
                 Notifications
@@ -242,7 +242,7 @@ const NotificationBell = () => {
           </div>
 
           {/* Footer */}
-          <div className="px-3 py-2 border-t border-line/60 bg-paper/60 text-center">
+          <div className="px-3 py-2 border-t border-line/60 bg-subtle/50 text-center">
             <span className="text-[10px] font-mono text-muted">
               Auto-syncs facility updates
             </span>

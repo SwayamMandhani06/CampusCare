@@ -37,7 +37,7 @@ const ThemeToggle = ({ className = '' }) => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-36 origin-top-right rounded-md bg-paper border border-line shadow-lg py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+        <div className="absolute right-0 mt-2 w-36 origin-top-right rounded-xl bg-surface border border-line shadow-xl py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
           <div className="px-3 py-1.5 border-b border-line/60">
             <span className="text-[10px] font-mono uppercase tracking-wider text-muted font-medium">
               Theme Mode

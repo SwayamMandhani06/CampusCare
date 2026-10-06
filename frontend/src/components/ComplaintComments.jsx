@@ -97,14 +97,14 @@ const ComplaintComments = ({ complaintId }) => {
         {loading ? (
           <LoadingSpinner label="Loading conversation..." size={16} className="py-6" />
         ) : comments.length === 0 ? (
-          <div className="p-6 rounded border border-dashed border-line text-center text-xs text-muted">
+          <div className="p-6 rounded-xl border border-dashed border-line bg-subtle/20 text-center text-xs text-muted">
             No discussion messages yet. You can communicate with facility staff here.
           </div>
         ) : (
           comments.map((comment) => (
             <div
               key={comment._id}
-              className="p-3.5 rounded-lg border border-line bg-paper/80 space-y-1.5 text-left"
+              className="p-3.5 rounded-xl border border-line bg-surface space-y-1.5 text-left shadow-2xs"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
@@ -126,7 +126,7 @@ const ComplaintComments = ({ complaintId }) => {
       {/* New Comment Input Form */}
       <form onSubmit={handleSubmit} className="pt-2 space-y-2">
         {error && (
-          <div className="p-2.5 rounded bg-priority-critical/10 text-priority-critical text-xs flex items-center space-x-1.5">
+          <div className="p-2.5 rounded-lg bg-priority-critical/10 text-priority-critical text-xs flex items-center space-x-1.5 border border-priority-critical/20">
             <AlertCircle size={13} className="shrink-0" />
             <span>{error}</span>
           </div>
@@ -140,7 +140,7 @@ const ComplaintComments = ({ complaintId }) => {
             placeholder="Type a message or response regarding this facility issue..."
             maxLength={1000}
             disabled={submitting}
-            className="w-full px-3 py-2 text-xs text-ink bg-paper border border-line rounded-lg focus:outline-none focus:ring-1 focus:ring-brand resize-none placeholder:text-muted/60"
+            className="w-full px-3 py-2 text-xs text-ink bg-surface border border-line rounded-lg focus:outline-none focus:ring-1 focus:ring-brand/30 focus:border-brand resize-none placeholder:text-muted/60 transition-colors"
           />
           <div className="absolute right-2.5 bottom-2.5 text-[10px] font-mono text-muted">
             {text.length}/1000

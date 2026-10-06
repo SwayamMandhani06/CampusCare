@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import Input from '../components/Button'; // will import real inputs
 import Button from '../components/Button';
 import Card from '../components/Card';
 import InputField from '../components/Input';

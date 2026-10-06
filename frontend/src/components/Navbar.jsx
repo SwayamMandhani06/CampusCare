@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Activity, LogOut, Menu, X, Shield, Wrench, GraduationCap } from 'lucide-react';
 import Button from './Button';
@@ -8,11 +8,12 @@ import NotificationBell from './NotificationBell';
 
 /**
  * Navbar Component
- * Minimalist header with wordmark in Geist medium and state-aware auth controls
+ * Minimalist header with wordmark and state-aware auth controls
  */
 const Navbar = ({ roleChip }) => {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
@@ -34,8 +35,10 @@ const Navbar = ({ roleChip }) => {
     return <GraduationCap size={14} className="text-brand" />;
   };
 
+  const isActive = (path) => location.pathname === path;
+
   return (
-    <header className="sticky top-0 z-40 w-full bg-paper/95 backdrop-blur-md border-b border-line">
+    <header className="sticky top-0 z-40 w-full bg-surface/90 backdrop-blur-md border-b border-line transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Brand / Wordmark */}
         <Link to="/" className="flex items-center space-x-2.5 group">
@@ -88,13 +91,17 @@ const Navbar = ({ roleChip }) => {
             <>
               <Link
                 to="/admin/complaints"
-                className="text-sm text-muted hover:text-ink transition-colors"
+                className={`text-sm transition-colors ${
+                  isActive('/admin/complaints') ? 'text-brand font-medium' : 'text-muted hover:text-ink'
+                }`}
               >
                 Complaints
               </Link>
               <Link
                 to="/admin/users"
-                className="text-sm text-muted hover:text-ink transition-colors"
+                className={`text-sm transition-colors ${
+                  isActive('/admin/users') ? 'text-brand font-medium' : 'text-muted hover:text-ink'
+                }`}
               >
                 Users & Staff
               </Link>
@@ -104,7 +111,9 @@ const Navbar = ({ roleChip }) => {
           {user?.role === 'staff' && (
             <Link
               to="/staff/tasks"
-              className="text-sm text-muted hover:text-ink transition-colors"
+              className={`text-sm transition-colors ${
+                isActive('/staff/tasks') ? 'text-brand font-medium' : 'text-muted hover:text-ink'
+              }`}
             >
               Assigned Tasks
             </Link>
@@ -113,7 +122,9 @@ const Navbar = ({ roleChip }) => {
           {user?.role === 'student' && (
             <Link
               to="/complaints"
-              className="text-sm text-muted hover:text-ink transition-colors"
+              className={`text-sm transition-colors ${
+                isActive('/complaints') ? 'text-brand font-medium' : 'text-muted hover:text-ink'
+              }`}
             >
               My Complaints
             </Link>
@@ -131,7 +142,7 @@ const Navbar = ({ roleChip }) => {
               <div className="flex items-center space-x-2">
                 <Link
                   to={getDashboardPath()}
-                  className="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-line/40 hover:bg-line/70 transition-colors text-xs font-mono text-ink"
+                  className="flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-subtle/60 hover:bg-subtle transition-colors text-xs font-mono text-ink border border-line"
                 >
                   {getRoleIcon()}
                   <span className="truncate max-w-[130px]">{user?.name || user?.email}</span>
@@ -187,7 +198,7 @@ const Navbar = ({ roleChip }) => {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-line bg-paper px-4 py-5 space-y-4 animate-in fade-in duration-150">
+        <div className="md:hidden border-b border-line bg-surface px-4 py-5 space-y-4 animate-in fade-in duration-150 shadow-lg">
           <div className="flex flex-col space-y-3">
             <button
               type="button"

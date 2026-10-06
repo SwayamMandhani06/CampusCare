@@ -239,10 +239,10 @@ const RaiseComplaintPage = () => {
                 id="category"
                 value={formData.category}
                 onChange={handleChange}
-                className="w-full px-3 py-2 bg-paper text-sm text-ink border border-line rounded transition-all duration-150 cursor-pointer focus:border-brand focus-visible:outline-brand"
+                className="w-full px-3.5 py-2.5 bg-surface text-sm text-ink border border-line rounded-lg transition-all duration-150 cursor-pointer focus:border-brand focus-visible:outline-brand hover:border-line-strong"
               >
                 {CATEGORIES.map((cat) => (
-                  <option key={cat.name} value={cat.name}>
+                  <option key={cat.name} value={cat.name} className="bg-surface text-ink">
                     {cat.name}
                   </option>
                 ))}
@@ -270,10 +270,10 @@ const RaiseComplaintPage = () => {
               id="priority"
               value={formData.priority}
               onChange={handleChange}
-              className="w-full px-3 py-2 bg-paper text-sm text-ink border border-line rounded transition-all duration-150 cursor-pointer focus:border-brand focus-visible:outline-brand font-mono text-xs"
+              className="w-full px-3.5 py-2.5 bg-surface text-sm text-ink border border-line rounded-lg transition-all duration-150 cursor-pointer focus:border-brand focus-visible:outline-brand hover:border-line-strong font-mono text-xs"
             >
               {PRIORITIES.map((p) => (
-                <option key={p.value} value={p.value}>
+                <option key={p.value} value={p.value} className="bg-surface text-ink">
                   [{p.value}] — {p.label}
                 </option>
               ))}
@@ -312,13 +312,13 @@ const RaiseComplaintPage = () => {
 
             {/* Upload Drop Zone / Picker */}
             {images.length < MAX_IMAGES && (
-              <label className="flex flex-col items-center justify-center p-4 border border-dashed border-line rounded-lg bg-paper hover:bg-line/20 transition-colors cursor-pointer group">
-                <Upload size={18} className="text-muted group-hover:text-brand transition-colors mb-1" />
+              <label className="flex flex-col items-center justify-center p-5 border border-dashed border-line rounded-xl bg-subtle/40 hover:bg-subtle transition-colors cursor-pointer group">
+                <Upload size={20} className="text-muted group-hover:text-brand transition-colors mb-1.5" />
                 <span className="text-xs font-medium text-ink">
                   Click to select photos from device
                 </span>
                 <span className="text-[10px] font-mono text-muted mt-0.5">
-                  Supported: JPG, PNG, WebP (Max 5 MB)
+                  Supported: JPG, PNG, WebP (Max 5 MB each)
                 </span>
                 <input
                   type="file"
@@ -336,9 +336,9 @@ const RaiseComplaintPage = () => {
                 {images.map((img, idx) => (
                   <div
                     key={idx}
-                    className="relative rounded-lg border border-line bg-paper/60 overflow-hidden group"
+                    className="relative rounded-xl border border-line bg-surface overflow-hidden group shadow-2xs"
                   >
-                    <div className="aspect-video w-full bg-line/20 overflow-hidden flex items-center justify-center">
+                    <div className="aspect-video w-full bg-subtle overflow-hidden flex items-center justify-center">
                       <img
                         src={img.previewUrl}
                         alt={img.name}
@@ -386,14 +386,14 @@ const RaiseComplaintPage = () => {
 
       {/* Duplicate Candidates Review Modal */}
       {showDuplicateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-paper border border-line rounded-lg shadow-xl max-w-xl w-full p-6 text-left max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface border border-line rounded-xl shadow-2xl max-w-xl w-full p-6 text-left max-h-[90vh] flex flex-col">
             <div className="flex items-center space-x-3 mb-4 pb-3 border-b border-line">
-              <div className="w-9 h-9 rounded bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 shrink-0">
+              <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 shrink-0">
                 <CopyCheck size={18} />
               </div>
               <div>
-                <h3 className="text-base font-medium text-ink">Similar Complaints Detected</h3>
+                <h3 className="text-base font-semibold text-ink">Similar Complaints Detected</h3>
                 <p className="text-xs text-muted">
                   We found active issues matching your location or keywords. You can review them to avoid duplicate submissions.
                 </p>
@@ -404,7 +404,7 @@ const RaiseComplaintPage = () => {
               {duplicateCandidates.map((c) => (
                 <div
                   key={c.id || c._id}
-                  className="p-3.5 bg-paper-subtle border border-line rounded-md hover:border-brand/40 transition-colors"
+                  className="p-3.5 bg-subtle/50 border border-line rounded-lg hover:border-brand/40 transition-colors"
                 >
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-600 font-medium">

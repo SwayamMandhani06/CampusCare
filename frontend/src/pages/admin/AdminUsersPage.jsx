@@ -71,15 +71,15 @@ const AdminUsersPage = () => {
       {/* Tabs & Search Toolbar */}
       <div className="my-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         {/* Role Tabs */}
-        <div className="flex items-center space-x-1 p-1 bg-paper border border-line rounded-lg w-fit">
+        <div className="flex items-center space-x-1 p-1 bg-surface border border-line rounded-xl w-fit shadow-2xs">
           <button
             onClick={() => {
               setActiveTab('student');
               setSearch('');
             }}
-            className={`inline-flex items-center space-x-2 px-4 py-2 text-xs font-mono rounded transition-colors ${
+            className={`inline-flex items-center space-x-2 px-4 py-2 text-xs font-mono rounded-lg transition-colors ${
               activeTab === 'student'
-                ? 'bg-ink text-paper font-medium'
+                ? 'bg-brand text-white font-medium shadow-xs'
                 : 'text-muted hover:text-ink'
             }`}
           >
@@ -91,9 +91,9 @@ const AdminUsersPage = () => {
               setActiveTab('staff');
               setSearch('');
             }}
-            className={`inline-flex items-center space-x-2 px-4 py-2 text-xs font-mono rounded transition-colors ${
+            className={`inline-flex items-center space-x-2 px-4 py-2 text-xs font-mono rounded-lg transition-colors ${
               activeTab === 'staff'
-                ? 'bg-ink text-paper font-medium'
+                ? 'bg-brand text-white font-medium shadow-xs'
                 : 'text-muted hover:text-ink'
             }`}
           >
@@ -110,17 +110,17 @@ const AdminUsersPage = () => {
             placeholder={`Search ${activeTab}s by name or email...`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 bg-paper text-xs text-ink border border-line rounded focus:border-brand focus-visible:outline-brand"
+            className="w-full pl-9 pr-3 py-2 bg-surface text-xs text-ink border border-line rounded-lg focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
           />
         </div>
       </div>
 
       {/* Users Dense Table */}
-      <div className="border border-line rounded-lg bg-paper overflow-hidden shadow-sm">
+      <div className="border border-line rounded-xl bg-surface overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-line bg-line/20 text-muted font-mono uppercase text-[11px] tracking-wider">
+              <tr className="border-b border-line bg-subtle/50 text-muted font-mono uppercase text-[11px] tracking-wider">
                 <th className="py-3 px-4 font-medium">User Details</th>
                 <th className="py-3 px-4 font-medium">Campus Email</th>
                 {activeTab === 'student' ? (

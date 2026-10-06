@@ -175,21 +175,21 @@ const MyComplaintsPage = () => {
       </div>
 
       {/* Filter Toolbar */}
-      <div className="my-6 p-4 bg-paper border border-line rounded-lg space-y-3">
+      <div className="my-6 p-4 sm:p-5 bg-surface border border-line rounded-xl space-y-3.5 shadow-xs">
         {/* Row 1: Search, Category, Status */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
           {/* Search Input */}
           <div className="md:col-span-6 relative">
             <Search
               size={15}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted"
             />
             <input
               type="text"
               placeholder="Search by title, location or description..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-paper text-xs text-ink border border-line rounded transition-all focus:border-brand focus-visible:outline-brand placeholder:text-muted/60"
+              className="w-full pl-9 pr-3.5 py-2.5 bg-surface text-xs text-ink border border-line rounded-lg transition-all focus:border-brand focus-visible:outline-brand hover:border-line-strong placeholder:text-muted/60"
             />
           </div>
 
@@ -198,11 +198,11 @@ const MyComplaintsPage = () => {
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand"
+              className="w-full px-3 py-2.5 bg-surface text-xs text-ink border border-line rounded-lg cursor-pointer focus:border-brand focus-visible:outline-brand hover:border-line-strong"
             >
-              <option value="">All Categories</option>
+              <option value="" className="bg-surface text-ink">All Categories</option>
               {CATEGORIES.map((c) => (
-                <option key={c.name} value={c.name}>
+                <option key={c.name} value={c.name} className="bg-surface text-ink">
                   {c.name}
                 </option>
               ))}
@@ -214,10 +214,10 @@ const MyComplaintsPage = () => {
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand font-mono"
+              className="w-full px-3 py-2.5 bg-surface text-xs text-ink border border-line rounded-lg cursor-pointer focus:border-brand focus-visible:outline-brand hover:border-line-strong font-mono"
             >
               {STATUS_OPTIONS.map((s) => (
-                <option key={s.value} value={s.value}>
+                <option key={s.value} value={s.value} className="bg-surface text-ink">
                   {s.label}
                 </option>
               ))}
@@ -232,10 +232,10 @@ const MyComplaintsPage = () => {
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
-              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand font-mono"
+              className="w-full px-3 py-2.5 bg-surface text-xs text-ink border border-line rounded-lg cursor-pointer focus:border-brand focus-visible:outline-brand hover:border-line-strong font-mono"
             >
               {PRIORITY_OPTIONS.map((p) => (
-                <option key={p.value} value={p.value}>
+                <option key={p.value} value={p.value} className="bg-surface text-ink">
                   {p.label}
                 </option>
               ))}
@@ -248,7 +248,7 @@ const MyComplaintsPage = () => {
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-1/2 px-2.5 py-1.5 bg-paper text-xs text-ink border border-line rounded font-mono"
+              className="w-1/2 px-2.5 py-2 bg-surface text-xs text-ink border border-line rounded-lg font-mono focus:border-brand"
               title="From date"
             />
             <span className="text-muted text-xs font-mono">to</span>
@@ -256,7 +256,7 @@ const MyComplaintsPage = () => {
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-1/2 px-2.5 py-1.5 bg-paper text-xs text-ink border border-line rounded font-mono"
+              className="w-1/2 px-2.5 py-2 bg-surface text-xs text-ink border border-line rounded-lg font-mono focus:border-brand"
               title="To date"
             />
           </div>
@@ -318,12 +318,12 @@ const MyComplaintsPage = () => {
         )
       ) : (
         /* Complaints List */
-        <div className="border border-line rounded-lg divide-y divide-line bg-paper overflow-hidden shadow-sm">
+        <div className="border border-line rounded-xl divide-y divide-line bg-surface overflow-hidden shadow-xs">
           {complaints.map((item) => (
             <Link
               key={item._id}
               to={`/complaints/${item._id}`}
-              className="p-4 sm:p-5 hover:bg-line/20 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
+              className="p-4 sm:p-5 hover:bg-subtle/50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
             >
               <div className="flex items-start space-x-3.5 min-w-0">
                 <div className="p-2.5 rounded bg-line/40 shrink-0 mt-0.5 text-muted group-hover:text-brand transition-colors">

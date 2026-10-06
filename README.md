@@ -634,9 +634,9 @@ FIRST_ESCALATION_AFTER_BREACH_MINUTES=0  # Delay before level 1 escalation (0 = 
 SECOND_ESCALATION_AFTER_BREACH_MINUTES=120 # Delay before level 2 persistent escalation (120m)
 ```
 
-### 🧪 Complete Automated Testing (228 Tests Passed)
+### 🧪 Complete Automated Testing (287 Tests Passed)
 
-Run the full end-to-end verification suite across all 5 suites:
+Run the full end-to-end verification suite across all 6 suites:
 
 ```bash
 cd backend
@@ -650,6 +650,7 @@ npm run test:complaints  # 49 complaint lifecycle tests
 npm run test:metrics     # 19 Prometheus observability tests
 npm run test:batch1      # 55 Batch 1 feature tests
 npm run test:batch2      # 77 Batch 2 Intelligent Priority & SLA tests
+npm run test:batch3      # 59 Batch 3 Real-time, AI, Duplicate & Staff Recs tests
 ```
 
 Frontend verification:
@@ -658,6 +659,87 @@ cd frontend
 npm run lint             # Oxlint verification (0 errors)
 npm run build            # Vite production build
 ```
+
+---
+
+## ⚡ CampusCare 2.0 Batch 3 & Auth Resilience
+
+CampusCare 2.0 Batch 3 elevates platform operations with low-latency real-time synchronization, provider-abstracted triage intelligence, explainable duplicate issue mitigation, and smart technician dispatching.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      CAMPUSCARE 2.0 BATCH 3 ARCHITECTURE                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  ⚡ Real-Time Socket.IO   │ JWT Handshake (Path: /api/socket.io)            │
+│                         │ Strict Room RBAC (Students own; Staff assigned) │
+├─────────────────────────┼─────────────────────────────────────────────────┤
+│  🤖 AI Triage & Fallback │ Provider Abstraction (AI_CLASSIFICATION_ENABLED)│
+│                         │ Zero-fail fallback to Rule-Based Priority       │
+│                         │ Mandatory Respect for Admin Manual Overrides    │
+├─────────────────────────┼─────────────────────────────────────────────────┤
+│  🔍 Duplicate Detection │ Explainable Jaccard + Category + Location Engine│
+│                         │ Bounded Active Lookup (30-day window)           │
+│                         │ Interactive Student Review Before Submission    │
+├─────────────────────────┼─────────────────────────────────────────────────┤
+│  🎯 Staff Recommendations│ Explainable Scoring (Trade 50%, Load 30%, SLA 20│
+│                         │ Ranked Dispatch Cards with One-Click Quick Assign│
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 🔐 Part A: Seeded Demo Authentication & Role Routing
+
+- **Root Cause Fix**: Eliminated duplicate bcrypt password hashing in Mongoose `pre('save')` via regex hash detection. Synchronized deterministic development credentials with idempotent verification using `user.matchPassword()`.
+- **401 Interceptor Protection**: Reconfigured Axios response interceptor to prevent wiping credentials on failed login submissions, ensuring clear feedback without redirect loops.
+- **Deterministic Password**: Managed via `SEED_DEMO_PASSWORD` environment variable (defaults to `CampusCare@2026`).
+- **Role Dashboard Redirects**:
+  - `STUDENT` $\to$ `/dashboard`
+  - `STAFF` $\to$ `/staff/dashboard`
+  - `ADMIN` $\to$ `/admin/dashboard`
+- **Seeded Demo Accounts**:
+  - **Admin**: `admin@pccoepune.org`
+  - **Staff Lead**: `staff@pccoepune.org`
+  - **Student**: `student@pccoepune.org` (and `aarav.sharma@pccoepune.org`)
+
+### ⚡ 1. Real-Time Complaint Status Updates (Socket.IO)
+- **Path & Transport**: Operates at `/api/socket.io` through Traefik Ingress without requiring separate port exposures.
+- **JWT Authentication**: WebSockets are authenticated on connection handshake using standard bearer tokens.
+- **Room RBAC**:
+  - `complaint:<id>`: Students may only join rooms for tickets they authored; staff may join rooms assigned to them; administrators can join any room.
+  - `user:<userId>`: Private notifications and assignment events.
+  - `admin_room`: Platform operational updates.
+- **Live Sync**: Real-time status changes, comments, timeline events, and priority overrides update dynamically with "LIVE" status indicator badges.
+
+### 🤖 2. AI-Assisted Complaint Classification
+- **Provider Abstraction**: Layered in `classificationService.js` supporting local heuristic simulation and future remote LLM providers.
+- **Default Disabled**: `AI_CLASSIFICATION_ENABLED=false` by default; deterministic rule-based priority engine remains fully authoritative.
+- **Zero-Failure Fallback**: Any provider timeout or network failure automatically falls back to deterministic classification without crashing.
+- **Admin Override Protection**: AI suggestions **never** override an administrator's manual priority override (`prioritySource === 'MANUAL'`).
+- **Audit Tracking**: Stores `classificationSource` (`RULE_BASED` / `AI` / `MANUAL`), `classificationConfidence`, `classificationKeywords`, and `classificationTimestamp`.
+
+### 🔍 3. Duplicate Complaint Detection
+- **Explainable Similarity**: Multi-factor scoring combining token Jaccard similarity (60%), location match (25%), and category match (15%).
+- **Bounded Candidate Pool**: Scans only recent active complaints within `DUPLICATE_LOOKBACK_DAYS` (default 30 days) to eliminate $O(n^2)$ database bottlenecks.
+- **Student Choice Flow**: Pre-submission check (`POST /api/complaints/check-duplicate`) displays matches in an interactive review modal, allowing students to inspect existing tickets, link duplicate, or proceed anyway.
+
+### 🎯 4. Smart Staff Recommendations
+- **Explainable Formula**:
+  $$\text{Score} = \text{Specialization (0-50 pts)} + \text{Workload Capacity (0-30 pts)} + \text{SLA Health (0-20 pts)}$$
+- **Ranked Dispatch**: Admin drawer displays ranked technician recommendations with score breakdowns and one-click "Quick Assign".
+
+### 📡 New REST APIs (Batch 3)
+
+| Method | Endpoint | Access | Description |
+|:---|:---|:---|:---|
+| `POST` | `/api/complaints/check-duplicate` | Authenticated | Pre-submission duplicate candidate search |
+| `GET` | `/api/admin/complaints/:id/staff-recommendations` | Admin only | Ranked staff recommendations with explainable scores |
+| `POST` | `/api/admin/complaints/:id/reclassify` | Admin only | Trigger AI-assisted reclassification |
+
+### 📊 Observability (Prometheus Metrics)
+- `campuscare_socket_connections_active`: Current active WebSocket client connections.
+- `campuscare_socket_events_total`: Total socket events classified by `event_type`.
+- `campuscare_ai_classification_requests_total`: AI classification calls by `provider` and `status`.
+- `campuscare_duplicate_checks_total`: Duplicate detection checks by `result`.
+- `campuscare_staff_recommendation_requests_total`: Total technician recommendation requests.
 
 ---
 

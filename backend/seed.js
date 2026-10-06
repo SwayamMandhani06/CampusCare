@@ -21,23 +21,32 @@ const { calculateSlaDeadlines, computeSlaStatus } = require('./services/slaServi
 
 dotenv.config();
 
-const DEFAULT_PASSWORD = process.env.DEMO_PASSWORD || 'Password@123';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin@12345';
-const STAFF_PASSWORD = process.env.STAFF_PASSWORD || 'Staff@12345';
-const STUDENT_PASSWORD = process.env.STUDENT_PASSWORD || 'Student@12345';
+const DEFAULT_DEMO_PASS = 'CampusCare@2026';
+const SEED_DEMO_PASSWORD = process.env.SEED_DEMO_PASSWORD || process.env.DEMO_PASSWORD || DEFAULT_DEMO_PASS;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || SEED_DEMO_PASSWORD;
+const STAFF_PASSWORD = process.env.STAFF_PASSWORD || SEED_DEMO_PASSWORD;
+const STUDENT_PASSWORD = process.env.STUDENT_PASSWORD || SEED_DEMO_PASSWORD;
 
 const upsertUser = async ({ name, email, password, role, studentId = null }) => {
-  let user = await User.findOne({ email });
+  const normalizedEmail = email.toLowerCase().trim();
+  let user = await User.findOne({ email: normalizedEmail }).select('+password');
   if (!user) {
-    user = await User.create({ name, email, password, role, studentId });
-    console.log(`[Seed:User] Created ${role.toUpperCase()}: ${email}`);
+    user = await User.create({ name, email: normalizedEmail, password, role, studentId });
+    console.log(`[Seed:User] Created ${role.toUpperCase()}: ${normalizedEmail}`);
   } else {
     user.name = name;
-    user.password = password;
     user.role = role;
     if (studentId) user.studentId = studentId;
-    await user.save();
-    console.log(`[Seed:User] Synced ${role.toUpperCase()}: ${email}`);
+
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      user.password = password;
+      await user.save();
+      console.log(`[Seed:User] Updated credentials for ${role.toUpperCase()}: ${normalizedEmail}`);
+    } else {
+      await user.save();
+      console.log(`[Seed:User] Synced ${role.toUpperCase()}: ${normalizedEmail}`);
+    }
   }
   return user;
 };
@@ -49,15 +58,21 @@ const seedDemonstrationData = async () => {
     console.log(`[Seed] Connecting to MongoDB at: ${mongoUri}`);
 
     try {
-      await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 2000 });
+      await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 4000 });
       console.log('[Seed] Database connected successfully.');
     } catch (connErr) {
-      console.warn(`[Seed] Direct connection failed (${connErr.message}). Using MongoMemoryServer fallback for demo verification...`);
-      const { MongoMemoryServer } = require('mongodb-memory-server');
-      mongod = await MongoMemoryServer.create();
-      mongoUri = mongod.getUri();
-      console.log(`[Seed] Connected to in-memory MongoDB at: ${mongoUri}`);
-      await mongoose.connect(mongoUri);
+      if (process.env.NODE_ENV === 'test' || process.env.ALLOW_IN_MEMORY_DB === 'true') {
+        console.warn(`[Seed] Direct connection failed (${connErr.message}). Using MongoMemoryServer fallback for verification...`);
+        const { MongoMemoryServer } = require('mongodb-memory-server');
+        mongod = await MongoMemoryServer.create();
+        mongoUri = mongod.getUri();
+        console.log(`[Seed] Connected to in-memory MongoDB at: ${mongoUri}`);
+        await mongoose.connect(mongoUri);
+      } else {
+        console.error(`[Seed FATAL] Cannot connect to MongoDB at ${mongoUri}: ${connErr.message}`);
+        console.error(`[Seed FATAL] Ensure MongoDB is running or set MONGO_URI appropriately.`);
+        throw connErr;
+      }
     }
 
     // -------------------------------------------------------------
@@ -137,9 +152,10 @@ const seedDemonstrationData = async () => {
     });
 
     // -------------------------------------------------------------
-    // 3. Seed Students (12 accounts)
+    // 3. Seed Students (13 accounts: 1 canonical demo student + 12 diverse students)
     // -------------------------------------------------------------
     const studentsData = [
+      { name: 'Campus Demo Student', email: 'student@pccoepune.org', studentId: '123B1B200' },
       { name: 'Aarav Sharma', email: 'aarav.sharma@pccoepune.org', studentId: '123B1B201' },
       { name: 'Neha Patil', email: 'neha.patil@pccoepune.org', studentId: '123B1B202' },
       { name: 'Rohan Deshmukh', email: 'rohan.deshmukh@pccoepune.org', studentId: '123B1B203' },

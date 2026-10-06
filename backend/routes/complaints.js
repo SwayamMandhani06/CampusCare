@@ -7,6 +7,7 @@ const router = express.Router();
 
 const {
   createComplaint,
+  checkDuplicateComplaint,
   getMyComplaints,
   getComplaintById,
   updateComplaint,
@@ -22,6 +23,9 @@ const { complaintUploadMiddleware } = require('../utils/upload');
 
 // All complaint routes require being logged in
 router.use(protect);
+
+// Pre-submission duplicate analysis
+router.post('/check-duplicate', checkDuplicateComplaint);
 
 // CSV Export (Must be placed before /:id)
 router.get('/export', exportMyComplaintsCsv);

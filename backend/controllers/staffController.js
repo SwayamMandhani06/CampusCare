@@ -6,6 +6,7 @@ const Complaint = require('../models/Complaint');
 const notificationService = require('../utils/notificationService');
 const { formatComplaintsCsv } = require('../utils/csvExport');
 const { recordFirstResponse, recordResolution } = require('../services/slaService');
+const { notifyComplaintUpdated } = require('../services/socketService');
 
 /**
  * @desc    Get all complaints assigned to logged-in staff with advanced filtering
@@ -193,6 +194,9 @@ const updateTaskStatus = async (req, res) => {
       );
     }
 
+    // Broadcast real-time WebSocket update
+    notifyComplaintUpdated(populatedComplaint, 'STATUS_CHANGED');
+
     return res.status(200).json({
       success: true,
       message: `Task status updated to ${upperStatus}`,
@@ -301,6 +305,9 @@ const resolveTask = async (req, res) => {
       populatedComplaint.createdBy,
       complaint.resolutionNotes
     );
+
+    // Broadcast real-time WebSocket update
+    notifyComplaintUpdated(populatedComplaint, 'RESOLVED');
 
     return res.status(200).json({
       success: true,

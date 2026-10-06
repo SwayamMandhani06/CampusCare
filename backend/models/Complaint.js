@@ -119,6 +119,8 @@ const activityTimelineSchema = new mongoose.Schema(
         'SLA_BREACHED',
         'COMPLAINT_ESCALATED',
         'SLA_RESOLVED',
+        'AI_RECLASSIFIED',
+        'DUPLICATE_FLAGGED',
         'COMMENT_ADDED',
         'RESOLVED',
         'FEEDBACK_SUBMITTED',
@@ -322,6 +324,46 @@ const complaintSchema = new mongoose.Schema(
       type: slaTrackingSchema,
       default: () => ({}),
     },
+    // Batch 3: AI-Assisted Classification Metadata
+    classificationSource: {
+      type: String,
+      enum: ['RULE_BASED', 'AI', 'MANUAL'],
+      default: 'RULE_BASED',
+    },
+    classificationConfidence: {
+      type: Number,
+      default: 1.0,
+    },
+    classificationKeywords: {
+      type: [String],
+      default: [],
+    },
+    classificationTimestamp: {
+      type: Date,
+      default: null,
+    },
+    classificationProvider: {
+      type: String,
+      default: 'deterministic',
+    },
+    // Batch 3: Duplicate Complaint Detection Metadata
+    duplicateDetected: {
+      type: Boolean,
+      default: false,
+    },
+    duplicateOf: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Complaint',
+      default: null,
+    },
+    duplicateSimilarityScore: {
+      type: Number,
+      default: 0,
+    },
+    duplicateMatchReason: {
+      type: String,
+      default: '',
+    },
   },
   {
     timestamps: true, // Automatically manages createdAt and updatedAt
@@ -339,6 +381,9 @@ complaintSchema.index({ createdAt: -1 });
 complaintSchema.index({ 'sla.status': 1, status: 1 });
 complaintSchema.index({ 'sla.resolutionDeadline': 1 });
 complaintSchema.index({ 'sla.escalated': 1 });
+complaintSchema.index({ classificationSource: 1 });
+complaintSchema.index({ duplicateDetected: 1 });
+complaintSchema.index({ duplicateOf: 1 });
 
 // Helpful constants exported alongside model
 complaintSchema.statics.categories = allowedCategories;

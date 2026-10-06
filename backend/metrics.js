@@ -55,6 +55,39 @@ const campuscareSlaEscalationsTotal = new promClient.Counter({
   labelNames: ['level'],
 });
 
+// Batch 3: Socket.IO Active Connections Gauge
+const campuscareSocketConnectionsActive = new promClient.Gauge({
+  name: 'campuscare_socket_connections_active',
+  help: 'Number of currently active Socket.IO connections',
+});
+
+// Batch 3: Socket.IO Events Counter
+const campuscareSocketEventsTotal = new promClient.Counter({
+  name: 'campuscare_socket_events_total',
+  help: 'Total Socket.IO events dispatched or received',
+  labelNames: ['event_type'],
+});
+
+// Batch 3: AI Classification Requests Counter
+const campuscareAiClassificationRequestsTotal = new promClient.Counter({
+  name: 'campuscare_ai_classification_requests_total',
+  help: 'Total number of AI complaint classification requests',
+  labelNames: ['provider', 'status'],
+});
+
+// Batch 3: Duplicate Complaint Detection Counter
+const campuscareDuplicateChecksTotal = new promClient.Counter({
+  name: 'campuscare_duplicate_checks_total',
+  help: 'Total duplicate complaint checks performed',
+  labelNames: ['result'],
+});
+
+// Batch 3: Staff Recommendation Requests Counter
+const campuscareStaffRecommendationRequestsTotal = new promClient.Counter({
+  name: 'campuscare_staff_recommendation_requests_total',
+  help: 'Total requests for smart staff recommendations',
+});
+
 /**
  * Normalizes request paths to safe, low-cardinality route patterns.
  * Prevents URL parameter pollution (e.g. user IDs, complaint IDs, tokens) in Prometheus labels.
@@ -127,6 +160,11 @@ module.exports = {
   campuscareSlaAtRiskTotal,
   campuscareSlaBreachedTotal,
   campuscareSlaEscalationsTotal,
+  campuscareSocketConnectionsActive,
+  campuscareSocketEventsTotal,
+  campuscareAiClassificationRequestsTotal,
+  campuscareDuplicateChecksTotal,
+  campuscareStaffRecommendationRequestsTotal,
   metricsMiddleware,
   metricsHandler,
   normalizeRoute,

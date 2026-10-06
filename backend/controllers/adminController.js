@@ -12,6 +12,9 @@ const {
   recordResolution,
   computeSlaStatus,
 } = require('../services/slaService');
+const { notifyComplaintUpdated } = require('../services/socketService');
+const { recommendStaffForComplaint } = require('../services/staffRecommendationService');
+const { classifyComplaint } = require('../services/classificationService');
 
 /**
  * @desc    Get dashboard metrics and analytics
@@ -334,6 +337,9 @@ const assignStaff = async (req, res) => {
       populatedComplaint.createdBy
     );
 
+    // Broadcast real-time WebSocket update
+    notifyComplaintUpdated(populatedComplaint, 'ASSIGNED', { assignedTo: staffUser });
+
     return res.status(200).json({
       success: true,
       message: `Complaint successfully assigned to ${staffUser.name}`,
@@ -511,6 +517,9 @@ const updateComplaintStatus = async (req, res) => {
         : status
         ? `Status updated to ${status}`
         : `Priority updated to ${priority}`;
+
+    // Broadcast real-time WebSocket update
+    notifyComplaintUpdated(populatedComplaint, 'STATUS_CHANGED');
 
     return res.status(200).json({
       success: true,
@@ -707,6 +716,13 @@ const updateComplaintPriority = async (req, res) => {
       reason.trim()
     );
 
+    // Broadcast real-time WebSocket update
+    notifyComplaintUpdated(populatedComplaint, 'PRIORITY_CHANGED', {
+      oldPriority,
+      newPriority: upperPriority,
+      reason: reason.trim(),
+    });
+
     return res.status(200).json({
       success: true,
       message: `Priority updated to ${upperPriority} successfully`,
@@ -728,12 +744,134 @@ const updateComplaintPriority = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Generate explainable smart staff recommendations for a complaint
+ * @route   GET /api/admin/complaints/:id/staff-recommendations
+ * @access  Private (Admin only)
+ */
+const getStaffRecommendations = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const complaint = await Complaint.findById(id);
+    if (!complaint) {
+      return res.status(404).json({
+        success: false,
+        message: 'Complaint not found',
+      });
+    }
+
+    const recommendations = await recommendStaffForComplaint(complaint);
+
+    return res.status(200).json({
+      success: true,
+      complaintId: complaint._id,
+      category: complaint.category,
+      priority: complaint.priority,
+      recommendations,
+    });
+  } catch (error) {
+    console.error(`[Staff Recommendations Error] ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error generating staff recommendations',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Trigger AI-assisted reclassification for a complaint
+ * @route   POST /api/admin/complaints/:id/reclassify
+ * @access  Private (Admin only)
+ */
+const reclassifyComplaint = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const complaint = await Complaint.findById(id);
+    if (!complaint) {
+      return res.status(404).json({
+        success: false,
+        message: 'Complaint not found',
+      });
+    }
+
+    const aiResult = await classifyComplaint({
+      title: complaint.title,
+      description: complaint.description,
+      category: complaint.category,
+      location: complaint.location,
+    });
+
+    const now = new Date();
+    complaint.classificationSource = aiResult.classificationSource;
+    complaint.classificationConfidence = aiResult.confidence;
+    complaint.classificationKeywords = aiResult.classificationKeywords || [];
+    complaint.classificationTimestamp = now;
+    complaint.classificationProvider = aiResult.classificationProvider;
+
+    let message = '';
+    // Security check: NEVER override an explicit manual priority decision by an admin
+    if (complaint.prioritySource === 'MANUAL') {
+      message = 'AI reclassification metadata updated. Manual priority override was preserved.';
+    } else {
+      const oldPriority = complaint.priority;
+      complaint.priority = aiResult.priority;
+      complaint.priorityReason = aiResult.reason;
+      complaint.priorityUpdatedAt = now;
+      complaint.sla = calculateSlaDeadlines(aiResult.priority, complaint.createdAt, complaint.sla);
+
+      complaint.activityTimeline.push({
+        eventType: 'AI_RECLASSIFIED',
+        actor: req.user._id,
+        actorName: `${req.user.name} (via AI Engine)`,
+        actorRole: 'admin',
+        message: `Issue reclassified by AI to ${aiResult.priority}: ${aiResult.reason}`,
+        timestamp: now,
+        metadata: {
+          previousPriority: oldPriority,
+          newPriority: aiResult.priority,
+          confidence: aiResult.confidence,
+          provider: aiResult.classificationProvider,
+        },
+      });
+
+      message = `Complaint successfully reclassified to ${aiResult.priority} via ${aiResult.classificationProvider}`;
+    }
+
+    await complaint.save();
+
+    const populatedComplaint = await Complaint.findById(id)
+      .populate('createdBy', 'name email studentId role')
+      .populate('assignedTo', 'name email role')
+      .populate('statusHistory.changedBy', 'name email role')
+      .populate('activityTimeline.actor', 'name email role');
+
+    notifyComplaintUpdated(populatedComplaint, 'AI_RECLASSIFIED');
+
+    return res.status(200).json({
+      success: true,
+      message,
+      classification: aiResult,
+      complaint: populatedComplaint,
+    });
+  } catch (error) {
+    console.error(`[Reclassify Complaint Error] ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error reclassifying complaint',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getAdminDashboard,
   getAllComplaints,
   assignStaff,
   updateComplaintStatus,
   updateComplaintPriority,
+  getStaffRecommendations,
+  reclassifyComplaint,
   getAllUsers,
   exportAdminComplaintsCsv,
 };

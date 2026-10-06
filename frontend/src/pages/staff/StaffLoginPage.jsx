@@ -8,7 +8,7 @@ import InputField from '../../components/Input';
 import { Wrench, ArrowLeft, AlertCircle, KeyRound } from 'lucide-react';
 
 const StaffLoginPage = () => {
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
@@ -30,6 +30,7 @@ const StaffLoginPage = () => {
       const user = await login(email.trim(), password);
 
       if (user.role !== 'staff') {
+        logout();
         setError('Access restricted: This portal is reserved for campus facility staff.');
         return;
       }
@@ -120,6 +121,21 @@ const StaffLoginPage = () => {
               >
                 Sign In to Work Orders
               </Button>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('staff@pccoepune.org');
+                  setPassword('CampusCare@2026');
+                  if (error) setError('');
+                }}
+                className="w-full py-2 px-3 text-xs font-mono text-muted hover:text-ink bg-line/20 hover:bg-line/40 rounded border border-line/60 transition-colors flex items-center justify-center space-x-2"
+              >
+                <KeyRound size={12} className="text-status-assigned" />
+                <span>Quick Fill Demo Staff</span>
+              </button>
             </div>
           </form>
 

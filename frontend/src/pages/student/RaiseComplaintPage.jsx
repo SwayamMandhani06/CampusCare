@@ -6,7 +6,7 @@ import Button from '../../components/Button';
 import Input from '../../components/Input';
 import Textarea from '../../components/Textarea';
 import { CATEGORIES } from '../../utils/categoryIcons';
-import { ArrowLeft, PlusCircle, AlertCircle, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, PlusCircle, AlertCircle, Upload, X, CopyCheck, ExternalLink } from 'lucide-react';
 
 const PRIORITIES = [
   { value: 'LOW', label: 'Low — Minor issue, minimal impact', dotColor: 'var(--priority-low)' },
@@ -41,6 +41,10 @@ const RaiseComplaintPage = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState('');
+
+  // Batch 3: Duplicate detection candidate state
+  const [duplicateCandidates, setDuplicateCandidates] = useState([]);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -80,7 +84,6 @@ const RaiseComplaintPage = () => {
     }
 
     setImages((prev) => [...prev, ...validNewImages]);
-    // Reset file input value so same file can be picked again if removed
     e.target.value = '';
   };
 
@@ -110,14 +113,7 @@ const RaiseComplaintPage = () => {
     return errs;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const validationErrors = validate();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
+  const executeSubmission = async (duplicateOverride = null) => {
     setLoading(true);
     setApiError('');
 
@@ -128,6 +124,11 @@ const RaiseComplaintPage = () => {
       payload.append('location', formData.location.trim());
       payload.append('priority', formData.priority);
       payload.append('description', formData.description.trim());
+
+      const dupId = duplicateOverride || selectedDuplicateOf;
+      if (dupId) {
+        payload.append('duplicateOf', dupId);
+      }
 
       for (const img of images) {
         payload.append('images', img.file);
@@ -148,7 +149,42 @@ const RaiseComplaintPage = () => {
       );
     } finally {
       setLoading(false);
+      setShowDuplicateModal(false);
     }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    setLoading(true);
+    setApiError('');
+
+    // Pre-submission duplicate check
+    try {
+      const dupRes = await api.post('/complaints/check-duplicate', {
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        category: formData.category,
+        location: formData.location.trim(),
+      });
+
+      if (dupRes.data && dupRes.data.duplicateDetected && dupRes.data.candidates.length > 0) {
+        setDuplicateCandidates(dupRes.data.candidates);
+        setShowDuplicateModal(true);
+        setLoading(false);
+        return; // Intercept for student decision
+      }
+    } catch (checkErr) {
+      console.warn('[Duplicate Check] Non-blocking check failed:', checkErr.message);
+    }
+
+    // If no duplicate candidates found, proceed directly with submission
+    await executeSubmission();
   };
 
   return (
@@ -347,6 +383,81 @@ const RaiseComplaintPage = () => {
           </div>
         </form>
       </Card>
+
+      {/* Duplicate Candidates Review Modal */}
+      {showDuplicateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-paper border border-line rounded-lg shadow-xl max-w-xl w-full p-6 text-left max-h-[90vh] flex flex-col">
+            <div className="flex items-center space-x-3 mb-4 pb-3 border-b border-line">
+              <div className="w-9 h-9 rounded bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 shrink-0">
+                <CopyCheck size={18} />
+              </div>
+              <div>
+                <h3 className="text-base font-medium text-ink">Similar Complaints Detected</h3>
+                <p className="text-xs text-muted">
+                  We found active issues matching your location or keywords. You can review them to avoid duplicate submissions.
+                </p>
+              </div>
+            </div>
+
+            <div className="overflow-y-auto space-y-3 flex-grow my-2 pr-1">
+              {duplicateCandidates.map((c) => (
+                <div
+                  key={c.id || c._id}
+                  className="p-3.5 bg-paper-subtle border border-line rounded-md hover:border-brand/40 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-600 font-medium">
+                      {Math.round(c.similarityScore * 100)}% Match
+                    </span>
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-line/40 text-muted uppercase">
+                      {c.status}
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-medium text-ink line-clamp-1">{c.title}</h4>
+                  <p className="text-xs text-muted mt-1 font-mono text-[11px]">{c.location} • {c.category}</p>
+                  <p className="text-xs text-muted/90 mt-1 italic">{c.matchReason}</p>
+                  <div className="mt-2.5 pt-2 border-t border-line/60 flex items-center justify-between">
+                    <a
+                      href={`/complaints/${c.id || c._id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-brand hover:underline inline-flex items-center space-x-1"
+                    >
+                      <span>View existing ticket</span>
+                      <ExternalLink size={12} />
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => executeSubmission(c.id || c._id)}
+                      className="text-xs font-mono px-2 py-1 bg-brand/10 hover:bg-brand/20 text-brand rounded transition-colors"
+                    >
+                      Link as Duplicate & Submit
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-4 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-3 mt-2">
+              <Button
+                variant="secondary"
+                onClick={() => setShowDuplicateModal(false)}
+                className="w-full sm:w-auto"
+              >
+                Go Back & Edit
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => executeSubmission()}
+                className="w-full sm:w-auto"
+              >
+                This is a Different Issue — Proceed
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

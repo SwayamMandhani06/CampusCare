@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
+import { getSocket } from '../../services/socket';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Textarea from '../../components/Textarea';
@@ -75,6 +76,9 @@ const StaffTasksPage = () => {
   const [actionSuccess, setActionSuccess] = useState('');
   const [actionError, setActionError] = useState('');
 
+  // Live socket state
+  const [isLive, setIsLive] = useState(false);
+
   // Debounce search
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -82,6 +86,65 @@ const StaffTasksPage = () => {
     }, 300);
     return () => clearTimeout(handler);
   }, [search]);
+
+  // Real-time socket events for technician workbench
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    const handleConnect = () => setIsLive(true);
+    const handleDisconnect = () => setIsLive(false);
+
+    if (socket.connected) {
+      setIsLive(true);
+    }
+
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+
+    const handleTaskUpdated = (data) => {
+      if (!data || !data.complaint) return;
+      const updated = data.complaint;
+      setTasks((prev) => {
+        const index = prev.findIndex((t) => t._id === updated._id);
+        if (index >= 0) {
+          const clone = [...prev];
+          clone[index] = { ...clone[index], ...updated };
+          return clone;
+        }
+        return [updated, ...prev];
+      });
+
+      setSelectedTask((current) => {
+        if (current && current._id === updated._id) {
+          return { ...current, ...updated };
+        }
+        return current;
+      });
+    };
+
+    socket.on('complaint_updated', handleTaskUpdated);
+    socket.on('staff_task_updated', handleTaskUpdated);
+
+    return () => {
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+      socket.off('complaint_updated', handleTaskUpdated);
+      socket.off('staff_task_updated', handleTaskUpdated);
+    };
+  }, []);
+
+  // Room subscription for currently selected task
+  useEffect(() => {
+    if (!selectedTask?._id) return;
+    const socket = getSocket();
+    if (!socket) return;
+
+    socket.emit('join_complaint', selectedTask._id);
+    return () => {
+      socket.emit('leave_complaint', selectedTask._id);
+    };
+  }, [selectedTask?._id]);
 
   const fetchTasks = async () => {
     setLoading(true);
@@ -235,9 +298,17 @@ const StaffTasksPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-line gap-4">
         <div>
-          <span className="text-xs font-mono uppercase text-muted tracking-wider">
-            Technician Workbench
-          </span>
+          <div className="flex items-center space-x-2">
+            <span className="text-xs font-mono uppercase text-muted tracking-wider">
+              Technician Workbench
+            </span>
+            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono border ${
+              isLive ? 'bg-success/10 text-success border-success/30' : 'bg-line/20 text-muted border-line'
+            }`}>
+              <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${isLive ? 'bg-success animate-pulse' : 'bg-muted'}`} />
+              {isLive ? 'LIVE' : 'SYNCED'}
+            </span>
+          </div>
           <h1 className="text-2xl sm:text-3xl font-medium tracking-tight text-ink mt-0.5">
             Assigned Work Orders
           </h1>

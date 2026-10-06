@@ -16,6 +16,7 @@ const {
   campuscareSlaBreachedTotal,
   campuscareSlaEscalationsTotal,
 } = require('../metrics');
+const { notifyComplaintUpdated } = require('./socketService');
 
 const LEASE_KEY = 'sla-monitoring-lease';
 const LEASE_DURATION_MS = 50 * 1000; // 50 seconds lease
@@ -265,6 +266,7 @@ async function runSlaCheckOnce(options = {}) {
 
       if (isModified) {
         await complaint.save();
+        notifyComplaintUpdated(complaint, 'SLA_STATUS_UPDATED');
       }
     }
   } catch (error) {

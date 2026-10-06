@@ -31,14 +31,33 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Clear invalid credentials
-      localStorage.removeItem('campuscare_token');
-      localStorage.removeItem('campuscare_user');
+      const requestUrl = error.config?.url || '';
+      const isAuthEndpoint =
+        requestUrl.includes('/auth/login') ||
+        requestUrl.includes('/auth/register');
 
-      // Only redirect if not already on /login or /register
-      const currentPath = window.location.pathname;
-      if (currentPath !== '/login' && currentPath !== '/register' && currentPath !== '/') {
-        window.location.href = '/login';
+      // Never wipe credentials or redirect if the request that returned 401 was the login/register attempt itself
+      if (!isAuthEndpoint) {
+        localStorage.removeItem('campuscare_token');
+        localStorage.removeItem('campuscare_user');
+
+        const currentPath = window.location.pathname;
+        const isAuthPage =
+          currentPath === '/login' ||
+          currentPath === '/register' ||
+          currentPath === '/admin/login' ||
+          currentPath === '/staff/login' ||
+          currentPath === '/';
+
+        if (!isAuthPage) {
+          if (currentPath.startsWith('/admin')) {
+            window.location.href = '/admin/login';
+          } else if (currentPath.startsWith('/staff')) {
+            window.location.href = '/staff/login';
+          } else {
+            window.location.href = '/login';
+          }
+        }
       }
     }
     return Promise.reject(error);

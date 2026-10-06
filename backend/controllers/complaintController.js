@@ -13,6 +13,9 @@ const { formatComplaintsCsv } = require('../utils/csvExport');
 const { UPLOAD_DIR } = require('../utils/upload');
 const { evaluatePriority } = require('../services/priorityService');
 const { calculateSlaDeadlines, recordFirstResponse, computeSlaStatus } = require('../services/slaService');
+const { classifyComplaint } = require('../services/classificationService');
+const { findDuplicateCandidates } = require('../services/duplicateDetectionService');
+const { notifyComplaintUpdated } = require('../services/socketService');
 
 /**
  * @desc    Create a new complaint (supports JSON & multipart/form-data with images)
@@ -50,13 +53,34 @@ const createComplaint = async (req, res) => {
 
     const now = new Date();
 
-    // Run deterministic rule-based priority evaluation
-    const evaluated = evaluatePriority({ title, description, category, location });
-    const finalPriority = (priority && req.user.role === 'admin') ? priority.toUpperCase() : evaluated.priority;
+    // 1. Run AI-assisted or rule-based classification
+    const classification = await classifyComplaint({ title, description, category, location });
+    const finalPriority = (priority && req.user.role === 'admin') ? priority.toUpperCase() : classification.priority;
     const finalPrioritySource = (priority && req.user.role === 'admin') ? 'MANUAL' : 'AUTOMATIC';
     const finalPriorityReason = finalPrioritySource === 'MANUAL'
       ? 'Initial manual priority assignment by administrator.'
-      : evaluated.priorityReason;
+      : classification.reason;
+
+    // 2. Duplicate Detection Check
+    let duplicateDetected = false;
+    let duplicateOf = null;
+    let duplicateSimilarityScore = 0;
+    let duplicateMatchReason = '';
+
+    if (req.body.duplicateOf) {
+      duplicateDetected = true;
+      duplicateOf = req.body.duplicateOf;
+      duplicateMatchReason = req.body.duplicateMatchReason || 'Acknowledged by student upon submission';
+      duplicateSimilarityScore = req.body.duplicateSimilarityScore || 0.85;
+    } else {
+      const dupCheck = await findDuplicateCandidates({ title, description, category, location });
+      if (dupCheck.duplicateDetected && dupCheck.candidates.length > 0) {
+        duplicateDetected = true;
+        duplicateOf = dupCheck.candidates[0]._id;
+        duplicateSimilarityScore = dupCheck.candidates[0].similarityScore;
+        duplicateMatchReason = dupCheck.candidates[0].matchReason;
+      }
+    }
 
     // Calculate initial SLA deadlines and targets
     const initialSla = calculateSlaDeadlines(finalPriority, now);
@@ -73,6 +97,15 @@ const createComplaint = async (req, res) => {
       priorityUpdatedAt: now,
       priorityUpdatedBy: finalPrioritySource === 'MANUAL' ? req.user._id : null,
       sla: initialSla,
+      classificationSource: classification.classificationSource,
+      classificationConfidence: classification.confidence,
+      classificationKeywords: classification.classificationKeywords,
+      classificationTimestamp: now,
+      classificationProvider: classification.classificationProvider,
+      duplicateDetected,
+      duplicateOf,
+      duplicateSimilarityScore,
+      duplicateMatchReason,
       status: 'PENDING',
       createdBy: req.user._id,
       assignedTo: null,
@@ -100,11 +133,16 @@ const createComplaint = async (req, res) => {
         },
         {
           eventType: 'PRIORITY_AUTO_ASSIGNED',
-          actorName: 'System Automation',
+          actorName: classification.classificationSource === 'AI' ? 'AI Classification Engine' : 'System Automation',
           actorRole: 'system',
           message: `Priority classified as ${finalPriority}: ${finalPriorityReason}`,
           timestamp: now,
-          metadata: { priority: finalPriority, reason: finalPriorityReason, source: finalPrioritySource },
+          metadata: {
+            priority: finalPriority,
+            reason: finalPriorityReason,
+            source: finalPrioritySource,
+            confidence: classification.confidence,
+          },
         },
         {
           eventType: 'SLA_STARTED',
@@ -122,6 +160,17 @@ const createComplaint = async (req, res) => {
       ],
     };
 
+    if (duplicateDetected) {
+      complaintData.activityTimeline.push({
+        eventType: 'DUPLICATE_FLAGGED',
+        actorName: 'Duplicate Detection Engine',
+        actorRole: 'system',
+        message: `Potential duplicate identified: ${duplicateMatchReason}`,
+        timestamp: now,
+        metadata: { duplicateOf, similarityScore: duplicateSimilarityScore },
+      });
+    }
+
     if (imageAttachments.length > 0) {
       complaintData.activityTimeline.push({
         eventType: 'IMAGE_UPLOADED',
@@ -138,6 +187,9 @@ const createComplaint = async (req, res) => {
 
     // Asynchronously dispatch notifications and emails
     notificationService.notifyComplaintCreated(complaint, req.user);
+
+    // Broadcast real-time WebSocket update
+    notifyComplaintUpdated(complaint, 'CREATED');
 
     return res.status(201).json({
       success: true,
@@ -514,6 +566,9 @@ const addComment = async (req, res) => {
     // Trigger notification
     notificationService.notifyCommentAdded(complaint, req.user, trimmedText);
 
+    // Broadcast real-time WebSocket update
+    notifyComplaintUpdated(complaint, 'COMMENT_ADDED', { comment });
+
     return res.status(201).json({
       success: true,
       message: 'Comment posted successfully',
@@ -661,6 +716,9 @@ const submitFeedback = async (req, res) => {
     // Trigger notification
     notificationService.notifyFeedbackSubmitted(complaint, req.user, feedbackObj);
 
+    // Broadcast real-time WebSocket update
+    notifyComplaintUpdated(complaint, 'FEEDBACK_SUBMITTED', { feedback: feedbackObj });
+
     return res.status(201).json({
       success: true,
       message: 'Thank you for your feedback! Rating recorded.',
@@ -730,8 +788,47 @@ const exportMyComplaintsCsv = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Check potential duplicate complaints before submission
+ * @route   POST /api/complaints/check-duplicate
+ * @access  Private
+ */
+const checkDuplicateComplaint = async (req, res) => {
+  try {
+    const { title, description, category, location } = req.body;
+    if (!title && !description) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide issue title or description to analyze',
+      });
+    }
+
+    const result = await findDuplicateCandidates({
+      title: title || '',
+      description: description || '',
+      category: category || '',
+      location: location || '',
+    });
+
+    return res.status(200).json({
+      success: true,
+      duplicateDetected: result.duplicateDetected,
+      hasDuplicates: result.duplicateDetected,
+      candidates: result.candidates,
+    });
+  } catch (error) {
+    console.error(`[Check Duplicate Error] ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error analyzing duplicate candidates',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createComplaint,
+  checkDuplicateComplaint,
   getMyComplaints,
   getComplaintById,
   updateComplaint,

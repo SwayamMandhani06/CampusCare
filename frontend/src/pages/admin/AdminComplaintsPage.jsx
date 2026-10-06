@@ -13,6 +13,7 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
 import { CATEGORIES, getCategoryIcon } from '../../utils/categoryIcons';
 import { formatRelativeDate, formatFullDateTime, formatSlaTimeRemaining } from '../../utils/formatDate';
+import { getSocket } from '../../services/socket';
 import {
   Search,
   ChevronLeft,
@@ -29,6 +30,9 @@ import {
   Clock,
   Flame,
   Zap,
+  Sparkles,
+  CopyCheck,
+  Bot,
 } from 'lucide-react';
 
 const STATUS_OPTIONS = [
@@ -96,6 +100,96 @@ const AdminComplaintsPage = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionSuccess, setActionSuccess] = useState('');
   const [actionError, setActionError] = useState('');
+
+  // Batch 3: Staff Recommendations & AI Reclassification
+  const [recommendations, setRecommendations] = useState([]);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+
+  // Real-Time Socket.IO Operational Listener
+  useEffect(() => {
+    const client = getSocket();
+    const handleUpdate = (payload) => {
+      if (payload && payload.complaint) {
+        setComplaints((prev) =>
+          prev.map((c) => (c._id === payload.complaint._id ? payload.complaint : c))
+        );
+        setSelectedComplaint((prev) =>
+          prev && prev._id === payload.complaint._id ? payload.complaint : prev
+        );
+      }
+    };
+
+    client.on('operational_complaint_updated', handleUpdate);
+    return () => {
+      client.off('operational_complaint_updated', handleUpdate);
+    };
+  }, []);
+
+  // Fetch staff recommendations when drawer opens
+  useEffect(() => {
+    if (selectedComplaint && selectedComplaint._id) {
+      fetchRecommendations(selectedComplaint._id);
+    } else {
+      setRecommendations([]);
+    }
+  }, [selectedComplaint?._id]);
+
+  const fetchRecommendations = async (complaintId) => {
+    setLoadingRecommendations(true);
+    try {
+      const res = await api.get(`/admin/complaints/${complaintId}/staff-recommendations`);
+      if (res.data && res.data.recommendations) {
+        setRecommendations(res.data.recommendations);
+      }
+    } catch (err) {
+      console.warn('[Staff Recommendations] Failed to load:', err.message);
+    } finally {
+      setLoadingRecommendations(false);
+    }
+  };
+
+  const handleAssignStaffDirect = async (staffId) => {
+    setSelectedStaffId(staffId);
+    setActionLoading(true);
+    setActionSuccess('');
+    setActionError('');
+    try {
+      const res = await api.put(`/admin/complaints/${selectedComplaint._id}/assign`, {
+        staffId,
+      });
+      if (res.data && res.data.complaint) {
+        setSelectedComplaint(res.data.complaint);
+        setSelectedStatus(res.data.complaint.status);
+        setActionSuccess(`Assigned successfully to ${res.data.complaint.assignedTo?.name}`);
+        fetchComplaints(pagination.page);
+      }
+    } catch (err) {
+      console.error('[AssignStaffDirect] Error:', err);
+      setActionError(err.response?.data?.message || 'Failed to assign staff member.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleReclassifyComplaint = async () => {
+    if (!selectedComplaint) return;
+    setActionLoading(true);
+    setActionSuccess('');
+    setActionError('');
+    try {
+      const res = await api.post(`/admin/complaints/${selectedComplaint._id}/reclassify`);
+      if (res.data && res.data.complaint) {
+        setSelectedComplaint(res.data.complaint);
+        setActionSuccess(res.data.message || 'Issue reclassified via AI.');
+        fetchComplaints(pagination.page);
+      }
+    } catch (err) {
+      console.error('[Reclassify] Error:', err);
+      setActionError(err.response?.data?.message || 'Failed to reclassify issue.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   // Debounce search by 300ms
   useEffect(() => {
@@ -823,6 +917,62 @@ const AdminComplaintsPage = () => {
                 </div>
               )}
 
+              {/* Batch 3: Potential Duplicate Warning */}
+              {selectedComplaint.duplicateDetected && (
+                <div className="p-3.5 rounded bg-amber-500/10 border border-amber-500/30 flex items-start space-x-2.5 text-xs text-amber-600">
+                  <CopyCheck size={16} className="shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-medium text-ink block">Potential Duplicate Ticket Detected</span>
+                    <p className="text-[11px] text-muted mt-0.5">
+                      {selectedComplaint.duplicateMatchReason || 'Identified by lexical & location similarity engine'}
+                    </p>
+                    {selectedComplaint.duplicateOf && (
+                      <span className="text-[11px] font-mono text-brand mt-1 block">
+                        Linked Parent Ticket: #{selectedComplaint.duplicateOf.toString().slice(-6).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Batch 3: AI-Assisted Classification Telemetry */}
+              <div className="p-3.5 bg-paper/60 border border-line rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-1.5 text-muted font-mono text-[11px] uppercase">
+                    <Sparkles size={12} className="text-brand" />
+                    <span>Classification Engine</span>
+                  </div>
+                  <div className="font-medium text-ink flex items-center space-x-2">
+                    <span>Source: {selectedComplaint.classificationSource || 'RULE_BASED'}</span>
+                    {selectedComplaint.classificationConfidence && (
+                      <span className="text-muted font-mono text-[11px]">
+                        ({Math.round(selectedComplaint.classificationConfidence * 100)}% confidence)
+                      </span>
+                    )}
+                  </div>
+                  {selectedComplaint.classificationKeywords && selectedComplaint.classificationKeywords.length > 0 && (
+                    <div className="flex items-center space-x-1 flex-wrap gap-1 mt-1">
+                      {selectedComplaint.classificationKeywords.map((kw, i) => (
+                        <span key={i} className="px-1.5 py-0.2 rounded bg-line/30 text-muted font-mono text-[10px]">
+                          #{kw}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleReclassifyComplaint}
+                  disabled={actionLoading}
+                  className="text-xs font-mono shrink-0"
+                >
+                  <Bot size={13} className="mr-1 text-brand" />
+                  <span>Reclassify via AI</span>
+                </Button>
+              </div>
+
               {/* SLA Telemetry & Operational Health Panel */}
               <div className="p-4 border border-line rounded-lg bg-paper/60 space-y-3">
                 <div className="flex items-center justify-between">
@@ -854,7 +1004,7 @@ const AdminComplaintsPage = () => {
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 text-xs font-mono">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
                   {/* Response SLA */}
                   <div className="p-2.5 rounded bg-line/20 border border-line/40 space-y-1">
                     <span className="text-[10px] text-muted uppercase block">Response Target & Deadline</span>
@@ -911,7 +1061,7 @@ const AdminComplaintsPage = () => {
                 </h3>
 
                 {/* 1. Assign to Staff */}
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="text-xs font-medium text-ink block">
                     Assign Maintenance Staff Member
                   </label>
@@ -938,8 +1088,54 @@ const AdminComplaintsPage = () => {
                       Assign Staff
                     </Button>
                   </div>
+
+                  {/* Smart Staff Recommendations Panel */}
+                  {recommendations && recommendations.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-line/60 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-mono text-muted uppercase tracking-wider flex items-center space-x-1">
+                          <Zap size={11} className="text-brand" />
+                          <span>Smart Recommended Technicians</span>
+                        </span>
+                        <span className="text-[10px] text-muted font-mono">Ranked by Trade & Capacity</span>
+                      </div>
+                      <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+                        {recommendations.slice(0, 3).map((rec) => (
+                          <div
+                            key={rec.staffId}
+                            className="p-2 rounded bg-paper-subtle border border-line/70 flex items-center justify-between text-xs hover:border-brand/40 transition-colors"
+                          >
+                            <div className="min-w-0 pr-2">
+                              <div className="flex items-center space-x-1.5">
+                                <span className="font-medium text-ink truncate">{rec.name}</span>
+                                <span className="px-1.5 py-0.2 rounded bg-brand/10 text-brand text-[10px] font-mono font-medium">
+                                  {rec.matchScore}%
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-muted truncate mt-0.5">
+                                {rec.reasons?.[0]} • {rec.activeTasks} active task(s)
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleAssignStaffDirect(rec.staffId)}
+                              disabled={actionLoading || rec.isCurrentlyAssigned}
+                              className={`px-2 py-1 rounded text-[11px] font-mono transition-colors shrink-0 ${
+                                rec.isCurrentlyAssigned
+                                  ? 'bg-line/40 text-muted cursor-default'
+                                  : 'bg-brand text-white hover:bg-brand/90'
+                              }`}
+                            >
+                              {rec.isCurrentlyAssigned ? 'Assigned' : 'Quick Assign'}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {selectedComplaint.assignedTo && (
-                    <span className="text-[11px] font-mono text-status-assigned block">
+                    <span className="text-[11px] font-mono text-status-assigned block pt-1">
                       Currently assigned to: {selectedComplaint.assignedTo.name}
                     </span>
                   )}

@@ -104,24 +104,27 @@ pipeline {
                 sh '''
                     set -e
 
-                    echo "[TEST 1/6] Running Backend Authentication & RBAC Test Suite..."
+                    echo "[TEST 1/7] Running Backend Authentication & RBAC Test Suite..."
                     cd backend
                     npm run test:auth
 
-                    echo "[TEST 2/6] Running Backend Complaint Lifecycle & Workflow Test Suite..."
+                    echo "[TEST 2/7] Running Backend Complaint Lifecycle & Workflow Test Suite..."
                     npm run test:complaints
 
-                    echo "[TEST 3/6] Running Backend Prometheus Metrics Test Suite..."
+                    echo "[TEST 3/7] Running Backend Prometheus Metrics Test Suite..."
                     npm run test:metrics
 
-                    echo "[TEST 4/6] Running Backend Batch 1 Features Test Suite..."
+                    echo "[TEST 4/7] Running Backend Batch 1 Features Test Suite..."
                     npm run test:batch1
 
-                    echo "[TEST 5/6] Running Backend Batch 2 Intelligent Priority & SLA Test Suite..."
+                    echo "[TEST 5/7] Running Backend Batch 2 Intelligent Priority & SLA Test Suite..."
                     npm run test:batch2
+
+                    echo "[TEST 6/7] Running Backend Batch 3 Real-Time, AI, Duplicate & Staff Recs Test Suite..."
+                    npm run test:batch3
                     cd ..
 
-                    echo "[TEST 6/6] Running Frontend Static Analysis & Lint Checks..."
+                    echo "[TEST 7/7] Running Frontend Static Analysis & Lint Checks..."
                     cd frontend
                     npm run lint
                     cd ..

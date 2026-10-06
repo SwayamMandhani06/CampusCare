@@ -18,6 +18,7 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorState from '../../components/ErrorState';
 import { CATEGORIES, getCategoryIcon } from '../../utils/categoryIcons';
 import { formatFullDateTime } from '../../utils/formatDate';
+import { subscribeToComplaintRoom } from '../../services/socket';
 import {
   ArrowLeft,
   MapPin,
@@ -31,6 +32,8 @@ import {
   History,
   Clock,
   AlertTriangle,
+  Sparkles,
+  CopyCheck,
 } from 'lucide-react';
 
 const PRIORITIES = [
@@ -89,6 +92,20 @@ const ComplaintDetailPage = () => {
 
   useEffect(() => {
     fetchComplaint();
+
+    // Subscribe to real-time updates via Socket.IO
+    const unsubscribe = subscribeToComplaintRoom(id, (payload) => {
+      if (payload && payload.complaint) {
+        setComplaint((prev) => ({
+          ...prev,
+          ...payload.complaint,
+        }));
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, [id]);
 
   const handleEditSubmit = async (e) => {
@@ -162,6 +179,10 @@ const ComplaintDetailPage = () => {
           Back to Complaints
         </Link>
         <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400 text-[11px] font-mono">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Live</span>
+          </div>
           <span className="text-xs font-mono text-muted">Ticket ID:</span>
           <span className="px-2 py-0.5 rounded bg-line/40 text-xs font-mono font-medium text-ink">
             #{complaint._id.slice(-8)}
@@ -190,6 +211,29 @@ const ComplaintDetailPage = () => {
               </div>
 
               <div className="flex items-center space-x-2 flex-wrap">
+                {complaint.classificationSource && (
+                  <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[11px] font-mono border bg-paper-subtle text-muted border-line">
+                    {complaint.classificationSource === 'AI' ? (
+                      <>
+                        <Sparkles size={11} className="text-brand" />
+                        <span>AI ({Math.round((complaint.classificationConfidence || 0.9) * 100)}%)</span>
+                      </>
+                    ) : complaint.classificationSource === 'MANUAL' ? (
+                      <>
+                        <Lock size={11} className="text-amber-500" />
+                        <span>Manual</span>
+                      </>
+                    ) : (
+                      <span>Rule-Based</span>
+                    )}
+                  </span>
+                )}
+                {complaint.duplicateDetected && (
+                  <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[11px] font-mono border bg-amber-500/10 text-amber-600 border-amber-500/30">
+                    <CopyCheck size={11} />
+                    <span>Duplicate Linked</span>
+                  </span>
+                )}
                 <PriorityBadge priority={complaint.priority} />
                 <StatusBadge status={complaint.status} />
                 {complaint.sla?.status && (

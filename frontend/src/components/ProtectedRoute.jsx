@@ -25,11 +25,24 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   if (!isAuthenticated) {
+    if (location.pathname.startsWith('/admin')) {
+      return <Navigate to="/admin/login" state={{ from: location }} replace />;
+    }
+    if (location.pathname.startsWith('/staff')) {
+      return <Navigate to="/staff/login" state={{ from: location }} replace />;
+    }
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Check role-based access if specified
   if (allowedRoles && (!user || !allowedRoles.includes(user.role))) {
+    const ownDashboard =
+      user?.role === 'admin'
+        ? '/admin/dashboard'
+        : user?.role === 'staff'
+        ? '/staff/dashboard'
+        : '/dashboard';
+
     return (
       <div className="max-w-md mx-auto my-16 p-8 bg-paper border border-line rounded-lg text-center">
         <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-priority-critical/10 flex items-center justify-center text-priority-critical">
@@ -43,8 +56,8 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
           <Button variant="secondary" onClick={() => window.history.back()}>
             Go Back
           </Button>
-          <Button variant="primary" onClick={() => window.location.href = '/'}>
-            Return Home
+          <Button variant="primary" onClick={() => (window.location.href = ownDashboard)}>
+            Go to Your Dashboard
           </Button>
         </div>
       </div>

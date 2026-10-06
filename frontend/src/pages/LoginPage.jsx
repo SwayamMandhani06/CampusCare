@@ -32,15 +32,23 @@ const LoginPage = () => {
     try {
       const user = await login(email.trim(), password);
 
-      // Role-based redirection
-      if (from) {
-        navigate(from, { replace: true });
-      } else if (user.role === 'admin') {
-        navigate('/admin/dashboard', { replace: true });
+      // Role-based redirection guarantees immediate routing to authorized dashboard
+      if (user.role === 'admin') {
+        const target = from && from.startsWith('/admin') ? from : '/admin/dashboard';
+        navigate(target, { replace: true });
       } else if (user.role === 'staff') {
-        navigate('/staff/dashboard', { replace: true });
+        const target = from && from.startsWith('/staff') ? from : '/staff/dashboard';
+        navigate(target, { replace: true });
       } else {
-        navigate('/dashboard', { replace: true });
+        const target =
+          from &&
+          !from.startsWith('/admin') &&
+          !from.startsWith('/staff') &&
+          from !== '/login' &&
+          from !== '/register'
+            ? from
+            : '/dashboard';
+        navigate(target, { replace: true });
       }
     } catch (err) {
       console.error('[Login Error]', err);
@@ -130,6 +138,21 @@ const LoginPage = () => {
               >
                 Sign In
               </Button>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('student@pccoepune.org');
+                  setPassword('CampusCare@2026');
+                  if (error) setError('');
+                }}
+                className="w-full py-2 px-3 text-xs font-mono text-muted hover:text-ink bg-line/20 hover:bg-line/40 rounded border border-line/60 transition-colors flex items-center justify-center space-x-2"
+              >
+                <KeyRound size={12} className="text-brand" />
+                <span>Quick Fill Demo Student</span>
+              </button>
             </div>
           </form>
 

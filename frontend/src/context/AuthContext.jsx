@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../services/api';
+import { updateSocketAuth, disconnectSocket } from '../services/socket';
 
 const AuthContext = createContext(null);
 
@@ -55,6 +56,8 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('campuscare_token', authToken);
       localStorage.setItem('campuscare_user', JSON.stringify(authUser));
 
+      updateSocketAuth();
+
       return authUser;
     }
     throw new Error('Authentication failed');
@@ -72,12 +75,15 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('campuscare_token', authToken);
       localStorage.setItem('campuscare_user', JSON.stringify(authUser));
 
+      updateSocketAuth();
+
       return authUser;
     }
     throw new Error('Registration failed');
   };
 
   const logout = () => {
+    disconnectSocket();
     setToken(null);
     setUser(null);
     localStorage.removeItem('campuscare_token');

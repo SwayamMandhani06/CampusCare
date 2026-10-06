@@ -1,260 +1,252 @@
-# 🏫 CampusCare
+# CampusCare
 
-<div align="center">
-
-**Smart Campus Complaint & Facility Management System**
-
-*A modern, full-stack, enterprise-ready complaint lifecycle management platform and automated DevOps infrastructure built for academic institutions.*
-
+[![CI/CD: Jenkins](https://img.shields.io/badge/CI%2FCD-Jenkins%20Pipeline-D33833?logo=jenkins&logoColor=white)](Jenkinsfile)
+[![Kubernetes: k3s](https://img.shields.io/badge/Kubernetes-k3s-326CE5?logo=kubernetes&logoColor=white)](helm/campuscare)
+[![Helm: 3](https://img.shields.io/badge/Helm-v3-0F1689?logo=helm&logoColor=white)](helm/campuscare)
+[![Monitoring: Prometheus](https://img.shields.io/badge/Monitoring-Prometheus-E6522C?logo=prometheus&logoColor=white)](monitoring)
+[![Visualization: Grafana](https://img.shields.io/badge/Visualization-Grafana-F46800?logo=grafana&logoColor=white)](monitoring)
+[![Tests: 358 Passing](https://img.shields.io/badge/Tests-358%20Passing-success)](backend)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Node.js](https://img.shields.io/badge/Node.js-v18+-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
-[![React](https://img.shields.io/badge/React-v19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
-[![Vite](https://img.shields.io/badge/Vite-v6-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v3.4-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![Express.js](https://img.shields.io/badge/Express.js-v4.21-000000?logo=express&logoColor=white)](https://expressjs.com/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-v7.0-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
-[![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
-[![Terraform](https://img.shields.io/badge/Terraform-GCP-7B42BC?logo=terraform&logoColor=white)](https://www.terraform.io/)
-[![Ansible](https://img.shields.io/badge/Ansible-Automated-EE0000?logo=ansible&logoColor=white)](https://www.ansible.com/)
-[![Google Cloud](https://img.shields.io/badge/GCP-Compute_Engine-4285F4?logo=google-cloud&logoColor=white)](https://cloud.google.com/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/SwayamMandhani06/CampusCare/pulls)
 
-[Key Features](#-key-features--role-based-workflows) •
-[Architecture](#-system-architecture--data-flow) •
-[Tech Stack](#-technology-stack) •
-[REST APIs](#-rest-api-reference) •
-[Local Setup](#-getting-started--local-development) •
-[Cloud Deployment](#-infrastructure-as-code--cloud-deployment) •
-[Demo Credentials](#-demo-credentials--evaluation-guide)
-
-</div>
+CampusCare is a smart campus complaint and facility management platform that enables students to raise and track complaints while providing staff and administrators with real-time workflows, SLA automation, intelligent classification, operational analytics, and DevOps-driven deployment and monitoring.
 
 ---
 
-## 📌 Executive Overview
+## Overview
 
-**CampusCare** is a centralized facility and complaint management system engineered specifically for colleges, universities, and educational institutions. It establishes an accountable, transparent, role-based workflow connecting **Students** who report infrastructure defects, **Administrators** who triage and assign issues, and **Maintenance Staff** who resolve and document maintenance operations in real time.
+CampusCare resolves fragmented communication and unmonitored maintenance bottlenecks across academic institutions by providing a single source of truth for campus facility operations. Key capabilities include:
 
-```
-                  ┌─────────────────────────────────────────────────────────┐
-                  │                 CAMPUSCARE CORE SYSTEM                  │
-                  └─────────────────────────────────────────────────────────┘
-                                               │
-             ┌─────────────────────────────────┼────────────────────────────────┐
-             │                                 │                                │
-             ▼                                 ▼                                ▼
-     🎓 STUDENT PORTAL               🛡️ ADMIN CONSOLE               🔧 STAFF WORKBENCH
- • Raise facility complaints       • Real-time analytics charts      • Priority-ordered queue
- • 5-stage status timeline rail    • Triage & staff assignment       • Status lifecycle transitions
- • Filter & edit pending tickets   • Dynamic priority escalation     • Resolution notes & logging
- • Live dashboard counters         • Full audit trail & user hub     • Instant repair documentation
-```
+- **Role-Based Workflows**: Tailored portals for Students, Maintenance Staff, and Administrators.
+- **Real-Time Synchronization**: Instant status updates, comments, and notifications powered by Socket.IO.
+- **SLA Governance & Automation**: Deterministic response/resolution deadlines with automated supervisory escalation.
+- **Platform Intelligence**: Rule-based priority evaluation, explainable duplicate detection, staff recommendations, and optional AI classification with zero-failure fallbacks.
+- **Executive Analytics**: Multi-dimensional trend analysis, campus hotspots, technician performance, and CSV exports.
+- **Production-Style SRE Observability**: Full-stack Prometheus instrumentation, Grafana SLO/SLI dashboards, and Kubernetes self-healing.
 
 ---
 
-## 💡 Problem & Solution
+## Key Features
 
-| The Traditional Challenge ❌ | The CampusCare Solution ✅ |
-|:---|:---|
-| **Fragmented Reporting**: Verbal complaints, lost emails, and chaotic WhatsApp groups lead to dropped tickets. | **Single Source of Truth**: Unified web portal capturing structured ticket data with categorical tagging and location details. |
-| **Zero Transparency**: Students have no visibility into who is handling their issue or estimated resolution time. | **Visual 5-Stage Timeline**: Real-time status tracker (`PENDING` → `REVIEWED` → `ASSIGNED` → `IN_PROGRESS` → `RESOLVED`). |
-| **Unmonitored Bottlenecks**: Facility administrators lack insights into high-failure zones and staff workloads. | **Interactive Analytics Hub**: Dynamic breakdown of complaints by category, status, and urgency powered by interactive charts. |
-| **Lack of Accountability**: No formal record of technician diagnosis, repair notes, or timeline changes. | **Immutable Audit Logs**: Timestamped status history tracking every status change, assignor, and technician resolution report. |
+### Student Portal
+- **Ticket Lifecycle**: Submit structured complaints with category, location, and severity details.
+- **Media Attachments**: Upload up to 5 verified images (JPEG, PNG, WebP) with secure authenticated viewing.
+- **Visual Progress Rail**: Real-time 5-stage status timeline (`PENDING` → `REVIEWED` → `ASSIGNED` → `IN_PROGRESS` → `RESOLVED`).
+- **Interactive Review**: Pre-submission duplicate detection modal to review or link related active issues.
+- **Engagement**: In-app notification center, collaborative comments thread, and post-resolution 5-star feedback rating.
+
+### Maintenance Staff Workbench
+- **Priority Queue**: Work orders sorted automatically by urgency with critical emergencies at the top.
+- **SLA Telemetry**: Live time-remaining/overdue countdown badges and escalation indicators.
+- **State Execution**: One-click transition to `IN_PROGRESS` upon technician arrival.
+- **Formal Resolution**: Mandatory diagnostic repair notes and root-cause documentation upon closure.
+
+### Administrator Console
+- **Triage & Dispatch**: Issue triage workbench with explainable staff recommendations for optimal technician assignment.
+- **Priority Governance**: Audited manual priority overrides requiring written justification.
+- **SLA & Escalations**: Monitoring of breached complaints with automated multi-tier escalation tracking.
+- **User Management**: Centralized directory managing student, staff, and administrator accounts.
+- **Operational Analytics**: Comprehensive Recharts dashboards with interactive drill-down to filtered complaint queues.
+
+### Platform Intelligence
+- **Deterministic Priority Engine**: Rule-based classification evaluating safety hazards (fire, sparking, flooding) in sub-milliseconds without external dependencies.
+- **AI Classification & Fallback**: Provider-abstracted AI classification (`classificationService.js`) with automatic fallback to rule-based evaluation. Manual administrator overrides are strictly preserved.
+- **Duplicate Detection**: Explainable token similarity (Jaccard) combined with category and location scoring over recent active tickets.
+- **Smart Staff Recommendations**: Multi-factor scoring balancing specialization match (50%), active workload (30%), and SLA health (20%).
+- **Real-Time Architecture**: Authenticated WebSockets (`/api/socket.io`) with role-scoped room isolation.
+
+### DevOps & Observability
+- **Infrastructure as Code**: AWS EC2 provisioning via Terraform (`terraform-aws/`).
+- **Configuration Management**: Server setup and runtime automation via Ansible (`ansible-aws/`).
+- **Containerization & Packaging**: Dockerized multi-stage builds and parameterized Helm 3 chart (`helm/campuscare/`).
+- **Automated CI/CD**: Declarative Jenkins pipeline with sequential builds, image registry publishing, and rolling deployments.
+- **SRE Monitoring**: Prometheus metric scraping, alert rules, Grafana SLO dashboards (99% availability target), and Kubernetes self-healing.
 
 ---
 
-## 🌟 Key Features & Role-Based Workflows
+## Architecture
 
-### 🎓 1. Student Portal
-- **Complaint Creation**: Intuitive form with validation for title, detailed description, categorized department (Electrical, Plumbing, WiFi, Furniture, Equipment, Cleanliness, Hostel, Classroom), exact campus location, and severity level.
-- **Interactive Dashboard**: Real-time counter metrics displaying total, pending, in-progress, and resolved complaints.
-- **Visual Status Rail**: 5-stage visual progress timeline showing exact stage, timestamp, and technician resolution notes.
-- **Search & Filtering**: Search tickets by title or description; filter dynamically by category and lifecycle status.
-- **Inline Ticket Modification**: Modify complaint details while the ticket remains in `PENDING` state.
-
-### 🛡️ 2. Administrator Control Hub
-- **Advanced Operational Analytics Hub**: Dedicated `/admin/analytics` operational intelligence console with interactive Recharts (volume trends over time, category breakdowns, priority severity, SLA compliance donut, campus facility hotspots, and rating distribution).
-- **Period-over-Period Performance Telemetry**: Automated calculation of equivalent preceding window comparisons for volume (% change), resolution duration (% change), and SLA compliance (percentage-point changes).
-- **Deterministic Operational Insights Engine**: Rule-based intelligence analyzing category concentration, backlog peaks, breach patterns, and technician capacity without external AI dependencies.
-- **One-Click Chart Drill-Down**: Interactive chart bars, slices, and staff rows route directly to filtered complaint queues (`/admin/complaints?category=...&slaStatus=...`).
-- **Executive CSV Report Export**: Multi-section CSV report downloads with mathematical formula injection defense against spreadsheet attacks.
-- **Triage & Assignment Console**: Comprehensive issue workbench to assign tasks to specific maintenance staff members.
-- **Dynamic Priority Escalation**: Upgrade priority (`LOW` → `MEDIUM` → `HIGH` → `CRITICAL`) with automatic audit log tracking.
-- **Audit & Governance Trail**: Every status transition, note, and assignment is timestamped and attributed to the acting administrator.
-- **User Directory**: View, search, and manage registered students, technicians, and administrators.
-
-### 🔧 3. Maintenance Staff Workbench
-- **Priority-Driven Task Queue**: Smart task list sorted automatically with critical and high-priority emergencies at the top.
-- **One-Click State Transitions**: Acknowledge and transition assigned tickets into `IN_PROGRESS` when on-site work begins.
-- **Resolution Documentation**: Formally resolve complaints with mandatory technician repair notes and diagnostics.
-
----
-
-## 🏗️ System Architecture & Data Flow
-
-### 1. DevOps & Cloud Infrastructure Architecture
+CampusCare follows a modular monolithic application architecture. The backend is structured into modular domain services and controllers deployed as a containerized application within a Kubernetes platform. The frontend, backend, and MongoDB run as separate containerized services.
 
 ```mermaid
 flowchart TD
-    subgraph Developer_Environment["💻 Developer Environment"]
-        Dev["Developer Machine"] -->|git push| GH["GitHub Repository"]
+    subgraph Client_Layer["Client Layer"]
+        Browser["Web Browser (Student / Staff / Admin)"]
     end
 
-    subgraph Infrastructure_Provisioning["☁️ Cloud Provisioning & IaC"]
-        TF["Terraform"] -->|Provisions VM & Firewall Rules| GCP["GCP Compute Engine (e2-medium)"]
-        ANS["Ansible Playbook"] -->|Configures Docker, Envs & Services| GCP
+    subgraph Ingress_Layer["Traefik Ingress Controller (:80 / :443)"]
+        Ingress["campuscare-ingress"]
     end
 
-    subgraph Docker_Compose_Stack["🐳 Container Stack (Isolated Bridge Network)"]
-        Nginx["Frontend Container (NGINX + React SPA)\nPort 80"]
-        API["Backend Container (Node.js / Express API)\nPort 5000"]
-        DB[("MongoDB 7.0 Container\nPort 27017 (Internal Only)")]
-        
-        Nginx -->|Proxy API Requests| API
-        API -->|Mongoose Connection| DB
+    subgraph Kubernetes_Cluster["k3s Kubernetes Cluster (Namespace: campuscare)"]
+        subgraph Frontend_Service["Frontend Service (ClusterIP:80)"]
+            FE_Pods["campuscare-frontend (2 Replicas)\nReact 19 + Nginx"]
+        end
+
+        subgraph Backend_Service["Backend Service (ClusterIP:5000)"]
+            BE_Pods["campuscare-backend (2 Replicas)\nNode.js / Express REST API & Socket.IO"]
+        end
+
+        subgraph Database_Service["Database Service (ClusterIP:27017)"]
+            DB_Pod[("campuscare-mongodb (1 Replica)\nMongoDB 7.0 + Bound PVC")]
+        end
     end
 
-    subgraph End_Users["👥 End Users"]
-        Browser["Web Browser (Student / Admin / Staff)"] -->|HTTP Port 80| Nginx
+    subgraph Monitoring_Stack["Monitoring Stack (Namespace: monitoring)"]
+        Prometheus["Prometheus Server\nScrapes /metrics & Evaluates Alert Rules"]
+        Grafana["Grafana Dashboards\nSLO (99%), SLI, Error Budget & Telemetry"]
     end
 
-    GCP --- Docker_Compose_Stack
-```
+    subgraph CI_CD_Pipeline["Jenkins CI/CD Automation (AWS EC2)"]
+        GitHub["GitHub Repo"] -->|SCM Trigger| Jenkins["Jenkins Pipeline"]
+        Jenkins -->|Build & Test| Tests["358 Tests + Lint"]
+        Tests -->|Package| DockerHub["Docker Hub Registry"]
+        DockerHub -->|Deploy| Helm["Helm 3 Upgrade"]
+        Helm -->|Rollout| Kubernetes_Cluster
+    end
 
-### 2. Complaint State Machine Lifecycle
+    subgraph Infrastructure_Layer["Infrastructure as Code & Configuration"]
+        TF["Terraform (AWS EC2 t3.small)"] --> Ansible["Ansible Playbook"] --> k3s["k3s Runtime"]
+    end
 
-```mermaid
-stateDiagram-v2
-    [*] --> PENDING: Student submits complaint
-    PENDING --> REVIEWED: Admin reviews complaint
-    PENDING --> ASSIGNED: Admin assigns to Maintenance Staff
-    REVIEWED --> ASSIGNED: Admin assigns to Maintenance Staff
-    ASSIGNED --> IN_PROGRESS: Technician begins repair work
-    IN_PROGRESS --> RESOLVED: Technician documents resolution notes
-    RESOLVED --> [*]: Ticket Closed
-```
-
----
-
-## 💻 Technology Stack
-
-| Domain | Technology | Version | Description / Purpose |
-|:---|:---|:---|:---|
-| **Frontend UI** | [React](https://react.dev/) | `19.2` | Component-driven Single Page Application (SPA) |
-| **Build Tool** | [Vite](https://vitejs.dev/) | `8.2` | Ultra-fast frontend development server & bundler |
-| **Styling** | [Tailwind CSS](https://tailwindcss.com/) | `3.4` | Modern utility-first responsive styling |
-| **Animations** | [Framer Motion](https://www.framer.com/motion/) | `13.1` | Fluid UI animations and state transitions |
-| **Icons & Charts** | [Lucide React](https://lucide.dev/) & [Recharts](https://recharts.org/) | `1.38` / `3.10` | Sleek icon set and dynamic data visualizations |
-| **Backend API** | [Node.js](https://nodejs.org/) & [Express](https://expressjs.com/) | `v18+` / `4.21` | RESTful API server with modular route controllers |
-| **Database** | [MongoDB](https://www.mongodb.com/) & [Mongoose](https://mongoosejs.com/) | `7.0` / `8.9` | NoSQL document database with schema validation |
-| **Security & Auth** | [JWT](https://jwt.io/) & [bcryptjs](https://github.com/dcodeIO/bcrypt.js) | `9.0` / `2.4` | Stateless bearer token authentication & password hashing |
-| **Containers** | [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/) | `v2+` | Multi-stage container builds and containerized application orchestration |
-| **Web Server** | [NGINX](https://nginx.org/) | `Alpine` | Production reverse proxy, static asset server, SPA routing |
-| **IaC** | [Terraform](https://www.terraform.io/) | `v1.5+` | Declarative cloud resource provisioning on GCP |
-| **Config Mgmt** | [Ansible](https://www.ansible.com/) | `v2.15+` | Automated host configuration, Docker setup, and deployment |
-| **Cloud** | [Google Cloud Platform](https://cloud.google.com/) | `GCP` | Compute Engine VM instance, VPC, and firewall rules |
-
----
-
-## 📡 REST API Reference
-
-All protected endpoints require the HTTP header:  
-`Authorization: Bearer <JWT_TOKEN>`
-
-### 🔑 1. Authentication Routes (`/api/auth`)
-| Method | Endpoint | Access | Description |
-|:---|:---|:---|:---|
-| `POST` | `/api/auth/register` | Public | Register a new student account (`name`, `email`, `password`, `studentId`) |
-| `POST` | `/api/auth/login` | Public | Authenticate user and receive signed JWT token |
-| `GET` | `/api/auth/me` | Protected | Fetch current logged-in user profile |
-
-### 📝 2. Complaints Management (`/api/complaints`)
-| Method | Endpoint | Access | Description |
-|:---|:---|:---|:---|
-| `POST` | `/api/complaints` | Student / User | Submit a new campus complaint ticket |
-| `GET` | `/api/complaints` | Student / User | Retrieve all complaints created by the logged-in user |
-| `GET` | `/api/complaints/:id` | Protected | Retrieve full complaint details including status history |
-| `PUT` | `/api/complaints/:id` | Student (Owner) | Update complaint details (only valid while `PENDING`) |
-
-### 🛡️ 3. Administrator Console (`/api/admin`)
-| Method | Endpoint | Access | Description |
-|:---|:---|:---|:---|
-| `GET` | `/api/admin/dashboard` | Admin Only | Get aggregated analytics, status counts, and category breakdown |
-| `GET` | `/api/admin/complaints` | Admin Only | List all campus complaints with search, category, and status filters |
-| `PUT` | `/api/admin/complaints/:id/assign` | Admin Only | Assign complaint to a staff member and update priority |
-| `PUT` | `/api/admin/complaints/:id/status` | Admin Only | Update complaint status and append administrative notes |
-| `GET` | `/api/admin/users` | Admin Only | Fetch directory of all registered campus users |
-
-### 🔧 4. Maintenance Staff Workbench (`/api/staff`)
-| Method | Endpoint | Access | Description |
-|:---|:---|:---|:---|
-| `GET` | `/api/staff/tasks` | Staff Only | Get all assigned tasks sorted by priority (`CRITICAL` → `HIGH` → `MED` → `LOW`) |
-| `PUT` | `/api/staff/tasks/:id/status` | Staff Only | Update task status (e.g. transition from `ASSIGNED` to `IN_PROGRESS`) |
-| `PUT` | `/api/staff/tasks/:id/resolve` | Staff Only | Mark task as `RESOLVED` with mandatory technician repair notes |
-
-### 🩺 5. System Health (`/api/health`)
-| Method | Endpoint | Access | Description |
-|:---|:---|:---|:---|
-| `GET` | `/api/health` | Public | Returns service status and timestamp |
-
----
-
-## 🗄️ Database Schemas & Data Models
-
-### 👤 User Model
-```json
-{
-  "_id": "ObjectId",
-  "name": "Aarav Sharma",
-  "email": "aarav.sharma@pccoepune.org",
-  "password": "$2a$10$hashed_password_string...",
-  "role": "student | admin | staff",
-  "studentId": "123B1B201",
-  "createdAt": "2026-09-01T10:00:00.000Z",
-  "updatedAt": "2026-09-01T10:00:00.000Z"
-}
-```
-
-### 📋 Complaint Model
-```json
-{
-  "_id": "ObjectId",
-  "title": "Ceiling Fan Regulators Loose in LH-302",
-  "description": "Two ceiling fans in Lecture Hall 302 have malfunctioning switches causing sparking.",
-  "category": "Classroom Infrastructure",
-  "location": "Academic Complex 2, 3rd Floor, Room LH-302",
-  "priority": "MEDIUM",
-  "status": "PENDING",
-  "createdBy": "ObjectId (ref: User)",
-  "assignedTo": "ObjectId (ref: User, nullable)",
-  "resolutionNotes": "",
-  "statusHistory": [
-    {
-      "_id": "ObjectId",
-      "status": "PENDING",
-      "changedBy": "ObjectId (ref: User)",
-      "notes": "Initial issue reported via student portal.",
-      "changedAt": "2026-09-01T10:00:00.000Z"
-    }
-  ],
-  "createdAt": "2026-09-01T10:00:00.000Z",
-  "updatedAt": "2026-09-01T10:00:00.000Z"
-}
+    Browser -->|HTTP Requests| Ingress
+    Ingress -->|Path: /*| Frontend_Service
+    Ingress -->|Path: /api/*| Backend_Service
+    Backend_Service -->|Mongoose TCP| Database_Service
+    Backend_Service -->|Exposes /metrics| Prometheus
+    Prometheus -->|Datasource Proxy| Grafana
 ```
 
 ---
 
-## 🚀 Getting Started & Local Development
+## Technology Stack
 
-### 📋 Prerequisites
-Ensure you have the following installed locally:
-- [Git](https://git-scm.com/) (`v2.30+`)
-- [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/) (`v2.0+`)
-- *Optional (for non-dockerized manual dev)*: [Node.js](https://nodejs.org/) (`v18+`) & [MongoDB](https://www.mongodb.com/) (`v6+`)
+| Layer | Technology | Version | Purpose |
+|:---|:---|:---|:---|
+| **Frontend** | React, Vite, Tailwind CSS | React 19, Vite 8, Tailwind 3.4 | Single Page Application with accessible dark/light themes |
+| **Backend** | Node.js, Express.js | Node 18+, Express 4.21 | Modular RESTful API and WebSocket service |
+| **Database** | MongoDB, Mongoose | MongoDB 7.0, Mongoose 8.9 | Persistent document storage and distributed locking |
+| **Authentication** | JWT, bcryptjs | jsonwebtoken 9.0, bcryptjs 2.4 | Stateless bearer token auth and salted password hashing |
+| **Real-Time** | Socket.IO | Socket.IO 4.8 | Low-latency duplex event broadcasting and room RBAC |
+| **Testing** | Node test runner, mongodb-memory-server | Built-in / In-memory | 358 automated integration and lifecycle unit tests |
+| **Containerization**| Docker | 24+ | Multi-stage production container builds |
+| **Container Registry**| Docker Hub | Cloud | Immutable Git SHA image repository (`swayammandhani06`) |
+| **Orchestration** | Kubernetes / k3s | v1.31+ | Single-node lightweight Kubernetes cluster |
+| **Packaging** | Helm | Helm 3 | Parameterized chart deployment and lifecycle management |
+| **CI/CD** | Jenkins | LTS (Declarative Pipeline) | Automated checkout, testing, building, pushing, and deployment |
+| **Infrastructure** | Terraform | v1.5+ | Declarative AWS EC2 infrastructure provisioning |
+| **Configuration** | Ansible | v2.15+ | Host package configuration, Docker, k3s, and Helm installation |
+| **Monitoring** | Prometheus | v2.54+ | Time-series metric collection and alert rule evaluations |
+| **Visualization** | Grafana | v11.1+ | SRE dashboards, SLI/SLO tracking, and alert visualization |
+| **Cloud Provider** | AWS EC2 | `t3.small` (`ap-south-1`) | Production-style academic deployment host |
 
 ---
 
-### Option A: Quickstart with Docker Compose (Recommended)
+## CI/CD Pipeline
+
+CampusCare uses a **Declarative Jenkins Pipeline** (`Jenkinsfile`) as its primary automated deployment engine:
+
+```
+GitHub Push ──> Jenkins Checkout ──> Install Deps (npm ci) ──> Test & Lint (8 Suites)
+                                                                       │
+Kubernetes Rollout <── Helm Upgrade <── Docker Push <── Docker Build <─┘
+         │
+Traefik Ingress Health Check (/api/health) ──> Zero-Downtime Live
+```
+
+1. **Deterministic Tagging**: Derives an immutable 7-character Git SHA (`IMAGE_TAG`) for image traceability.
+2. **Comprehensive Verification**: Executes all 7 backend test suites (358 tests) and frontend static linting before any build occurs.
+3. **Resource-Conscious Building**: Sequentially builds backend and frontend images to respect EC2 `t3.small` memory limits.
+4. **Secure Registry Push**: Authenticates with Docker Hub via Jenkins credentials store without process-level token exposure.
+5. **Atomic Helm Upgrades**: Executes `helm upgrade --install --reuse-values` in namespace `campuscare` to perform rolling pod upgrades.
+6. **Automated Rollout & Probing**: Verifies replica readiness via `kubectl rollout status` and validates HTTP 200 health via Traefik Ingress.
+
+---
+
+## Observability & SRE
+
+CampusCare implements production-style observability and Site Reliability Engineering (SRE) principles:
+
+- **Application Telemetry**: Backend exposes Prometheus metrics at `/metrics` via `prom-client` (`campuscare_http_requests_total`, `campuscare_http_errors_total`, `campuscare_http_request_duration_seconds`, active Socket.IO connections, SLA gauges, and duplicate checks).
+- **Service Level Objectives (SLO)**: Formally tracks a **99.0% Availability SLO** with a **1.0% Error Budget** evaluated over rolling operational windows.
+- **Alerting Rules**: Prometheus evaluates operational alert rules (`CampusCareBackendDown`, `CampusCareHighErrorRate`, `CampusCareHighLatency`, `CampusCarePodHealth`).
+- **Grafana SRE Dashboard**: 14 operational panels visualizing uptime SLI, error budget burn, p95/p99 latencies, pod CPU/memory consumption, and SLA escalation counters.
+- **Kubernetes Self-Healing**: Backend and frontend deployments configure HTTP readiness and liveness probes; pods automatically restart upon transient faults with zero service downtime.
+
+---
+
+## Advanced Analytics
+
+The dedicated Analytics Hub (`/admin/analytics`) provides deep operational intelligence for campus facility management:
+
+- **Trend Analysis**: Visualizes complaint volume, resolution velocity, and backlog growth over configurable windows (`7d`, `30d`, `90d`, `6m`, `1y`, or custom date ranges).
+- **Multi-Dimensional Filtering**: Real-time cross-filtering across 9 facility categories, 4 priority levels, 5 lifecycle states, and 4 SLA conditions.
+- **Facility Hotspots**: Identifies physical campus locations with high complaint frequencies, severe hazards, and repeated SLA breaches.
+- **Staff Performance Matrix**: Sortable technician metrics tracking assigned volume, active workload, SLA compliance rate, and average resolution time.
+- **Period-over-Period Telemetry**: Automated comparisons evaluating volume change percentage, resolution speed variance, and SLA delta against preceding periods.
+- **Interactive Drill-Down**: Clicking any chart bar, slice, or technician navigates directly to pre-filtered complaint lists.
+- **Executive CSV Export**: Downloads multi-section operational reports with formula sanitization defending against spreadsheet injection (`=`, `+`, `-`, `@`).
+
+---
+
+## Security
+
+CampusCare enforces defense-in-depth protections across all layers:
+
+- **Authentication & Hashing**: Stateless JSON Web Tokens (JWT) and salted bcrypt password hashing (10 rounds). Double-hashing protections prevent hash corruption on user re-save.
+- **Role-Based Access Control (RBAC)**: Strict server-side route guards enforcing Student, Staff, and Administrator boundaries.
+- **Media Upload Validation**: Multi-layer image inspection validating file extensions, MIME types, size thresholds (5MB), and binary magic signatures (`JPEG`, `PNG`, `WebP`).
+- **WebSocket Isolation**: Handshake authentication and scoped Socket.IO rooms prevent cross-ticket eavesdropping.
+- **CSV Injection Prevention**: All exported CSV cells are sanitized against spreadsheet formula injection attacks.
+- **Network Isolation**: MongoDB runs without public port exposure, communicating exclusively over the internal cluster network.
+- **Secret Hygiene**: Zero production secrets, private keys, or cloud credentials are committed to version control.
+
+---
+
+## Project Structure
+
+```text
+CampusCare/
+├── ansible-aws/             # Ansible playbooks and host configuration for AWS EC2
+├── backend/                 # Node.js & Express REST API and Socket.IO server
+│   ├── config/              # Database connection and environment setup
+│   ├── controllers/         # Route controllers (auth, complaints, admin, staff, analytics)
+│   ├── middleware/          # JWT auth, role RBAC, upload validation
+│   ├── models/              # Mongoose models (User, Complaint, Notification, SystemLock)
+│   ├── routes/              # Express API route declarations
+│   ├── services/            # SLA, priority, classification, duplicate, and recommendation logic
+│   ├── seed.js              # Idempotent database seeder with realistic demo data
+│   ├── server.js            # Express application entry point & Socket.IO listener
+│   └── test-*.js            # 7 automated test suites (358 tests)
+├── frontend/                # React 19 + Vite client application
+│   ├── src/
+│   │   ├── components/      # UI components (Navbar, Modal, Timeline, Cards, Badges)
+│   │   ├── context/         # AuthContext and SocketContext state providers
+│   │   ├── layouts/         # Role layout wrappers (AdminLayout, StaffLayout)
+│   │   ├── pages/           # Pages (Landing, Auth, Student, Staff, Admin)
+│   │   └── services/        # Axios API client and Socket.IO services
+│   ├── tailwind.config.js   # Tailwind CSS configuration with design system tokens
+│   └── vite.config.js       # Vite build configuration
+├── helm/                    # Production Helm 3 chart
+│   └── campuscare/          # Templates, values.yaml, and Chart.yaml
+├── k8s/                     # Raw Kubernetes baseline manifests
+├── monitoring/              # Prometheus alert rules, Grafana dashboards, and SRE runbooks
+├── terraform-aws/           # Terraform configuration for AWS EC2 infrastructure
+├── Jenkinsfile              # Declarative Jenkins CI/CD pipeline
+├── docker-compose.yml       # Local multi-container development configuration
+├── LICENSE                  # MIT Open-Source License
+└── README.md                # Project documentation
+```
+
+---
+
+## Local Development
+
+### Prerequisites
+- [Node.js](https://nodejs.org/) (`v18+`) and `npm` (`v9+`)
+- [MongoDB](https://www.mongodb.com/) (`v6+`) running locally or via Docker
+- [Git](https://git-scm.com/)
+
+### Step-by-Step Setup
 
 1. **Clone the repository:**
    ```bash
@@ -265,614 +257,156 @@ Ensure you have the following installed locally:
 2. **Configure Environment Variables:**
    ```bash
    cp .env.example .env
+   cp backend/.env.example backend/.env
    ```
 
-3. **Build & Start Services:**
+3. **Install Dependencies:**
    ```bash
-   docker compose up --build -d
+   cd backend && npm install
+   cd ../frontend && npm install
+   cd ..
    ```
 
-4. **Seed Demonstration Accounts & Complaints:**
+4. **Seed Database with Demo Accounts & Complaints:**
    ```bash
-   docker compose exec backend node seed.js
+   cd backend
+   npm run seed:demo
    ```
 
-5. **Access Application:**
-   - 🌐 **Frontend Application**: [http://localhost](http://localhost)
-   - 🔌 **Backend REST API**: [http://localhost:5000/api](http://localhost:5000/api)
-   - 🩺 **Health Check**: [http://localhost:5000/api/health](http://localhost:5000/api/health)
-
-6. **Stop All Containers:**
-   ```bash
-   docker compose down -v
-   ```
+5. **Start Services:**
+   - **Backend API**:
+     ```bash
+     cd backend
+     npm run dev     # Runs on http://localhost:5000
+     ```
+   - **Frontend Client**:
+     ```bash
+     cd frontend
+     npm run dev     # Runs on http://localhost:5173
+     ```
 
 ---
 
-### Option B: Manual Local Development
-
-#### 1. Start Backend
-```bash
-cd backend
-cp .env.example .env
-npm install
-npm run seed     # Seeds initial users and tickets
-npm run dev      # Starts nodemon on http://localhost:5000
-```
-
-#### 2. Start Frontend
-```bash
-cd ../frontend
-npm install
-npm run dev      # Starts Vite dev server on http://localhost:5173
-```
-
----
-
-## ⚙️ Environment Variables Reference
-
-A `.env.example` template is provided in the repository root:
+## Environment Variables
 
 | Variable | Default Value | Description |
 |:---|:---|:---|
-| `MONGO_INITDB_ROOT_USERNAME` | `admin` | MongoDB root administrator username |
-| `MONGO_INITDB_ROOT_PASSWORD` | `campuscare_secure_password_2026` | MongoDB root administrator password |
 | `PORT` | `5000` | Port for Express backend API |
-| `JWT_SECRET` | `campuscare_super_secret_jwt_key_2026` | Secret key for signing JWT bearer tokens |
-| `VITE_API_URL` | `http://localhost:5000` | Target URL for frontend API calls (use public IP for VM deployment) |
+| `MONGO_URI` | `mongodb://127.0.0.1:27017/campuscare` | MongoDB connection URI |
+| `JWT_SECRET` | `CHANGE_ME_JWT_SECRET` | Secret key for signing JWT tokens |
+| `UPLOAD_DIR` | `/app/uploads` | Path for uploaded complaint attachments |
+| `MAX_IMAGE_SIZE_MB` | `5` | Maximum upload size per image in megabytes |
+| `EMAIL_ENABLED` | `false` | Enables SMTP email notifications (disabled for local dev) |
+| `SEED_DEMO_PASSWORD` | `CampusCare@2026` | Deterministic password used by seed scripts |
+| `SLA_SCHEDULER_ENABLED`| `true` | Enables background periodic SLA monitoring scheduler |
+| `SLA_CHECK_INTERVAL_MS`| `60000` | SLA monitoring cycle interval in milliseconds |
+| `SLA_LEASE_TTL_MS` | `45000` | MongoDB distributed lease lock expiration |
+| `AI_CLASSIFICATION_ENABLED` | `false` | Enables AI classification provider (falls back to rules) |
+| `DUPLICATE_LOOKBACK_DAYS` | `30` | Active complaint lookback window for duplicate detection |
 
 ---
 
-## ☁️ Infrastructure as Code & Cloud Deployment
+## Demo & Seed Data
 
-CampusCare includes complete production-grade automation using **Terraform** for GCP cloud infrastructure provisioning and **Ansible** for configuration management.
+The database seeder (`cd backend && npm run seed:demo`) safely upserts realistic demo data without duplicates:
 
-```
-┌─────────────────┐       ┌────────────────────────┐       ┌────────────────────────┐
-│  Terraform IaC  │  ───> │  GCP Compute Engine VM │  ───> │  Ansible Orchestration │
-│  (main.tf)      │       │  (Ubuntu 24.04 LTS)    │       │  (deploy.yml)          │
-└─────────────────┘       └────────────────────────┘       └────────────────────────┘
-```
-
-### Step 1: Provision Infrastructure with Terraform
-```bash
-cd terraform
-
-# 1. Initialize provider plugins
-terraform init
-
-# 2. Review execution plan
-terraform plan
-
-# 3. Provision Compute Engine instance & firewall rules
-terraform apply
-```
-
-*Terraform will output the VM's public IP address upon completion.*
-
-### Step 2: Configure VM & Deploy with Ansible
-```bash
-cd ../ansible
-
-# 1. Test host connectivity
-ansible all -i inventory.ini -m ping
-
-# 2. Execute end-to-end configuration and deployment
-ansible-playbook -i inventory.ini deploy.yml
-```
-
-**The Ansible Playbook automatically:**
-1. Updates APT repositories and installs system dependencies.
-2. Configures the official Docker repository and installs Docker Engine & Docker Compose.
-3. Synchronizes the repository source code to the remote host.
-4. Templates production `.env` configuration.
-5. Builds and launches the multi-container stack (`docker compose up --build -d`).
-6. Executes `node seed.js` inside the backend container to populate baseline accounts.
-
----
-
-## 📊 Advanced Analytics & Operational Reporting
-
-CampusCare features an executive analytics subsystem delivering deep visibility into facility operations, SLA performance, campus hotspots, and staff workload:
-
-### 1. Dedicated Analytics Console (`/admin/analytics`)
-- **Date Range Filters**: `7d`, `30d` (default), `90d`, `6m`, `1y`, and `custom` (custom date pickers) strictly calculated on the server with UTC boundaries.
-- **Multi-Dimensional Operational Filters**: Filter simultaneously by Category, Priority, Lifecycle Status, SLA Status (`ON_TRACK`, `AT_RISK`, `BREACHED`, `RESOLVED`), Location keyword regex, and Assigned Technician.
-- **Period-over-Period Performance Indicators**: Live comparison cards evaluating volume variance (% change), resolution speed (% change), and SLA compliance changes (percentage points).
-- **Rule-Based Operational Insights Engine**: Deterministic, data-backed operational telemetry highlighting backlog concentrations, dominant complaint categories, SLA breach patterns, and overloaded personnel.
-- **Interactive Recharts Visualizations**:
-  - *Complaint Volume Over Time*: Area/Line historical trajectory of created, resolved, and breached tickets.
-  - *SLA Health Distribution*: Visual compliance, at-risk, and overdue workload breakdown with drill-down support.
-  - *Category Breakdown*: Bar distribution across the 9 facility disciplines with click-through filtering.
-  - *Priority Severity*: Criticality distribution across campus infrastructure.
-  - *Campus Facility Hotspots*: Top physical locations ranked by complaint frequency, critical hazards, and SLA breaches.
-  - *Student Satisfaction*: Post-resolution star rating distribution (1 to 5 stars) and average score.
-- **Maintenance Staff Capacity Matrix**: Sortable technician table tracking assigned count, active workload, resolved count, breached count, SLA compliance rate, completion rate, and average resolution time in hours.
-- **Executive CSV Report Export**: Comprehensive 8-section report generation (`GET /api/admin/analytics/export`) protected by formula sanitization against spreadsheet injection.
-
-### 2. Analytics REST API Reference (Admin Only)
-
-| Method | Endpoint | Query Parameters | Description |
+| Role | Email | Password | Responsibilities |
 |:---|:---|:---|:---|
-| `GET` | `/api/admin/analytics/overview` | `range`, `startDate`, `endDate`, `category`, `priority`, `status`, `slaStatus`, `location`, `assignedStaff` | Complete consolidated analytics dataset |
-| `GET` | `/api/admin/analytics/trends` | `range`, `startDate`, `endDate`, filters... | Time-bucketed volume and resolution trajectories |
-| `GET` | `/api/admin/analytics/sla` | `range`, `startDate`, `endDate`, filters... | SLA compliance, breach, and escalation telemetry |
-| `GET` | `/api/admin/analytics/staff` | `range`, `startDate`, `endDate`, filters... | Maintenance staff workload and performance matrix |
-| `GET` | `/api/admin/analytics/locations` | `range`, `startDate`, `endDate`, filters... | Campus facility hotspot ranking |
-| `GET` | `/api/admin/analytics/feedback` | `range`, `startDate`, `endDate`, filters... | Student satisfaction ratings and distribution |
-| `GET` | `/api/admin/analytics/export` | `range`, `startDate`, `endDate`, filters... | Download executive multi-section operational CSV report |
+| **Campus Admin** | `admin@pccoepune.org` | `CampusCare@2026` | Full administrative triage, priority override, analytics, user management |
+| **Electrical Staff** | `electrical.staff@pccoepune.org` | `CampusCare@2026` | Electrical hazard repair, SLA countdown, repair note logging |
+| **Plumbing Staff** | `plumbing.staff@pccoepune.org` | `CampusCare@2026` | Plumbing repair queue, state transitions, leak resolution |
+| **IT Support Staff**| `itsupport.staff@pccoepune.org`| `CampusCare@2026` | Network outages, laboratory computer hardware maintenance |
+| **Students** | `student@pccoepune.org` / `aarav.sharma@pccoepune.org` | `CampusCare@2026` | Ticket creation, image upload, status tracking, comments, feedback |
+
+*Note: All demo accounts share the configurable development password `CampusCare@2026` managed via `SEED_DEMO_PASSWORD`.*
 
 ---
 
-## 🧪 Testing & Quality Assurance
+## Cloud Deployment (AWS + k3s)
 
-CampusCare maintains a comprehensive 358-test automated test suite across 7 specialized test runners, all self-contained with embedded MongoDB support:
+The production-style deployment is provisioned on AWS and automated via Jenkins:
+
+1. **Infrastructure as Code (Terraform)**:
+   ```bash
+   cd terraform-aws
+   terraform init
+   terraform apply
+   ```
+   *Provisions an AWS EC2 `t3.small` instance in `ap-south-1` with security groups and storage.*
+
+2. **Configuration Management (Ansible)**:
+   ```bash
+   cd ansible-aws
+   ansible-playbook -i inventory.ini site.yml
+   ```
+   *Installs Docker, k3s Kubernetes, Helm 3, and Jenkins with cluster privileges.*
+
+3. **Helm Application Packaging**:
+   ```bash
+   helm upgrade --install campuscare helm/campuscare \
+     --namespace campuscare \
+     --create-namespace
+   ```
+   *Deploys Frontend, Backend, MongoDB, PVCs, and Traefik Ingress.*
+
+4. **Automated Jenkins CI/CD**:
+   Every push to `main` triggers `Jenkinsfile` to run the 8 test suites, build Docker images, publish to Docker Hub, and execute a zero-downtime rolling Helm upgrade.
+
+---
+
+## Monitoring Access
+
+To securely access Prometheus and Grafana without exposing external ports, use `kubectl port-forward`:
+
+- **Grafana Dashboard**:
+  ```bash
+  kubectl port-forward svc/grafana 3000:80 -n monitoring
+  ```
+  *Open [http://localhost:3000](http://localhost:3000) to view the **CampusCare — DevOps Observability & SRE** dashboard.*
+
+- **Prometheus Server**:
+  ```bash
+  kubectl port-forward svc/prometheus-server 9090:80 -n monitoring
+  ```
+  *Open [http://localhost:9090](http://localhost:9090) to inspect targets, scrape jobs, and alert rule states.*
+
+---
+
+## Testing & Quality Assurance
+
+CampusCare maintains a comprehensive automated testing suite:
 
 ```bash
-# Run All Test Suites in Sequence (Auth, Complaints, Metrics, Batch 1, Batch 2, Batch 3, Analytics)
+# Run complete backend test suite (358 tests)
 cd backend
 npm test
 
-# Run Specialized Test Runners Individually:
+# Run individual test suites
 npm run test:auth         # Authentication & RBAC verification (34 tests)
 npm run test:complaints   # Complaint lifecycle & transitions (40 tests)
 npm run test:metrics      # Prometheus metrics registration (12 tests)
-npm run test:batch1       # Batch 1 features: comments, uploads, notifications (56 tests)
-npm run test:batch2       # Batch 2 features: smart priority, SLA scheduler (86 tests)
-npm run test:batch3       # Batch 3 features: Socket.IO, AI fallback, duplicates, staff recs (59 tests)
-npm run test:analytics    # Advanced Analytics & Reporting verification (71 tests)
-```
+npm run test:batch1       # Batch 1: comments, uploads, notifications (56 tests)
+npm run test:batch2       # Batch 2: priority automation, SLA scheduler (86 tests)
+npm run test:batch3       # Batch 3: Socket.IO, AI fallback, duplicates, staff recs (59 tests)
+npm run test:analytics    # Advanced Analytics & CSV export verification (71 tests)
 
-**Frontend Linting & Production Build Validation:**
-```bash
+# Frontend quality checks
 cd ../frontend
-npm run lint    # OxLint static analysis (0 errors)
-npm run build   # Production Vite bundling
+npm run lint              # Oxlint static code analysis (0 errors)
+npm run build             # Production Vite build bundling
 ```
 
 ---
 
-## 🔄 Continuous Integration & Deployment (Jenkins CI/CD Pipeline)
+## Academic Project Context (FA1 vs FA2)
 
-CampusCare features an automated, production-style **Declarative Jenkins CI/CD Pipeline** (`Jenkinsfile`) designed for single-node **k3s Kubernetes** deployments on AWS EC2 (`t3.small`). The pipeline ensures that every commit to `main` undergoes automated verification, deterministic container builds, secure registry pushes, and zero-downtime rolling upgrades managed by **Helm 3**.
+To maintain academic grading continuity, this repository documents two evolutionary milestones:
 
-```
-  ┌──────────────┐     ┌──────────────────────┐     ┌────────────────┐
-  │ 1. Checkout  │ ──> │ 2. Install Deps (CI) │ ──> │ 3. Test Suites │
-  └──────────────┘     └──────────────────────┘     └────────────────┘
-                                                            │
-  ┌──────────────┐     ┌──────────────────────┐             │
-  │ 6. Helm      │ <── │ 5. Docker Push       │ <── ┌────────────────┐
-  │   Deploy     │     │    (dockerhub-creds) │     │ 4. Build Img   │
-  └──────────────┘     └──────────────────────┘     │   (Git SHA)    │
-         │                                          └────────────────┘
-         ▼
-  ┌──────────────┐     ┌──────────────────────┐     ┌────────────────┐
-  │ 7. Rollout   │ ──> │ 8. Ingress Health    │ ──> │ 9. Post &      │
-  │   Status     │     │    Check (localhost) │     │    Cleanup     │
-  └──────────────┘     └──────────────────────┘     └────────────────┘
-```
-
-### 📋 Pipeline Stages
-
-| Stage | Responsibility | Enforcement / Tools |
-|:---|:---|:---|
-| **1. Checkout** | Clones the repository and dynamically resolves the immutable 7-character Git commit SHA (`IMAGE_TAG`). | `checkout scm`, `git rev-parse --short=7 HEAD` |
-| **2. Install Dependencies** | Cleanly installs production and test dependencies using strict lockfiles. | `npm ci` across `/backend` and `/frontend` |
-| **3. Test** | Executes backend authentication, role authorization, and complaint lifecycle tests alongside frontend static analysis. | `npm run test:auth`, `npm run test:complaints`, `npm run lint` |
-| **4. Docker Build** | Builds backend and frontend production images sequentially to respect EC2 `t3.small` resource limits. Tags with Git SHA. | `docker build` (`VITE_API_URL=/api`) |
-| **5. Docker Push** | Authenticates securely with Docker Hub using Jenkins credentials (`dockerhub-creds`) without leaking tokens via process table or logs. *(Restricted to `main` branch)* | `withCredentials`, `docker login --password-stdin`, `docker push` |
-| **6. Kubernetes Deploy** | Atomically deploys workloads via Helm chart (`helm/campuscare`) into `campuscare` namespace with immutable image tags. Safely reuses existing secrets or adopts existing resources. | `helm upgrade --install --reuse-values` |
-| **7. Rollout Verification** | Confirms all replicas of `campuscare-backend` and `campuscare-frontend` achieve `Ready` state within 180 seconds. | `kubectl rollout status deployment/... -n campuscare` |
-| **8. Health Check** | Verifies live application functionality by probing Traefik Ingress on the local host with automatic retries. | `curl -s http://localhost/api/health` (HTTP 200) |
-| **9. Post & Cleanup** | Emits success/failure reports and purges temporary build artifacts to conserve host disk space. | `deleteDir()`, `docker logout` |
+- **Historical Milestone (FA1)**: The initial prototype deployed on Google Cloud Platform (GCP) Compute Engine using Docker Compose. Historical IaC and automation assets are preserved in `/terraform` and `/ansible`.
+- **Current Milestone (FA2)**: The production-oriented platform re-architected on AWS EC2 (`t3.small`) using k3s Kubernetes, parameterized Helm 3 packaging, automated Jenkins CI/CD pipeline, and Prometheus/Grafana SRE observability. Current operational assets reside in `/terraform-aws`, `/ansible-aws`, `/k8s`, `/helm`, and `/monitoring`.
 
 ---
 
-## 🔑 Demo Credentials & Evaluation Guide
+## License
 
-The database seeder (`npm run seed:demo` or `node seed.js`) pre-populates deterministic, realistic demo accounts:
-
-| Role | Email | Password | Access / Purpose |
-|:---|:---|:---|:---|
-| **Campus Administrator** | `admin@pccoepune.org` | `CampusCare@2026` / `Admin@12345` | Chief Facilities Officer - triage, dispatch, overrides, analytics, CSV export |
-| **Deputy Administrator** | `deputy.admin@pccoepune.org` | `CampusCare@2026` | Deputy Operations Director - full admin privileges |
-| **Electrical Staff** | `electrical.staff@pccoepune.org` | `CampusCare@2026` | Senior Electrical Technician |
-| **Plumbing Staff** | `plumbing.staff@pccoepune.org` | `CampusCare@2026` | Campus Master Plumber |
-| **Civil Staff** | `civil.staff@pccoepune.org` | `CampusCare@2026` | Civil & Structural Maintenance Engineer |
-| **IT Support Staff** | `itsupport.staff@pccoepune.org` | `CampusCare@2026` | Network & IT Systems Administrator |
-| **Sanitation Staff** | `cleaning.staff@pccoepune.org` | `CampusCare@2026` | Sanitation & Housekeeping Lead |
-| **Security Staff** | `security.staff@pccoepune.org` | `CampusCare@2026` | Security Systems & Access Controller |
-| **Furniture Staff** | `furniture.staff@pccoepune.org` | `CampusCare@2026` | Furniture & Carpentry Specialist |
-| **General Staff** | `general.staff@pccoepune.org` | `CampusCare@2026` | General Campus Facility Engineer |
-| **Legacy Staff** | `staff@pccoepune.org` | `CampusCare@2026` / `Staff@12345` | Senior Maintenance Specialist |
-| **Students (12 Accounts)** | `aarav.sharma@pccoepune.org`, `neha.patil@pccoepune.org`, etc. | `CampusCare@2026` / `Student@12345` | Student ticket raising, feedback rating, comments, image uploads |
-
----
-
-## 🚀 CampusCare 2.0 — Batch 1 Architecture & Features
-
-CampusCare 2.0 Batch 1 introduces enterprise collaboration, media attachment, observability, and usability enhancements while maintaining complete backward compatibility with the existing single-node k3s / Helm / Jenkins / Prometheus deployment.
-
-### 📋 12 Implemented Features
-
-1. **Complaint Discussion & Comments (`Feature 1`)**:
-   - Threaded discussion on complaints between students, assigned staff, and administrators.
-   - Role-based authorization: students can comment on their own complaints, staff on assigned complaints, admins on any complaint.
-   - Input length validation, trimming, sanitization, and duplicate submission prevention.
-2. **Complaint Image Uploads (`Feature 2`)**:
-   - Attach up to 5 images per complaint (JPEG, PNG, WebP) with a 5 MB maximum size limit per image.
-   - Multi-layer validation: MIME type check and binary magic bytes/signature verification (`FF D8 FF`, `89 50 4E 47`, `RIFF...WEBP`).
-   - Stored with secure random UUID filenames in persistent storage (`/app/uploads`).
-   - Secure authenticated retrieval endpoint: `GET /api/complaints/:id/images/:imageId` with strict ownership and authorization checks.
-3. **In-App Notification Center (`Feature 3`)**:
-   - Real-time in-app notification center tracking 6 lifecycle events: complaint creation, staff assignment, status change, resolution, new comments, and feedback ratings.
-   - Header notification bell with unread badge counter, dropdown preview, mark single as read, and mark all as read.
-4. **Email Notifications Infrastructure (`Feature 4`)**:
-   - Provider-agnostic Nodemailer SMTP integration.
-   - Disabled by default via `EMAIL_ENABLED=false` for local, CI, and test environments.
-   - Fully asynchronous and non-blocking — email failures never interrupt API responses or database transactions.
-5. **Advanced Search & Multi-Parametric Filtering (`Feature 5`)**:
-   - Keyword search across ticket title, description, location, and ticket ID.
-   - Dropdown filtering by Category, Status, Priority, Assigned Staff, and Date Range (`startDate` to `endDate`).
-   - Applied consistently across Admin, Student, and Staff portals.
-6. **Complaint Feedback & 5-Star Rating (`Feature 6`)**:
-   - Post-resolution rating system allowing the complaint owner to submit 1-5 star ratings and comments.
-   - Strictly enforced state validation: only available after ticket reaches `RESOLVED`.
-   - Idempotent and protected against duplicate or unauthorized rating submissions.
-7. **Comprehensive Activity Timeline & Audit History (`Feature 7`)**:
-   - Visual activity stream logging each lifecycle transition, staff dispatch, comment addition, resolution notes, and feedback submission.
-   - Preserves existing `statusHistory` array while maintaining the `activityTimeline` log.
-8. **RFC 4180 CSV Complaint Export (`Feature 8`)**:
-   - Server-side CSV generation with proper RFC 4180 quoting and character escaping.
-   - Role-scoped: Admins export all filtered complaints, Students export their own complaints, Staff export assigned tasks.
-   - Direct download via `Content-Disposition: attachment; filename=...`.
-9. **Dark / Light / System Theme Support (`Feature 9`)**:
-   - Class-based Tailwind dark mode (`darkMode: 'class'`).
-   - Persistent preference stored in `localStorage` with real-time `prefers-color-scheme` system detection.
-   - Theme toggle button integrated into the global navigation bar.
-10. **Standardized Loading, Error & Empty States (`Feature 10`)**:
-    - Reusable components (`LoadingSpinner`, `LoadingSkeleton`, `ErrorState`, `EmptyState`) deployed across all portal views.
-    - Eliminates blank screens and provides clear guidance when filters return no matches.
-11. **Idempotent Realistic Demo Dataset (`Feature 11`)**:
-    - Seed script (`npm run seed:demo`) that safely upserts 2 Admins, 8 Staff, 12 Students, and 28 Complaints with rich comments, timeline events, notifications, and feedback ratings.
-12. **Multi-Staff Departmental Integration (`Feature 12`)**:
-    - Specialized accounts across 8 operational campus facilities (Electrical, Plumbing, Civil, IT Support, Cleaning, Security, Furniture, General Facilities).
-    - Verified against staff authentication, work order queue, state transitions, and comment threads.
-
----
-
-### 📡 New REST APIs (Batch 1)
-
-| Method | Endpoint | Access | Description |
-|:---|:---|:---|:---|
-| `POST` | `/api/complaints/:id/comments` | Authenticated (Owner, Assigned Staff, Admin) | Post comment to complaint thread |
-| `GET` | `/api/complaints/:id/comments` | Authenticated (Owner, Assigned Staff, Admin) | Get all comments for complaint |
-| `GET` | `/api/complaints/:id/images/:imageId` | Authenticated (Owner, Assigned Staff, Admin) | Securely retrieve uploaded image |
-| `POST` | `/api/complaints/:id/feedback` | Authenticated (Student Owner only) | Submit 1-5 star resolution rating |
-| `GET` | `/api/complaints/export` | Authenticated (Student) | Export student's complaints to CSV |
-| `GET` | `/api/admin/complaints/export` | Admin only | Export filtered campus complaints to CSV |
-| `GET` | `/api/staff/tasks/export` | Staff only | Export assigned technician tasks to CSV |
-| `GET` | `/api/notifications` | Authenticated (Own notifications) | Get recent notifications |
-| `GET` | `/api/notifications/unread-count` | Authenticated (Own count) | Get count of unread notifications |
-| `PATCH` | `/api/notifications/:id/read` | Authenticated (Own notification) | Mark specific notification as read |
-| `PATCH` | `/api/notifications/read-all` | Authenticated (Own notifications) | Mark all notifications as read |
-
----
-
-### ⚙️ New Environment Variables
-
-```bash
-# Upload Configuration
-UPLOAD_DIR=/app/uploads
-MAX_IMAGE_SIZE_MB=5
-
-# Email Notification Configuration (Optional)
-EMAIL_ENABLED=false
-SMTP_HOST=
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=
-SMTP_PASSWORD=
-EMAIL_FROM="CampusCare Notifications" <no-reply@campuscare.local>
-
-# Demo Seeding Password (Optional)
-DEMO_PASSWORD=CampusCare@2026
-```
-
----
-
-### 🧪 Automated Testing (Batch 1)
-
-Run the complete test suite (151 tests across 4 suites):
-
-```bash
-cd backend
-npm test
-```
-
-Or run individual suites:
-```bash
-npm run test:auth        # 28 authentication & RBAC tests
-npm run test:complaints  # 49 complaint lifecycle tests
-npm run test:metrics     # 19 Prometheus observability tests
-npm run test:batch1      # 55 Batch 1 end-to-end feature tests
-```
-
----
-
-## ⚡ CampusCare 2.0 Batch 2 — Intelligent Priority Automation & SLA Management System
-
-Batch 2 enhances CampusCare from a manual logging registry into an operationally smart, deterministic facility management engine with automated SLA governance and multi-replica safety.
-
-### 🧠 1. Deterministic Rule-Based Priority Engine
-CampusCare uses a deterministic rule-based priority engine (`backend/services/priorityService.js`). It does not rely on third-party AI APIs or LLM keys, ensuring deterministic, offline-capable, and sub-millisecond evaluation:
-- **`CRITICAL`**: Electrical hazards (exposed live wires, sparking, burning smells, short circuits), active fire/smoke, structural flooding/burst pipes, serious campus security threats.
-- **`HIGH`**: Complete laboratory failures (computer labs, chemistry facilities), widespread internet/network outages affecting multiple departments, core campus infrastructure offline.
-- **`MEDIUM`**: Standard classroom equipment failure (projectors, loose fan regulators), routine plumbing blockages, localized facility repairs.
-- **`LOW`**: Minor cosmetic wear, non-urgent furniture maintenance, routine touch-ups.
-- **Audit Traceability**: Computes both `priority` (`LOW | MEDIUM | HIGH | CRITICAL`) and a human-readable `priorityReason` explaining the exact safety or operational rule triggered.
-- **Source Tracking**: Marked as `prioritySource: 'AUTOMATIC'`.
-
-### 🛡️ 2. Audited Administrator Manual Priority Override
-- Administrators can override priority at any time via `PUT /api/admin/complaints/:id/priority`.
-- **Mandatory Justification**: Requires a minimum 5-character reason explaining the administrative override.
-- **Audit Persistence**: Sets `prioritySource: 'MANUAL'`, stores `priorityUpdatedBy` and `priorityUpdatedAt`, logs a `PRIORITY_CHANGED` event on the activity timeline, and preserves previous priority.
-- **Override Respect Guarantee**: Automated SLA escalations will **never** overwrite an admin's manually assigned priority.
-
-### ⏱️ 3. Centralized SLA Policy Engine & Tracking
-CampusCare establishes strict institutional SLA policies (`backend/services/slaService.js`):
-
-| Priority Level | Response SLA Target | Resolution SLA Target |
-|:---|:---|:---|
-| **`CRITICAL`** | **1 Hour** (60 minutes) | **8 Hours** (480 minutes) |
-| **`HIGH`** | **4 Hours** (240 minutes) | **24 Hours** (1,440 minutes) |
-| **`MEDIUM`** | **12 Hours** (720 minutes) | **48 Hours** (2,880 minutes) |
-| **`LOW`** | **24 Hours** (1,440 minutes) | **72 Hours** (4,320 minutes) |
-
-- **First Response Definition**: Achieved when an authorized administrator or technician performs an actionable workflow step: ticket is reviewed, assigned to a technician, status transitions beyond `PENDING`, or a staff comment is posted.
-- **Resolution Definition**: Achieved when status becomes `RESOLVED`. Records authoritative `resolutionAt` timestamp and stores whether resolution completed within SLA or breached.
-- **Authoritative Status Calculation**:
-  - `ON_TRACK`: More than 25% target time remaining.
-  - `AT_RISK`: 25% or less target time remaining before breach.
-  - `BREACHED`: Deadline passed before first response or resolution.
-  - `RESOLVED`: Complaint completed.
-
-### 🔄 4. Automated SLA Monitoring & Multi-Level Escalation
-- **Lightweight Periodic Scheduler**: Background interval (`backend/services/slaScheduler.js`) inspects unresolved complaints at a configurable interval (`SLA_CHECK_INTERVAL_MS`, default 60s).
-- **Multi-Replica Kubernetes Safety (No Redis Required)**: Uses distributed lease locking via MongoDB collection `SystemLock` (`backend/models/SystemLock.js`). Before checking complaints, an instance acquires an atomic lock with a 45-second TTL (`findOneAndUpdate` with `$lt: now`). Even with multiple backend replicas running on k3s, only one worker performs SLA monitoring at a time.
-- **Multi-Level Escalation Workflow**:
-  - **Level 1 Escalation (On Breach)**: Complaint is flagged `sla.escalated = true`, `sla.escalationLevel = 1`. In-app and optional email notifications dispatched to assigned technician and administrators. Activity timeline records `SLA_BREACHED` and `COMPLAINT_ESCALATED`. If `prioritySource === 'AUTOMATIC'`, priority is automatically upgraded (`LOW` → `MEDIUM` → `HIGH` → `CRITICAL`) with targets recalculated.
-  - **Level 2 Executive Escalation (Persistent Overdue)**: Complaints remaining breached beyond `SECOND_ESCALATION_AFTER_BREACH_MINUTES` (default 120m) escalate to Level 2 with high-priority executive alerts.
-  - **Duplicate Prevention**: State flags (`breachNotified`, `escalation2Notified`) prevent notification spam across scheduler cycles.
-
-### 👁️ 5. Multi-Role UI Experience
-- **Admin Console**: SLA status and escalation filters, priority source tags (`Auto` / `Manual`), priority reason tooltips, dedicated SLA Telemetry card with live countdowns, and audited manual override modal requiring justification.
-- **Admin Dashboard**: 7 real-time SLA KPI cards: Active Unresolved, On-Track, At-Risk, Breached, Escalated, Average Resolution Time (hours), and SLA Compliance Percentage (target ≥ 90%).
-- **Staff Workbench**: Priority badge with reason, SLA state pill with live time remaining/overdue countdown, escalation badge with pulsing alert, and response/resolution deadlines.
-- **Student Portal**: Priority and clear resolution timeline with estimated completion date/time. Polite delay messaging (*"This complaint is currently delayed. Campus facilities has been alerted."*) without exposing sensitive internal supervisory workflows.
-
-### 📡 New REST APIs (Batch 2)
-
-| Method | Endpoint | Access | Description |
-|:---|:---|:---|:---|
-| `PUT` | `/api/admin/complaints/:id/priority` | Admin only | Manually override complaint priority with mandatory justification |
-| `GET` | `/api/admin/complaints?slaStatus=...` | Admin only | Filter complaints by SLA status (`ON_TRACK`, `AT_RISK`, `BREACHED`, `RESOLVED`) |
-| `GET` | `/api/admin/complaints?escalated=true` | Admin only | Filter escalated complaints |
-| `GET` | `/api/admin/complaints?prioritySource=...` | Admin only | Filter by `AUTOMATIC` or `MANUAL` priority origin |
-| `GET` | `/api/staff/tasks?slaStatus=...` | Staff only | Filter assigned work orders by SLA status |
-
-### 📊 Observability (Prometheus Metrics)
-- `campuscare_sla_at_risk_total`: Gauge tracking total tickets currently at risk (≤25% SLA remaining).
-- `campuscare_sla_breached_total`: Counter incremented whenever an active complaint breaches its SLA deadline.
-- `campuscare_sla_escalations_total`: Counter tracking supervisory escalations triggered by the scheduler.
-
-### ⚙️ Batch 2 Environment Variables
-
-```bash
-# SLA Scheduler Configuration
-SLA_SCHEDULER_ENABLED=true               # Set to false to disable background scheduler
-SLA_CHECK_INTERVAL_MS=60000             # Periodic monitoring interval (default: 60s)
-SLA_LEASE_TTL_MS=45000                  # Distributed lock lease expiration (default: 45s)
-FIRST_ESCALATION_AFTER_BREACH_MINUTES=0  # Delay before level 1 escalation (0 = immediate)
-SECOND_ESCALATION_AFTER_BREACH_MINUTES=120 # Delay before level 2 persistent escalation (120m)
-```
-
-### 🧪 Complete Automated Testing (287 Tests Passed)
-
-Run the full end-to-end verification suite across all 6 suites:
-
-```bash
-cd backend
-npm test
-```
-
-Individual test suites:
-```bash
-npm run test:auth        # 28 authentication & RBAC tests
-npm run test:complaints  # 49 complaint lifecycle tests
-npm run test:metrics     # 19 Prometheus observability tests
-npm run test:batch1      # 55 Batch 1 feature tests
-npm run test:batch2      # 77 Batch 2 Intelligent Priority & SLA tests
-npm run test:batch3      # 59 Batch 3 Real-time, AI, Duplicate & Staff Recs tests
-```
-
-Frontend verification:
-```bash
-cd frontend
-npm run lint             # Oxlint verification (0 errors)
-npm run build            # Vite production build
-```
-
----
-
-## ⚡ CampusCare 2.0 Batch 3 & Auth Resilience
-
-CampusCare 2.0 Batch 3 elevates platform operations with low-latency real-time synchronization, provider-abstracted triage intelligence, explainable duplicate issue mitigation, and smart technician dispatching.
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                      CAMPUSCARE 2.0 BATCH 3 ARCHITECTURE                     │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  ⚡ Real-Time Socket.IO   │ JWT Handshake (Path: /api/socket.io)            │
-│                         │ Strict Room RBAC (Students own; Staff assigned) │
-├─────────────────────────┼─────────────────────────────────────────────────┤
-│  🤖 AI Triage & Fallback │ Provider Abstraction (AI_CLASSIFICATION_ENABLED)│
-│                         │ Zero-fail fallback to Rule-Based Priority       │
-│                         │ Mandatory Respect for Admin Manual Overrides    │
-├─────────────────────────┼─────────────────────────────────────────────────┤
-│  🔍 Duplicate Detection │ Explainable Jaccard + Category + Location Engine│
-│                         │ Bounded Active Lookup (30-day window)           │
-│                         │ Interactive Student Review Before Submission    │
-├─────────────────────────┼─────────────────────────────────────────────────┤
-│  🎯 Staff Recommendations│ Explainable Scoring (Trade 50%, Load 30%, SLA 20│
-│                         │ Ranked Dispatch Cards with One-Click Quick Assign│
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-### 🔐 Part A: Seeded Demo Authentication & Role Routing
-
-- **Root Cause Fix**: Eliminated duplicate bcrypt password hashing in Mongoose `pre('save')` via regex hash detection. Synchronized deterministic development credentials with idempotent verification using `user.matchPassword()`.
-- **401 Interceptor Protection**: Reconfigured Axios response interceptor to prevent wiping credentials on failed login submissions, ensuring clear feedback without redirect loops.
-- **Deterministic Password**: Managed via `SEED_DEMO_PASSWORD` environment variable (defaults to `CampusCare@2026`).
-- **Role Dashboard Redirects**:
-  - `STUDENT` $\to$ `/dashboard`
-  - `STAFF` $\to$ `/staff/dashboard`
-  - `ADMIN` $\to$ `/admin/dashboard`
-- **Seeded Demo Accounts**:
-  - **Admin**: `admin@pccoepune.org`
-  - **Staff Lead**: `staff@pccoepune.org`
-  - **Student**: `student@pccoepune.org` (and `aarav.sharma@pccoepune.org`)
-
-### ⚡ 1. Real-Time Complaint Status Updates (Socket.IO)
-- **Path & Transport**: Operates at `/api/socket.io` through Traefik Ingress without requiring separate port exposures.
-- **JWT Authentication**: WebSockets are authenticated on connection handshake using standard bearer tokens.
-- **Room RBAC**:
-  - `complaint:<id>`: Students may only join rooms for tickets they authored; staff may join rooms assigned to them; administrators can join any room.
-  - `user:<userId>`: Private notifications and assignment events.
-  - `admin_room`: Platform operational updates.
-- **Live Sync**: Real-time status changes, comments, timeline events, and priority overrides update dynamically with "LIVE" status indicator badges.
-
-### 🤖 2. AI-Assisted Complaint Classification
-- **Provider Abstraction**: Layered in `classificationService.js` supporting local heuristic simulation and future remote LLM providers.
-- **Default Disabled**: `AI_CLASSIFICATION_ENABLED=false` by default; deterministic rule-based priority engine remains fully authoritative.
-- **Zero-Failure Fallback**: Any provider timeout or network failure automatically falls back to deterministic classification without crashing.
-- **Admin Override Protection**: AI suggestions **never** override an administrator's manual priority override (`prioritySource === 'MANUAL'`).
-- **Audit Tracking**: Stores `classificationSource` (`RULE_BASED` / `AI` / `MANUAL`), `classificationConfidence`, `classificationKeywords`, and `classificationTimestamp`.
-
-### 🔍 3. Duplicate Complaint Detection
-- **Explainable Similarity**: Multi-factor scoring combining token Jaccard similarity (60%), location match (25%), and category match (15%).
-- **Bounded Candidate Pool**: Scans only recent active complaints within `DUPLICATE_LOOKBACK_DAYS` (default 30 days) to eliminate $O(n^2)$ database bottlenecks.
-- **Student Choice Flow**: Pre-submission check (`POST /api/complaints/check-duplicate`) displays matches in an interactive review modal, allowing students to inspect existing tickets, link duplicate, or proceed anyway.
-
-### 🎯 4. Smart Staff Recommendations
-- **Explainable Formula**:
-  $$\text{Score} = \text{Specialization (0-50 pts)} + \text{Workload Capacity (0-30 pts)} + \text{SLA Health (0-20 pts)}$$
-- **Ranked Dispatch**: Admin drawer displays ranked technician recommendations with score breakdowns and one-click "Quick Assign".
-
-### 📡 New REST APIs (Batch 3)
-
-| Method | Endpoint | Access | Description |
-|:---|:---|:---|:---|
-| `POST` | `/api/complaints/check-duplicate` | Authenticated | Pre-submission duplicate candidate search |
-| `GET` | `/api/admin/complaints/:id/staff-recommendations` | Admin only | Ranked staff recommendations with explainable scores |
-| `POST` | `/api/admin/complaints/:id/reclassify` | Admin only | Trigger AI-assisted reclassification |
-
-### 📊 Observability (Prometheus Metrics)
-- `campuscare_socket_connections_active`: Current active WebSocket client connections.
-- `campuscare_socket_events_total`: Total socket events classified by `event_type`.
-- `campuscare_ai_classification_requests_total`: AI classification calls by `provider` and `status`.
-- `campuscare_duplicate_checks_total`: Duplicate detection checks by `result`.
-- `campuscare_staff_recommendation_requests_total`: Total technician recommendation requests.
-
----
-
-## 📂 Project Directory Structure
-
-```text
-CampusCare/
-├── 📁 .github/                  # GitHub workflows & templates
-├── 📁 ansible/                  # Ansible automation & configuration management (GCP)
-│   ├── ansible.cfg              # Ansible configuration & SSH settings
-│   ├── deploy.yml               # Production deployment playbook
-│   └── inventory.ini            # Target host inventory file
-├── 📁 ansible-aws/              # Ansible base host automation & Docker setup (AWS EC2)
-├── 📁 backend/                  # Node.js & Express.js REST API
-│   ├── config/                  # Database connection (Mongoose / MongoDB)
-│   ├── controllers/             # Request handlers (auth, complaints, admin, staff)
-│   ├── middleware/              # JWT verification & RBAC authorization
-│   ├── models/                  # Data models (User, Complaint)
-│   ├── routes/                  # Express route routers
-│   ├── Dockerfile               # Alpine-based Node.js runtime container
-│   ├── package.json             # Backend dependencies & test scripts
-│   ├── seed.js                  # Database seeder for demo data
-│   ├── server.js                # Express application entrypoint
-│   ├── test-auth.js             # Authentication integration test suite
-│   └── test-complaints.js       # Complaint lifecycle test suite
-├── 📁 frontend/                 # React 19 + Vite client application
-│   ├── src/
-│   │   ├── assets/              # Static assets & illustrations
-│   │   ├── components/          # Reusable UI components (Navbar, Modal, Timeline)
-│   │   ├── context/             # AuthContext & global state providers
-│   │   ├── layouts/             # Base layout wrappers
-│   │   ├── pages/               # Role-specific views (Student, Admin, Staff)
-│   │   ├── services/            # Axios API client services
-│   │   ├── App.jsx              # Application router & protected routes
-│   │   └── main.jsx             # React entry point
-│   ├── Dockerfile               # Multi-stage production build (Node builder -> NGINX)
-│   ├── nginx.conf               # NGINX reverse proxy & SPA fallback configuration
-│   ├── package.json             # Frontend dependencies & build scripts
-│   ├── tailwind.config.js       # Tailwind CSS configuration
-│   └── vite.config.js           # Vite build configuration
-├── 📁 helm/                     # Production Helm 3 chart (Phase 4)
-│   └── campuscare/              # Parameterized templates, values.yaml, and Chart.yaml
-├── 📁 k8s/                      # Kubernetes raw manifests (Phase 3)
-│   ├── backend-deployment.yaml  # Backend deployment manifest (2 replicas)
-│   ├── backend-service.yaml     # Backend ClusterIP service
-│   ├── configmap.yaml           # Non-sensitive configuration
-│   ├── frontend-deployment.yaml # Frontend deployment manifest (2 replicas)
-│   ├── frontend-service.yaml    # Frontend ClusterIP service
-│   ├── ingress.yaml             # Traefik Ingress routing / and /api
-│   ├── mongodb-deployment.yaml  # MongoDB database deployment
-│   ├── mongodb-pvc.yaml         # PersistentVolumeClaim for MongoDB data
-│   ├── mongodb-service.yaml     # MongoDB ClusterIP service
-│   ├── namespace.yaml           # campuscare namespace
-│   └── secret.yaml              # Application secret definitions
-├── 📁 terraform/                # Infrastructure as Code (Google Cloud Platform)
-├── 📁 terraform-aws/            # Infrastructure as Code (AWS EC2 t3.small in ap-south-1)
-├── .env.example                 # Root environment variables template
-├── .gitignore                   # Git ignore patterns
-├── docker-compose.yml           # Multi-container orchestration specification
-├── Jenkinsfile                  # Production Declarative CI/CD Pipeline (Phase 5)
-├── LICENSE                      # MIT Open-Source License
-└── README.md                    # Project documentation
-```
-
----
-
-## 🔒 Security & Best Practices
-
-- **Stateless JWT Authentication**: Secure, digitally signed bearer tokens expire automatically to prevent session hijacking.
-- **Bcrypt Password Hashing**: Passwords are salted and hashed (10 rounds) before persisting to MongoDB; plain text passwords are never stored.
-- **Role-Based Access Control (RBAC)**: Strict server-side route guards prevent unauthorized role privilege escalation.
-- **Database Network Isolation**: MongoDB operates exclusively within an internal Docker bridge network (`campuscare-net`), preventing external direct database exposure.
-- **Multi-Stage Docker Builds**: Frontend images use lightweight Alpine NGINX runtime containers, stripping dev dependencies and keeping attack surfaces minimal.
-
----
-
-## 🤝 Contributing
-
-Contributions make the open-source community an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-1. Fork the Project (`https://github.com/SwayamMandhani06/CampusCare`)
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'feat: Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 📄 License
-
-Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information.
-
+Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for complete details.

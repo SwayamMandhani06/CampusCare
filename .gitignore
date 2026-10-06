@@ -15,6 +15,8 @@ node_modules/
 *.key
 id_rsa
 id_rsa.pub
+id_ed25519
+id_ed25519.pub
 *.pub
 
 # Logs
@@ -27,11 +29,13 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
-# Build artifacts
+# Build artifacts & coverage
 dist/
 build/
+coverage/
 **/dist/
 **/build/
+**/coverage/
 
 # IDE / Editor configuration
 .vscode/
@@ -45,7 +49,6 @@ build/
 *.tfvars.json
 !*.tfvars.example
 !**/*.tfvars.example
-
 
 # Planning and Internal Verification Artifacts
 PLAN.md
@@ -63,7 +66,9 @@ kubeconfig
 *.kubeconfig
 !k8s/secret.yaml
 
-# Uploads directory
+# Uploads and temporary directories
 uploads/*
 **/uploads/*
 !**/uploads/.gitkeep
+tmp/
+**/tmp/

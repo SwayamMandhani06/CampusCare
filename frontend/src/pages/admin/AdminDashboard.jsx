@@ -282,11 +282,11 @@ const AdminDashboard = () => {
 
           {/* 3. At-Risk */}
           <Card className="p-3.5 bg-amber-500/5 border-amber-500/20">
-            <div className="flex items-center justify-between text-amber-500">
+            <div className="flex items-center justify-between text-amber-600 dark:text-amber-400">
               <span className="text-[10px] font-mono uppercase tracking-wider font-medium">At Risk</span>
-              <AlertTriangle size={13} />
+              <Clock size={13} />
             </div>
-            <div className="text-xl sm:text-2xl font-medium text-amber-500 mt-1.5">
+            <div className="text-xl sm:text-2xl font-medium text-amber-600 dark:text-amber-400 mt-1.5 font-mono">
               <AnimatedCounter value={slaMetrics.atRisk} />
             </div>
             <span className="text-[10px] font-mono text-muted mt-0.5 block truncate">&le;25% SLA left</span>
@@ -294,23 +294,23 @@ const AdminDashboard = () => {
 
           {/* 4. Breached */}
           <Card className="p-3.5 bg-rose-500/5 border-rose-500/20">
-            <div className="flex items-center justify-between text-rose-500">
+            <div className="flex items-center justify-between text-rose-600 dark:text-rose-400">
               <span className="text-[10px] font-mono uppercase tracking-wider font-medium">Breached</span>
-              <AlertOctagon size={13} />
+              <Clock size={13} />
             </div>
-            <div className="text-xl sm:text-2xl font-medium text-rose-500 mt-1.5">
+            <div className="text-xl sm:text-2xl font-medium text-rose-600 dark:text-rose-400 mt-1.5 font-mono">
               <AnimatedCounter value={slaMetrics.breached} />
             </div>
-            <span className="text-[10px] font-mono text-muted mt-0.5 block truncate">Overdue deadline</span>
+            <span className="text-[10px] font-mono text-muted mt-0.5 block truncate">Deadline exceeded</span>
           </Card>
 
           {/* 5. Escalated */}
-          <Card className="p-3.5 bg-red-500/5 border-red-500/20">
-            <div className="flex items-center justify-between text-red-500">
+          <Card className="p-3.5 bg-rose-500/5 border-rose-500/20">
+            <div className="flex items-center justify-between text-rose-600 dark:text-rose-400">
               <span className="text-[10px] font-mono uppercase tracking-wider font-medium">Escalated</span>
               <Flame size={13} />
             </div>
-            <div className="text-xl sm:text-2xl font-medium text-red-500 mt-1.5">
+            <div className="text-xl sm:text-2xl font-medium text-rose-600 dark:text-rose-400 mt-1.5 font-mono">
               <AnimatedCounter value={slaMetrics.escalated} />
             </div>
             <span className="text-[10px] font-mono text-muted mt-0.5 block truncate">Management alert</span>

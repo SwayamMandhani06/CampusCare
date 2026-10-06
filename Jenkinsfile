@@ -256,6 +256,7 @@ pipeline {
                             --namespace "${KUBE_NAMESPACE}" \
                             --reuse-values \
                             ${EXTRA_ARGS} \
+                            --set backend.persistence.uploads.enabled=true \
                             --set backend.image.tag="${IMAGE_TAG}" \
                             --set frontend.image.tag="${IMAGE_TAG}"
                     else

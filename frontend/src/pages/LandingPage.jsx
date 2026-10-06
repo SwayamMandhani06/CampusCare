@@ -213,7 +213,7 @@ const LandingPage = () => {
             variants={itemVariants}
             className="inline-flex items-center space-x-2 px-3.5 py-1.5 mb-7 rounded-full border border-line bg-surface shadow-2xs text-xs font-mono text-muted"
           >
-            <span className="w-2 h-2 rounded-full bg-status-resolved animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-status-resolved" />
             <span className="font-medium text-ink">PCCOE Campus Operations</span>
             <span className="text-line">•</span>
             <span>Smart Complaint & Facility Management</span>
@@ -306,45 +306,46 @@ const LandingPage = () => {
             </Link>
           </motion.div>
 
-          {/* Visual Composition: Live Telemetry Preview Card */}
+          {/* Institutional Process Architecture Grid */}
           <motion.div
             variants={itemVariants}
-            className="mt-12 max-w-2xl mx-auto text-left"
+            className="mt-12 max-w-4xl mx-auto"
           >
-            <div className="bg-surface border border-line rounded-xl p-5 shadow-sm">
-              <div className="flex items-center justify-between pb-3 border-b border-line">
-                <div className="flex items-center space-x-2.5">
-                  <span className="w-2 h-2 rounded-full bg-status-progress animate-ping" />
-                  <span className="text-xs font-mono font-medium text-ink uppercase tracking-wide">
-                    Live Dispatch Telemetry
-                  </span>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+              <div className="p-5 rounded-xl bg-surface border border-line shadow-2xs hover:border-line-strong transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-brand/10 border border-brand/20 flex items-center justify-center text-brand mb-3">
+                  <FileText size={16} />
                 </div>
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-status-assigned/15 text-status-assigned border border-status-assigned/30 font-semibold">
-                  Ticket #CC-8429
-                </span>
+                <h3 className="text-sm font-semibold text-ink">
+                  1. Report Campus Issues
+                </h3>
+                <p className="text-xs text-muted mt-1.5 leading-relaxed">
+                  Log campus breakdowns with exact building and room locations, category classification, and photo attachments.
+                </p>
               </div>
-              <div className="pt-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <h4 className="text-sm font-semibold text-ink">
-                    Main Electrical Distribution Panel Trip
-                  </h4>
-                  <p className="text-xs text-muted flex items-center space-x-2">
-                    <span className="inline-flex items-center font-mono">
-                      <MapPin size={11} className="mr-1 text-muted" /> Mechanical Building • Floor 2
-                    </span>
-                    <span className="text-line">•</span>
-                    <span className="font-mono text-[11px]">Assigned to: Ramesh D.</span>
-                  </p>
+
+              <div className="p-5 rounded-xl bg-surface border border-line shadow-2xs hover:border-line-strong transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-status-assigned/10 border border-status-assigned/20 flex items-center justify-center text-status-assigned mb-3">
+                  <Clock size={16} />
                 </div>
-                <div className="flex items-center space-x-2 shrink-0">
-                  <span className="px-2 py-1 rounded text-[11px] font-mono bg-status-progress/10 text-status-progress border border-status-progress/30 font-semibold">
-                    IN PROGRESS
-                  </span>
-                  <span className="px-2 py-1 rounded text-[11px] font-mono bg-status-resolved/10 text-status-resolved border border-status-resolved/30 font-semibold flex items-center space-x-1">
-                    <Clock size={11} />
-                    <span>SLA: 2h 45m</span>
-                  </span>
+                <h3 className="text-sm font-semibold text-ink">
+                  2. Track with SLA Deadlines
+                </h3>
+                <p className="text-xs text-muted mt-1.5 leading-relaxed">
+                  Time-bound resolution targets guarantee prompt routing to on-duty campus technicians with live stage updates.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-xl bg-surface border border-line shadow-2xs hover:border-line-strong transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-status-resolved/10 border border-status-resolved/20 flex items-center justify-center text-status-resolved mb-3">
+                  <ShieldCheck size={16} />
                 </div>
+                <h3 className="text-sm font-semibold text-ink">
+                  3. Verified Repair Closure
+                </h3>
+                <p className="text-xs text-muted mt-1.5 leading-relaxed">
+                  Technicians record parts and diagnostic repair notes; students confirm work outcomes with a permanent audit trail.
+                </p>
               </div>
             </div>
           </motion.div>

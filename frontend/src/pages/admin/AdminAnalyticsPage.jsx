@@ -29,7 +29,6 @@ import {
   TrendingUp,
   TrendingDown,
   Clock,
-  AlertOctagon,
   Users,
   MapPin,
   Star,
@@ -602,9 +601,9 @@ const AdminAnalyticsPage = () => {
 
             {/* Breaches & Escalations */}
             <Card className="p-4 sm:p-5 relative overflow-hidden">
-              <div className="flex items-center justify-between text-[#8B3416]">
-                <span className="text-xs font-mono uppercase tracking-wider font-medium">Breached SLA</span>
-                <AlertOctagon size={15} />
+              <div className="flex items-center justify-between text-rose-700 dark:text-rose-400">
+                <span className="text-xs font-mono uppercase tracking-wider font-medium">Overdue / Breached SLA</span>
+                <Clock size={15} />
               </div>
               <div className="text-2xl sm:text-3xl font-medium text-ink mt-2">
                 <AnimatedCounter value={analytics.slaAnalytics.breached} />

@@ -421,11 +421,19 @@ const getComplaintImage = async (req, res) => {
     }
 
     // Authorization check
-    const isOwner = complaint.createdBy.toString() === req.user._id.toString();
+    const createdById = complaint.createdBy?._id
+      ? complaint.createdBy._id.toString()
+      : complaint.createdBy?.toString();
+    const isOwner = createdById === req.user._id.toString();
+
+    const assignedToId = complaint.assignedTo?._id
+      ? complaint.assignedTo._id.toString()
+      : complaint.assignedTo?.toString();
     const isAssignedStaff =
       req.user.role === 'staff' &&
-      complaint.assignedTo &&
-      complaint.assignedTo.toString() === req.user._id.toString();
+      assignedToId &&
+      assignedToId === req.user._id.toString();
+
     const isAdmin = req.user.role === 'admin';
 
     if (!isOwner && !isAssignedStaff && !isAdmin) {

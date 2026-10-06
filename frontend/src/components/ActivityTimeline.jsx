@@ -51,9 +51,9 @@ const ActivityTimeline = ({ timeline = [] }) => {
       case 'SLA_STARTED':
         return <Clock size={13} className="text-blue-500" />;
       case 'SLA_AT_RISK':
-        return <AlertTriangle size={13} className="text-amber-500" />;
+        return <Clock size={13} className="text-amber-500" />;
       case 'SLA_BREACHED':
-        return <AlertOctagon size={13} className="text-red-500" />;
+        return <Clock size={13} className="text-rose-600 dark:text-rose-400" />;
       case 'COMPLAINT_ESCALATED':
         return <Flame size={13} className="text-rose-500" />;
       case 'SLA_RESOLVED':

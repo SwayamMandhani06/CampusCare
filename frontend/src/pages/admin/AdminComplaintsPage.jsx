@@ -1044,7 +1044,9 @@ const AdminComplaintsPage = () => {
                           ✓ Responded: {formatFullDateTime(selectedComplaint.sla.responseAt)}
                         </span>
                       ) : selectedComplaint.sla?.responseBreached ? (
-                        <span className="text-priority-critical">⚠ Response SLA Breached</span>
+                        <span className="inline-flex items-center text-rose-700 dark:text-rose-400 font-medium font-mono text-[11px]">
+                          <Clock size={11} className="mr-1 shrink-0" /> Response Deadline Exceeded
+                        </span>
                       ) : (
                         <span className="text-muted">Awaiting first response action</span>
                       )}
@@ -1066,7 +1068,9 @@ const AdminComplaintsPage = () => {
                           ✓ Resolved: {formatFullDateTime(selectedComplaint.sla.resolutionAt)}
                         </span>
                       ) : selectedComplaint.sla?.resolutionBreached ? (
-                        <span className="text-priority-critical">⚠ Resolution Breached</span>
+                        <span className="inline-flex items-center text-rose-700 dark:text-rose-400 font-medium font-mono text-[11px]">
+                          <Clock size={11} className="mr-1 shrink-0" /> Resolution Deadline Exceeded
+                        </span>
                       ) : (
                         <span className="text-muted">
                           {formatSlaTimeRemaining(selectedComplaint.sla?.resolutionDeadline)}

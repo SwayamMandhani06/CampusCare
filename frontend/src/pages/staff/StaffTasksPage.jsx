@@ -619,7 +619,9 @@ const StaffTasksPage = () => {
                           ✓ Responded: {formatFullDateTime(selectedTask.sla.responseAt)}
                         </span>
                       ) : selectedTask.sla?.responseBreached ? (
-                        <span className="text-priority-critical font-medium">⚠ Response SLA Breached</span>
+                        <span className="inline-flex items-center text-rose-700 dark:text-rose-400 font-medium font-mono text-[11px]">
+                          <Clock size={11} className="mr-1 shrink-0" /> Response Deadline Exceeded
+                        </span>
                       ) : (
                         <span className="text-muted">Awaiting first response action</span>
                       )}
@@ -641,7 +643,9 @@ const StaffTasksPage = () => {
                           ✓ Resolved: {formatFullDateTime(selectedTask.sla.resolutionAt)}
                         </span>
                       ) : selectedTask.sla?.resolutionBreached ? (
-                        <span className="text-priority-critical font-medium">⚠ Resolution Breached</span>
+                        <span className="inline-flex items-center text-rose-700 dark:text-rose-400 font-medium font-mono text-[11px]">
+                          <Clock size={11} className="mr-1 shrink-0" /> Resolution Deadline Exceeded
+                        </span>
                       ) : (
                         <span className="text-muted">
                           {formatSlaTimeRemaining(selectedTask.sla?.resolutionDeadline)}

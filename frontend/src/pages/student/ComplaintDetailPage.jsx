@@ -357,12 +357,12 @@ const ComplaintDetailPage = () => {
                     </span>
                   </div>
                 ) : complaint.sla?.status === 'BREACHED' || complaint.sla?.resolutionBreached ? (
-                  <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center space-x-2.5 text-xs font-mono text-amber-600 dark:text-amber-400">
-                    <AlertTriangle size={15} className="shrink-0" />
+                  <div className="p-3.5 rounded-xl bg-rose-500/5 border border-rose-500/20 flex items-center space-x-2.5 text-xs font-mono text-rose-700 dark:text-rose-300">
+                    <Clock size={15} className="shrink-0 text-rose-600 dark:text-rose-400" />
                     <div>
-                      <span className="font-medium block">This complaint is currently delayed.</span>
+                      <span className="font-medium block">Resolution deadline exceeded.</span>
                       <span className="text-[11px] text-muted block mt-0.5 font-sans">
-                        Campus facilities has been alerted and is prioritizing resolution for this issue.
+                        Campus facilities has been notified and is prioritizing resolution for this issue.
                       </span>
                     </div>
                   </div>

@@ -125,7 +125,7 @@ const RaiseComplaintPage = () => {
       payload.append('priority', formData.priority);
       payload.append('description', formData.description.trim());
 
-      const dupId = duplicateOverride || selectedDuplicateOf;
+      const dupId = duplicateOverride || null;
       if (dupId) {
         payload.append('duplicateOf', dupId);
       }
@@ -145,6 +145,7 @@ const RaiseComplaintPage = () => {
       console.error('[RaiseComplaint] Error:', err);
       setApiError(
         err.response?.data?.message ||
+          err.message ||
           'Failed to submit complaint. Please check fields and try again.'
       );
     } finally {

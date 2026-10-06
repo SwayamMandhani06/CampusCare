@@ -31,6 +31,7 @@ import {
   Flame,
   TrendingUp,
   Activity,
+  BarChart2,
 } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -154,6 +155,12 @@ const AdminDashboard = () => {
             <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
             <span>Refresh Data</span>
           </Button>
+          <Link to="/admin/analytics">
+            <Button variant="secondary" size="sm" className="text-xs">
+              <BarChart2 size={15} />
+              <span>Analytics Hub</span>
+            </Button>
+          </Link>
           <Link to="/admin/complaints">
             <Button variant="primary" size="sm">
               <FileText size={15} />

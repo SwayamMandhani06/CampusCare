@@ -24,6 +24,7 @@ router.use(protect);
 router.use(authorize('admin'));
 
 router.get('/dashboard', getAdminDashboard);
+router.use('/analytics', require('./analytics'));
 router.get('/complaints/export', exportAdminComplaintsCsv);
 router.get('/complaints', getAllComplaints);
 router.put('/complaints/:id/assign', assignStaff);

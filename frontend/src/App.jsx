@@ -28,6 +28,7 @@ import ComplaintDetailPage from './pages/student/ComplaintDetailPage';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminAnalyticsPage from './pages/admin/AdminAnalyticsPage';
 import AdminComplaintsPage from './pages/admin/AdminComplaintsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 
@@ -115,6 +116,7 @@ function App() {
               }
             >
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
               <Route path="/admin/complaints" element={<AdminComplaintsPage />} />
               <Route path="/admin/users" element={<AdminUsersPage />} />
             </Route>

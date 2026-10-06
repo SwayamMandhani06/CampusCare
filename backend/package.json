@@ -8,13 +8,14 @@
     "dev": "nodemon server.js",
     "seed": "node seed.js",
     "seed:demo": "node seed.js",
-    "test": "node test-auth.js && node test-complaints.js && node test-metrics.js && node test-batch1.js && node test-batch2.js && node test-batch3.js",
+    "test": "node test-auth.js && node test-complaints.js && node test-metrics.js && node test-batch1.js && node test-batch2.js && node test-batch3.js && node test-analytics.js",
     "test:auth": "node test-auth.js",
     "test:complaints": "node test-complaints.js",
     "test:metrics": "node test-metrics.js",
     "test:batch1": "node test-batch1.js",
     "test:batch2": "node test-batch2.js",
-    "test:batch3": "node test-batch3.js"
+    "test:batch3": "node test-batch3.js",
+    "test:analytics": "node test-analytics.js"
   },
   "keywords": [
     "campuscare",

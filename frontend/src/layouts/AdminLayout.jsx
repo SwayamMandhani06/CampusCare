@@ -8,6 +8,7 @@ import {
   Users,
   LogOut,
   Shield,
+  BarChart2,
 } from 'lucide-react';
 import Button from '../components/Button';
 
@@ -31,6 +32,12 @@ const AdminLayout = () => {
       label: 'Operational Dashboard',
       shortLabel: 'Dashboard',
       icon: <LayoutDashboard size={17} />,
+    },
+    {
+      to: '/admin/analytics',
+      label: 'Advanced Analytics',
+      shortLabel: 'Analytics',
+      icon: <BarChart2 size={17} />,
     },
     {
       to: '/admin/complaints',

@@ -73,7 +73,11 @@
 - **Inline Ticket Modification**: Modify complaint details while the ticket remains in `PENDING` state.
 
 ### 🛡️ 2. Administrator Control Hub
-- **Executive Analytics Dashboard**: Summary KPIs with visual category distribution and status breakdown charts (powered by Recharts).
+- **Advanced Operational Analytics Hub**: Dedicated `/admin/analytics` operational intelligence console with interactive Recharts (volume trends over time, category breakdowns, priority severity, SLA compliance donut, campus facility hotspots, and rating distribution).
+- **Period-over-Period Performance Telemetry**: Automated calculation of equivalent preceding window comparisons for volume (% change), resolution duration (% change), and SLA compliance (percentage-point changes).
+- **Deterministic Operational Insights Engine**: Rule-based intelligence analyzing category concentration, backlog peaks, breach patterns, and technician capacity without external AI dependencies.
+- **One-Click Chart Drill-Down**: Interactive chart bars, slices, and staff rows route directly to filtered complaint queues (`/admin/complaints?category=...&slaStatus=...`).
+- **Executive CSV Report Export**: Multi-section CSV report downloads with mathematical formula injection defense against spreadsheet attacks.
 - **Triage & Assignment Console**: Comprehensive issue workbench to assign tasks to specific maintenance staff members.
 - **Dynamic Priority Escalation**: Upgrade priority (`LOW` → `MEDIUM` → `HIGH` → `CRITICAL`) with automatic audit log tracking.
 - **Audit & Governance Trail**: Every status transition, note, and assignment is timestamped and attributed to the acting administrator.
@@ -367,23 +371,63 @@ ansible-playbook -i inventory.ini deploy.yml
 
 ---
 
+## 📊 Advanced Analytics & Operational Reporting
+
+CampusCare features an executive analytics subsystem delivering deep visibility into facility operations, SLA performance, campus hotspots, and staff workload:
+
+### 1. Dedicated Analytics Console (`/admin/analytics`)
+- **Date Range Filters**: `7d`, `30d` (default), `90d`, `6m`, `1y`, and `custom` (custom date pickers) strictly calculated on the server with UTC boundaries.
+- **Multi-Dimensional Operational Filters**: Filter simultaneously by Category, Priority, Lifecycle Status, SLA Status (`ON_TRACK`, `AT_RISK`, `BREACHED`, `RESOLVED`), Location keyword regex, and Assigned Technician.
+- **Period-over-Period Performance Indicators**: Live comparison cards evaluating volume variance (% change), resolution speed (% change), and SLA compliance changes (percentage points).
+- **Rule-Based Operational Insights Engine**: Deterministic, data-backed operational telemetry highlighting backlog concentrations, dominant complaint categories, SLA breach patterns, and overloaded personnel.
+- **Interactive Recharts Visualizations**:
+  - *Complaint Volume Over Time*: Area/Line historical trajectory of created, resolved, and breached tickets.
+  - *SLA Health Distribution*: Visual compliance, at-risk, and overdue workload breakdown with drill-down support.
+  - *Category Breakdown*: Bar distribution across the 9 facility disciplines with click-through filtering.
+  - *Priority Severity*: Criticality distribution across campus infrastructure.
+  - *Campus Facility Hotspots*: Top physical locations ranked by complaint frequency, critical hazards, and SLA breaches.
+  - *Student Satisfaction*: Post-resolution star rating distribution (1 to 5 stars) and average score.
+- **Maintenance Staff Capacity Matrix**: Sortable technician table tracking assigned count, active workload, resolved count, breached count, SLA compliance rate, completion rate, and average resolution time in hours.
+- **Executive CSV Report Export**: Comprehensive 8-section report generation (`GET /api/admin/analytics/export`) protected by formula sanitization against spreadsheet injection.
+
+### 2. Analytics REST API Reference (Admin Only)
+
+| Method | Endpoint | Query Parameters | Description |
+|:---|:---|:---|:---|
+| `GET` | `/api/admin/analytics/overview` | `range`, `startDate`, `endDate`, `category`, `priority`, `status`, `slaStatus`, `location`, `assignedStaff` | Complete consolidated analytics dataset |
+| `GET` | `/api/admin/analytics/trends` | `range`, `startDate`, `endDate`, filters... | Time-bucketed volume and resolution trajectories |
+| `GET` | `/api/admin/analytics/sla` | `range`, `startDate`, `endDate`, filters... | SLA compliance, breach, and escalation telemetry |
+| `GET` | `/api/admin/analytics/staff` | `range`, `startDate`, `endDate`, filters... | Maintenance staff workload and performance matrix |
+| `GET` | `/api/admin/analytics/locations` | `range`, `startDate`, `endDate`, filters... | Campus facility hotspot ranking |
+| `GET` | `/api/admin/analytics/feedback` | `range`, `startDate`, `endDate`, filters... | Student satisfaction ratings and distribution |
+| `GET` | `/api/admin/analytics/export` | `range`, `startDate`, `endDate`, filters... | Download executive multi-section operational CSV report |
+
+---
+
 ## 🧪 Testing & Quality Assurance
 
-The backend includes built-in verification scripts with self-contained in-memory MongoDB support:
+CampusCare maintains a comprehensive 358-test automated test suite across 7 specialized test runners, all self-contained with embedded MongoDB support:
 
 ```bash
-# Run Authentication & Role Access Verification
+# Run All Test Suites in Sequence (Auth, Complaints, Metrics, Batch 1, Batch 2, Batch 3, Analytics)
 cd backend
-npm run test:auth
+npm test
 
-# Run Full Complaint Lifecycle & Workflow Verification
-npm run test:complaints
+# Run Specialized Test Runners Individually:
+npm run test:auth         # Authentication & RBAC verification (34 tests)
+npm run test:complaints   # Complaint lifecycle & transitions (40 tests)
+npm run test:metrics      # Prometheus metrics registration (12 tests)
+npm run test:batch1       # Batch 1 features: comments, uploads, notifications (56 tests)
+npm run test:batch2       # Batch 2 features: smart priority, SLA scheduler (86 tests)
+npm run test:batch3       # Batch 3 features: Socket.IO, AI fallback, duplicates, staff recs (59 tests)
+npm run test:analytics    # Advanced Analytics & Reporting verification (71 tests)
 ```
 
-**Frontend Linting & Static Code Analysis:**
+**Frontend Linting & Production Build Validation:**
 ```bash
-cd frontend
-npm run lint
+cd ../frontend
+npm run lint    # OxLint static analysis (0 errors)
+npm run build   # Production Vite bundling
 ```
 
 ---

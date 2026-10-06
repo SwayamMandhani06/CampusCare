@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
 import Button from '../../components/Button';
 import StatusBadge from '../../components/StatusBadge';
@@ -72,6 +73,7 @@ const PRIORITY_SOURCE_OPTIONS = [
 ];
 
 const AdminComplaintsPage = () => {
+  const [searchParams] = useSearchParams();
   const [complaints, setComplaints] = useState([]);
   const [staffUsers, setStaffUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -90,6 +92,28 @@ const AdminComplaintsPage = () => {
   const [assignedStaff, setAssignedStaff] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  // Sync filters from URL query parameters (Drill-Down from Analytics)
+  useEffect(() => {
+    const urlCategory = searchParams.get('category');
+    const urlStatus = searchParams.get('status');
+    const urlPriority = searchParams.get('priority');
+    const urlSlaStatus = searchParams.get('slaStatus');
+    const urlStaff = searchParams.get('assignedStaff');
+    const urlSearch = searchParams.get('search');
+    const urlEscalated = searchParams.get('escalated');
+
+    if (urlCategory !== null) setCategory(urlCategory);
+    if (urlStatus !== null) setStatus(urlStatus);
+    if (urlPriority !== null) setPriority(urlPriority);
+    if (urlSlaStatus !== null) setSlaStatus(urlSlaStatus);
+    if (urlStaff !== null) setAssignedStaff(urlStaff);
+    if (urlSearch !== null) {
+      setSearch(urlSearch);
+      setDebouncedSearch(urlSearch);
+    }
+    if (urlEscalated !== null) setEscalated(urlEscalated);
+  }, [searchParams]);
 
   // Selected Complaint for Drawer / Detail Modal
   const [selectedComplaint, setSelectedComplaint] = useState(null);

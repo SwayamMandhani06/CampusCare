@@ -46,3 +46,21 @@ export const formatFullDateTime = (dateString) => {
 };
 
 export const formatTimeAgo = formatRelativeDate;
+
+export const formatMinutesRemaining = (minutes) => {
+  if (minutes === null || minutes === undefined) return '—';
+  const abs = Math.abs(minutes);
+  const h = Math.floor(abs / 60);
+  const m = Math.round(abs % 60);
+  const formatted = h > 0 ? `${h}h ${m}m` : `${m}m`;
+  return minutes >= 0 ? `${formatted} left` : `${formatted} overdue`;
+};
+
+export const formatSlaTimeRemaining = (deadline, isResolved = false) => {
+  if (!deadline) return null;
+  if (isResolved) return 'Resolved';
+  const target = new Date(deadline).getTime();
+  const now = Date.now();
+  const diffMinutes = Math.round((target - now) / 60000);
+  return formatMinutesRemaining(diffMinutes);
+};

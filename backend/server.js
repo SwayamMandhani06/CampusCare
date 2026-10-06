@@ -7,12 +7,18 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const { metricsMiddleware, metricsHandler } = require('./metrics');
+const { startSlaScheduler } = require('./services/slaScheduler');
 
 // Load environment variables from .env file
 dotenv.config();
 
 // Connect to MongoDB
 connectDB();
+
+// Start background SLA monitoring scheduler (multi-replica safe via Mongo lease)
+if (process.env.ENABLE_SLA_SCHEDULER !== 'false' && process.env.NODE_ENV !== 'test') {
+  startSlaScheduler();
+}
 
 const app = express();
 

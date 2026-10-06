@@ -6,6 +6,12 @@ const Complaint = require('../models/Complaint');
 const User = require('../models/User');
 const notificationService = require('../utils/notificationService');
 const { formatComplaintsCsv } = require('../utils/csvExport');
+const {
+  calculateSlaDeadlines,
+  recordFirstResponse,
+  recordResolution,
+  computeSlaStatus,
+} = require('../services/slaService');
 
 /**
  * @desc    Get dashboard metrics and analytics
@@ -24,6 +30,11 @@ const getAdminDashboard = async (req, res) => {
       resolvedCount,
       totalStudents,
       totalStaff,
+      onTrackCount,
+      atRiskCount,
+      breachedCount,
+      escalatedCount,
+      resolvedComplaints,
     ] = await Promise.all([
       Complaint.countDocuments(),
       Complaint.countDocuments({ status: 'PENDING' }),
@@ -33,6 +44,11 @@ const getAdminDashboard = async (req, res) => {
       Complaint.countDocuments({ status: 'RESOLVED' }),
       User.countDocuments({ role: 'student' }),
       User.countDocuments({ role: 'staff' }),
+      Complaint.countDocuments({ status: { $ne: 'RESOLVED' }, 'sla.status': 'ON_TRACK' }),
+      Complaint.countDocuments({ status: { $ne: 'RESOLVED' }, 'sla.status': 'AT_RISK' }),
+      Complaint.countDocuments({ status: { $ne: 'RESOLVED' }, 'sla.status': 'BREACHED' }),
+      Complaint.countDocuments({ status: { $ne: 'RESOLVED' }, 'sla.escalated': true }),
+      Complaint.find({ status: 'RESOLVED' }).select('sla createdAt updatedAt'),
     ]);
 
     // Grouping by category
@@ -71,6 +87,29 @@ const getAdminDashboard = async (req, res) => {
       { $sort: { count: -1 } },
     ]);
 
+    // SLA Compliance & Resolution Time calculation
+    const totalActive = pendingCount + reviewedCount + assignedCount + inProgressCount;
+    const compliantCount = resolvedComplaints.filter(
+      (c) => !c.sla || !c.sla.resolutionBreached
+    ).length;
+    const slaCompliancePercentage =
+      resolvedComplaints.length > 0
+        ? Math.round((compliantCount / resolvedComplaints.length) * 100)
+        : 100;
+
+    const totalResolutionMs = resolvedComplaints.reduce((acc, c) => {
+      const resTime = c.sla?.resolutionAt || c.updatedAt;
+      const diff = new Date(resTime).getTime() - new Date(c.createdAt).getTime();
+      return acc + (diff > 0 ? diff : 0);
+    }, 0);
+
+    const averageResolutionTimeHours =
+      resolvedComplaints.length > 0
+        ? parseFloat(
+            (totalResolutionMs / (resolvedComplaints.length * 3600 * 1000)).toFixed(1)
+          )
+        : 0;
+
     return res.status(200).json({
       success: true,
       data: {
@@ -83,6 +122,15 @@ const getAdminDashboard = async (req, res) => {
           resolved: resolvedCount,
           totalStudents,
           totalStaff,
+        },
+        slaMetrics: {
+          totalActive,
+          onTrack: onTrackCount,
+          atRisk: atRiskCount,
+          breached: breachedCount,
+          escalated: escalatedCount,
+          averageResolutionTimeHours,
+          slaCompliancePercentage,
         },
         byCategory: categoryAggregation,
         byPriority: priorityAggregation,
@@ -129,6 +177,18 @@ const getAllComplaints = async (req, res) => {
 
     if (priority) {
       query.priority = priority.toUpperCase();
+    }
+
+    if (req.query.slaStatus) {
+      query['sla.status'] = req.query.slaStatus.toUpperCase();
+    }
+
+    if (req.query.escalated !== undefined && req.query.escalated !== '') {
+      query['sla.escalated'] = req.query.escalated === 'true';
+    }
+
+    if (req.query.prioritySource) {
+      query.prioritySource = req.query.prioritySource.toUpperCase();
     }
 
     if (assignedStaff) {
@@ -238,6 +298,7 @@ const assignStaff = async (req, res) => {
     // Update assignment and status
     complaint.assignedTo = staffUser._id;
     complaint.status = 'ASSIGNED';
+    recordFirstResponse(complaint, now);
 
     // Append to status history timeline
     complaint.statusHistory.push({
@@ -332,6 +393,30 @@ const updateComplaintStatus = async (req, res) => {
         });
       }
 
+      if (upperStatus !== 'PENDING') {
+        recordFirstResponse(complaint, now);
+      }
+
+      if (upperStatus === 'RESOLVED') {
+        const wasResolved = recordResolution(complaint, now);
+        if (wasResolved) {
+          complaint.activityTimeline.push({
+            eventType: 'SLA_RESOLVED',
+            actor: req.user._id,
+            actorName: req.user.name,
+            actorRole: req.user.role,
+            message: complaint.sla?.resolutionBreached
+              ? 'Complaint marked RESOLVED after SLA deadline (breached).'
+              : 'Complaint marked RESOLVED within SLA target window.',
+            timestamp: now,
+            metadata: {
+              resolutionBreached: complaint.sla?.resolutionBreached,
+              resolutionAt: now,
+            },
+          });
+        }
+      }
+
       complaint.status = upperStatus;
       complaint.statusHistory.push({
         status: upperStatus,
@@ -362,16 +447,36 @@ const updateComplaintStatus = async (req, res) => {
         });
       }
 
+      const oldPriority = complaint.priority;
       complaint.priority = upperPriority;
+      complaint.prioritySource = 'MANUAL';
+      complaint.priorityReason = notes || `Manual priority override to ${upperPriority} by administrator`;
+      complaint.priorityUpdatedAt = now;
+      complaint.priorityUpdatedBy = req.user._id;
+      complaint.sla = calculateSlaDeadlines(upperPriority, complaint.createdAt, complaint.sla);
+
       complaint.activityTimeline.push({
         eventType: 'PRIORITY_CHANGED',
         actor: req.user._id,
         actorName: req.user.name,
         actorRole: req.user.role,
-        message: `Priority changed to ${upperPriority} by admin`,
+        message: `Priority manually changed from ${oldPriority} to ${upperPriority}: ${complaint.priorityReason}`,
         timestamp: now,
-        metadata: { newPriority: upperPriority },
+        metadata: {
+          previousPriority: oldPriority,
+          newPriority: upperPriority,
+          reason: complaint.priorityReason,
+          source: 'MANUAL',
+        },
       });
+
+      notificationService.notifyPriorityChanged(
+        complaint,
+        req.user,
+        oldPriority,
+        upperPriority,
+        complaint.priorityReason
+      );
     }
 
     await complaint.save();
@@ -520,11 +625,115 @@ const exportAdminComplaintsCsv = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Manually override complaint priority with mandatory reason (Admin only)
+ * @route   PUT /api/admin/complaints/:id/priority
+ * @access  Private (Admin only)
+ */
+const updateComplaintPriority = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { priority, reason } = req.body;
+
+    if (!priority) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid priority level (LOW, MEDIUM, HIGH, CRITICAL)',
+      });
+    }
+
+    const upperPriority = priority.toUpperCase();
+    const allowedPriorities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+    if (!allowedPriorities.includes(upperPriority)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid priority '${priority}'. Allowed priorities: ${allowedPriorities.join(', ')}`,
+      });
+    }
+
+    if (!reason || !reason.trim() || reason.trim().length < 5) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid reason for changing priority (minimum 5 characters)',
+      });
+    }
+
+    const complaint = await Complaint.findById(id);
+    if (!complaint) {
+      return res.status(404).json({
+        success: false,
+        message: 'Complaint not found',
+      });
+    }
+
+    const oldPriority = complaint.priority;
+    const now = new Date();
+
+    complaint.priority = upperPriority;
+    complaint.prioritySource = 'MANUAL';
+    complaint.priorityReason = reason.trim();
+    complaint.priorityUpdatedAt = now;
+    complaint.priorityUpdatedBy = req.user._id;
+    complaint.sla = calculateSlaDeadlines(upperPriority, complaint.createdAt, complaint.sla);
+
+    complaint.activityTimeline.push({
+      eventType: 'PRIORITY_CHANGED',
+      actor: req.user._id,
+      actorName: req.user.name,
+      actorRole: req.user.role,
+      message: `Priority manually updated from ${oldPriority} to ${upperPriority}: ${reason.trim()}`,
+      timestamp: now,
+      metadata: {
+        previousPriority: oldPriority,
+        newPriority: upperPriority,
+        reason: reason.trim(),
+        source: 'MANUAL',
+      },
+    });
+
+    await complaint.save();
+
+    const populatedComplaint = await Complaint.findById(id)
+      .populate('createdBy', 'name email studentId role')
+      .populate('assignedTo', 'name email role')
+      .populate('statusHistory.changedBy', 'name email role')
+      .populate('activityTimeline.actor', 'name email role');
+
+    notificationService.notifyPriorityChanged(
+      populatedComplaint,
+      req.user,
+      oldPriority,
+      upperPriority,
+      reason.trim()
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: `Priority updated to ${upperPriority} successfully`,
+      complaint: populatedComplaint,
+    });
+  } catch (error) {
+    console.error(`[Admin Update Priority Error] ${error.message}`);
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid complaint ID format',
+      });
+    }
+    return res.status(500).json({
+      success: false,
+      message: 'Server error updating complaint priority',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getAdminDashboard,
   getAllComplaints,
   assignStaff,
   updateComplaintStatus,
+  updateComplaintPriority,
   getAllUsers,
   exportAdminComplaintsCsv,
 };

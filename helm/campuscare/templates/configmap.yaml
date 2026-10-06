@@ -11,3 +11,5 @@ data:
   NODE_ENV: {{ .Values.config.nodeEnv | quote }}
   PORT: {{ .Values.config.port | quote }}
   MONGO_HOST: {{ .Values.config.mongoHost | quote }}
+  SLA_CHECK_INTERVAL_MS: {{ .Values.config.slaCheckIntervalMs | default "60000" | quote }}
+  SLA_SCHEDULER_ENABLED: {{ .Values.config.slaSchedulerEnabled | default "true" | quote }}

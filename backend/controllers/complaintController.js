@@ -11,6 +11,8 @@ const Comment = require('../models/Comment');
 const notificationService = require('../utils/notificationService');
 const { formatComplaintsCsv } = require('../utils/csvExport');
 const { UPLOAD_DIR } = require('../utils/upload');
+const { evaluatePriority } = require('../services/priorityService');
+const { calculateSlaDeadlines, recordFirstResponse, computeSlaStatus } = require('../services/slaService');
 
 /**
  * @desc    Create a new complaint (supports JSON & multipart/form-data with images)
@@ -48,13 +50,29 @@ const createComplaint = async (req, res) => {
 
     const now = new Date();
 
+    // Run deterministic rule-based priority evaluation
+    const evaluated = evaluatePriority({ title, description, category, location });
+    const finalPriority = (priority && req.user.role === 'admin') ? priority.toUpperCase() : evaluated.priority;
+    const finalPrioritySource = (priority && req.user.role === 'admin') ? 'MANUAL' : 'AUTOMATIC';
+    const finalPriorityReason = finalPrioritySource === 'MANUAL'
+      ? 'Initial manual priority assignment by administrator.'
+      : evaluated.priorityReason;
+
+    // Calculate initial SLA deadlines and targets
+    const initialSla = calculateSlaDeadlines(finalPriority, now);
+
     // Build complaint object
     const complaintData = {
       title,
       description,
       category,
       location,
-      priority: priority ? priority.toUpperCase() : 'MEDIUM',
+      priority: finalPriority,
+      prioritySource: finalPrioritySource,
+      priorityReason: finalPriorityReason,
+      priorityUpdatedAt: now,
+      priorityUpdatedBy: finalPrioritySource === 'MANUAL' ? req.user._id : null,
+      sla: initialSla,
       status: 'PENDING',
       createdBy: req.user._id,
       assignedTo: null,
@@ -79,6 +97,27 @@ const createComplaint = async (req, res) => {
           actorRole: req.user.role,
           message: 'Complaint submitted by student',
           timestamp: now,
+        },
+        {
+          eventType: 'PRIORITY_AUTO_ASSIGNED',
+          actorName: 'System Automation',
+          actorRole: 'system',
+          message: `Priority classified as ${finalPriority}: ${finalPriorityReason}`,
+          timestamp: now,
+          metadata: { priority: finalPriority, reason: finalPriorityReason, source: finalPrioritySource },
+        },
+        {
+          eventType: 'SLA_STARTED',
+          actorName: 'System Automation',
+          actorRole: 'system',
+          message: `SLA policy activated. Resolution target: ${Math.round(initialSla.resolutionTargetMinutes / 60)} hours.`,
+          timestamp: now,
+          metadata: {
+            responseDeadline: initialSla.responseDeadline,
+            resolutionDeadline: initialSla.resolutionDeadline,
+            responseTargetMinutes: initialSla.responseTargetMinutes,
+            resolutionTargetMinutes: initialSla.resolutionTargetMinutes,
+          },
         },
       ],
     };
@@ -136,6 +175,10 @@ const getMyComplaints = async (req, res) => {
 
     if (priority) {
       query.priority = priority.toUpperCase();
+    }
+
+    if (req.query.slaStatus) {
+      query['sla.status'] = req.query.slaStatus.toUpperCase();
     }
 
     if (startDate || endDate) {
@@ -211,9 +254,12 @@ const getComplaintById = async (req, res) => {
       });
     }
 
+    const complaintObj = complaint.toObject();
+    complaintObj.realTimeSla = computeSlaStatus(complaint);
+
     return res.status(200).json({
       success: true,
-      complaint,
+      complaint: complaintObj,
     });
   } catch (error) {
     console.error(`[Get Complaint By ID Error] ${error.message}`);
@@ -457,6 +503,12 @@ const addComment = async (req, res) => {
       timestamp: now,
       metadata: { commentId: comment._id },
     });
+
+    // If responder is staff or admin, count towards first response SLA
+    if (req.user.role === 'staff' || req.user.role === 'admin') {
+      recordFirstResponse(complaint, now);
+    }
+
     await complaint.save();
 
     // Trigger notification

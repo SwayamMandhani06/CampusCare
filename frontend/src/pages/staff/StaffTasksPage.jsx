@@ -6,6 +6,7 @@ import Button from '../../components/Button';
 import Textarea from '../../components/Textarea';
 import StatusBadge from '../../components/StatusBadge';
 import PriorityBadge from '../../components/PriorityBadge';
+import SlaBadge from '../../components/SlaBadge';
 import StatusRail from '../../components/StatusRail';
 import ComplaintComments from '../../components/ComplaintComments';
 import ComplaintImageGallery from '../../components/ComplaintImageGallery';
@@ -13,7 +14,7 @@ import ActivityTimeline from '../../components/ActivityTimeline';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
 import { CATEGORIES } from '../../utils/categoryIcons';
-import { formatRelativeDate } from '../../utils/formatDate';
+import { formatRelativeDate, formatFullDateTime, formatSlaTimeRemaining } from '../../utils/formatDate';
 import {
   Play,
   CheckCircle,
@@ -24,6 +25,8 @@ import {
   Check,
   Download,
   History,
+  Clock,
+  Flame,
 } from 'lucide-react';
 
 const STATUS_FILTERS = [
@@ -41,6 +44,14 @@ const PRIORITY_OPTIONS = [
   { value: 'CRITICAL', label: 'Critical' },
 ];
 
+const SLA_FILTERS = [
+  { value: '', label: 'All SLA Statuses' },
+  { value: 'ON_TRACK', label: 'On Track' },
+  { value: 'AT_RISK', label: 'At Risk' },
+  { value: 'BREACHED', label: 'Breached' },
+  { value: 'RESOLVED', label: 'Resolved' },
+];
+
 const StaffTasksPage = () => {
   const [searchParams] = useSearchParams();
   const initialTaskId = searchParams.get('taskId');
@@ -55,6 +66,7 @@ const StaffTasksPage = () => {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
+  const [slaFilter, setSlaFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
 
   // Resolution form state
@@ -78,6 +90,7 @@ const StaffTasksPage = () => {
       if (statusFilter) params.status = statusFilter;
       if (priorityFilter) params.priority = priorityFilter;
       if (categoryFilter) params.category = categoryFilter;
+      if (slaFilter) params.slaStatus = slaFilter;
       if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
 
       const res = await api.get('/staff/tasks', { params });
@@ -107,16 +120,17 @@ const StaffTasksPage = () => {
 
   useEffect(() => {
     fetchTasks();
-  }, [statusFilter, priorityFilter, categoryFilter, debouncedSearch]);
+  }, [statusFilter, priorityFilter, categoryFilter, slaFilter, debouncedSearch]);
 
   const hasActiveFilters = Boolean(
-    search || statusFilter || priorityFilter || categoryFilter
+    search || statusFilter || priorityFilter || categoryFilter || slaFilter
   );
 
   const resetFilters = () => {
     setSearch('');
     setStatusFilter('');
     setPriorityFilter('');
+    setSlaFilter('');
     setCategoryFilter('');
   };
 
@@ -127,6 +141,7 @@ const StaffTasksPage = () => {
       if (statusFilter) params.status = statusFilter;
       if (priorityFilter) params.priority = priorityFilter;
       if (categoryFilter) params.category = categoryFilter;
+      if (slaFilter) params.slaStatus = slaFilter;
       if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
 
       const res = await api.get('/staff/tasks/export', {
@@ -250,7 +265,7 @@ const StaffTasksPage = () => {
       <div className="my-6 p-4 bg-paper border border-line rounded-lg space-y-3">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
           {/* Search */}
-          <div className="md:col-span-4 relative">
+          <div className="md:col-span-3 relative">
             <Search
               size={15}
               className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
@@ -265,7 +280,7 @@ const StaffTasksPage = () => {
           </div>
 
           {/* Status Tabs */}
-          <div className="md:col-span-3">
+          <div className="md:col-span-2">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -289,6 +304,21 @@ const StaffTasksPage = () => {
               {PRIORITY_OPTIONS.map((p) => (
                 <option key={p.value} value={p.value}>
                   {p.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* SLA Status Filter */}
+          <div className="md:col-span-2">
+            <select
+              value={slaFilter}
+              onChange={(e) => setSlaFilter(e.target.value)}
+              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand font-mono"
+            >
+              {SLA_FILTERS.map((sla) => (
+                <option key={sla.value} value={sla.value}>
+                  {sla.label}
                 </option>
               ))}
             </select>
@@ -390,7 +420,30 @@ const StaffTasksPage = () => {
                       {task.title}
                     </h4>
 
-                    <div className="flex items-center justify-between text-xs text-muted">
+                    {/* SLA Status & Indicator */}
+                    <div className="my-1.5 flex items-center justify-between gap-2">
+                      <SlaBadge
+                        status={task.sla?.status || 'ON_TRACK'}
+                        escalated={task.sla?.escalated}
+                        escalationLevel={task.sla?.escalationLevel}
+                        timeRemaining={
+                          task.status === 'RESOLVED'
+                            ? 'Resolved'
+                            : formatSlaTimeRemaining(task.sla?.resolutionDeadline)
+                        }
+                        size="sm"
+                      />
+                      {task.priorityReason && (
+                        <span
+                          className="text-[10px] text-muted truncate max-w-[140px] font-sans"
+                          title={task.priorityReason}
+                        >
+                          {task.priorityReason}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-muted pt-0.5">
                       <span className="truncate max-w-[200px] flex items-center font-mono text-[11px]">
                         <MapPin size={11} className="mr-1 shrink-0 text-brand" />
                         {task.location}
@@ -445,6 +498,101 @@ const StaffTasksPage = () => {
                 <div className="flex items-center text-xs text-muted mt-2 font-mono bg-paper/60 p-2.5 rounded border border-line">
                   <MapPin size={14} className="mr-2 text-brand shrink-0" />
                   <span>{selectedTask.location}</span>
+                </div>
+              </div>
+
+              {/* SLA Target & Deadlines Banner */}
+              <div className="p-4 rounded-lg border border-line bg-paper/60 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center space-x-2">
+                    <Clock size={15} className="text-brand" />
+                    <span className="text-xs font-mono uppercase tracking-wider text-ink font-medium">
+                      Service Level Agreement (SLA)
+                    </span>
+                  </div>
+                  <SlaBadge
+                    status={selectedTask.sla?.status || 'ON_TRACK'}
+                    escalated={selectedTask.sla?.escalated}
+                    escalationLevel={selectedTask.sla?.escalationLevel}
+                    timeRemaining={
+                      selectedTask.status === 'RESOLVED'
+                        ? 'Resolved'
+                        : formatSlaTimeRemaining(selectedTask.sla?.resolutionDeadline)
+                    }
+                  />
+                </div>
+
+                {selectedTask.sla?.escalated && (
+                  <div className="p-2.5 rounded bg-red-500/10 border border-red-500/20 text-xs text-red-500 flex items-center space-x-2 font-mono">
+                    <Flame size={14} className="shrink-0 animate-pulse" />
+                    <span>
+                      Management Escalation: Level {selectedTask.sla.escalationLevel || 1}
+                      {selectedTask.sla.escalatedAt ? ` on ${formatFullDateTime(selectedTask.sla.escalatedAt)}` : ''}
+                    </span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
+                  {/* Response Deadline */}
+                  <div className="p-2.5 rounded bg-line/20 border border-line/40 space-y-1">
+                    <span className="text-[10px] text-muted uppercase block">Response Target & Deadline</span>
+                    <div className="text-ink font-medium">
+                      Target: {selectedTask.sla?.responseTargetMinutes ? `${selectedTask.sla.responseTargetMinutes / 60}h` : '—'}
+                    </div>
+                    <div className="text-[11px] text-muted">
+                      Deadline: {formatFullDateTime(selectedTask.sla?.responseDeadline) || '—'}
+                    </div>
+                    <div className="text-[11px]">
+                      {selectedTask.sla?.responseAt ? (
+                        <span className="text-status-resolved">
+                          ✓ Responded: {formatFullDateTime(selectedTask.sla.responseAt)}
+                        </span>
+                      ) : selectedTask.sla?.responseBreached ? (
+                        <span className="text-priority-critical font-medium">⚠ Response SLA Breached</span>
+                      ) : (
+                        <span className="text-muted">Awaiting first response action</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Resolution Deadline */}
+                  <div className="p-2.5 rounded bg-line/20 border border-line/40 space-y-1">
+                    <span className="text-[10px] text-muted uppercase block">Resolution Target & Deadline</span>
+                    <div className="text-ink font-medium">
+                      Target: {selectedTask.sla?.resolutionTargetMinutes ? `${selectedTask.sla.resolutionTargetMinutes / 60}h` : '—'}
+                    </div>
+                    <div className="text-[11px] text-muted">
+                      Deadline: {formatFullDateTime(selectedTask.sla?.resolutionDeadline) || '—'}
+                    </div>
+                    <div className="text-[11px]">
+                      {selectedTask.sla?.resolutionAt ? (
+                        <span className="text-status-resolved">
+                          ✓ Resolved: {formatFullDateTime(selectedTask.sla.resolutionAt)}
+                        </span>
+                      ) : selectedTask.sla?.resolutionBreached ? (
+                        <span className="text-priority-critical font-medium">⚠ Resolution Breached</span>
+                      ) : (
+                        <span className="text-muted">
+                          {formatSlaTimeRemaining(selectedTask.sla?.resolutionDeadline)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Priority Source & Reason */}
+                <div className="pt-2 border-t border-line/60 flex flex-wrap items-center justify-between text-xs font-mono text-muted gap-2">
+                  <div className="flex items-center space-x-1.5">
+                    <span>Priority Source:</span>
+                    <span className="text-ink font-medium uppercase">
+                      {selectedTask.prioritySource || 'AUTOMATIC'}
+                    </span>
+                  </div>
+                  {selectedTask.priorityReason && (
+                    <div className="text-[11px] text-muted italic">
+                      &ldquo;{selectedTask.priorityReason}&rdquo;
+                    </div>
+                  )}
                 </div>
               </div>
 

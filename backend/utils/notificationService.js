@@ -219,6 +219,131 @@ class NotificationService {
       console.warn(`[NotificationService:notifyFeedbackSubmitted] ${err.message}`);
     }
   }
+
+  /**
+   * 7. SLA At Risk Warning
+   */
+  async notifySlaAtRisk(complaint, student, staff, remainingMinutes) {
+    try {
+      const ticketNum = complaint._id.toString().slice(-6).toUpperCase();
+
+      // Notify student
+      if (student?._id) {
+        await this.createNotification({
+          recipientId: student._id,
+          type: 'SLA_AT_RISK',
+          title: `Status Notice: #${ticketNum}`,
+          message: `Your ticket "${complaint.title}" is in progress and receiving priority attention to ensure timely resolution.`,
+          complaintId: complaint._id,
+          metadata: { remainingMinutes },
+        });
+        emailService.sendSlaAtRisk(student, complaint, remainingMinutes);
+      }
+
+      // Notify technician
+      if (staff?._id) {
+        await this.createNotification({
+          recipientId: staff._id,
+          type: 'SLA_AT_RISK',
+          title: `⚠️ Task At Risk: #${ticketNum}`,
+          message: `Work order "${complaint.title}" has less than 25% time remaining (~${remainingMinutes}m). Please prioritize.`,
+          complaintId: complaint._id,
+          metadata: { remainingMinutes },
+        });
+        emailService.sendSlaAtRisk(staff, complaint, remainingMinutes);
+      }
+    } catch (err) {
+      console.warn(`[NotificationService:notifySlaAtRisk] ${err.message}`);
+    }
+  }
+
+  /**
+   * 8. SLA Breached & Escalated
+   */
+  async notifySlaBreached(complaint, student, staff, escalationLevel = 1) {
+    try {
+      const ticketNum = complaint._id.toString().slice(-6).toUpperCase();
+
+      // Notify student
+      if (student?._id) {
+        await this.createNotification({
+          recipientId: student._id,
+          type: 'SLA_BREACH',
+          title: `Ticket Update: #${ticketNum}`,
+          message: `Resolution for your ticket "${complaint.title}" has taken longer than planned and has been escalated to campus supervisors.`,
+          complaintId: complaint._id,
+          metadata: { escalationLevel },
+        });
+        emailService.sendSlaBreached(student, complaint, escalationLevel);
+      }
+
+      // Notify assigned staff
+      if (staff?._id) {
+        await this.createNotification({
+          recipientId: staff._id,
+          type: 'SLA_BREACH',
+          title: `🚨 SLA Breached: #${ticketNum}`,
+          message: `Work order "${complaint.title}" has breached resolution deadline and escalated to Level ${escalationLevel}.`,
+          complaintId: complaint._id,
+          metadata: { escalationLevel },
+        });
+        emailService.sendSlaBreached(staff, complaint, escalationLevel);
+      }
+
+      // Notify all admins
+      const admins = await User.find({ role: 'admin' }).select('_id name email');
+      for (const admin of admins) {
+        await this.createNotification({
+          recipientId: admin._id,
+          type: 'SLA_BREACH',
+          title: `🚨 Escalation (Level ${escalationLevel}): #${ticketNum}`,
+          message: `Ticket #${ticketNum} (${complaint.title}) at ${complaint.location} breached SLA. Urgency: ${complaint.priority}.`,
+          complaintId: complaint._id,
+          metadata: { escalationLevel, priority: complaint.priority },
+        });
+        emailService.sendSlaBreached(admin, complaint, escalationLevel);
+      }
+    } catch (err) {
+      console.warn(`[NotificationService:notifySlaBreached] ${err.message}`);
+    }
+  }
+
+  /**
+   * 9. Priority Changed
+   */
+  async notifyPriorityChanged(complaint, student, staff, previousPriority, newPriority, reason) {
+    try {
+      const ticketNum = complaint._id.toString().slice(-6).toUpperCase();
+
+      // Notify student
+      if (student?._id) {
+        await this.createNotification({
+          recipientId: student._id,
+          type: 'PRIORITY_CHANGED',
+          title: `Priority Updated: #${ticketNum}`,
+          message: `Urgency level for "${complaint.title}" adjusted to ${newPriority}. Reason: ${reason}`,
+          complaintId: complaint._id,
+          metadata: { previousPriority, newPriority, reason },
+        });
+        emailService.sendPriorityChanged(student, complaint, previousPriority, newPriority, reason);
+      }
+
+      // Notify assigned staff
+      if (staff?._id) {
+        await this.createNotification({
+          recipientId: staff._id,
+          type: 'PRIORITY_CHANGED',
+          title: `Priority Updated: #${ticketNum}`,
+          message: `Assigned task "${complaint.title}" priority is now ${newPriority}. Reason: ${reason}`,
+          complaintId: complaint._id,
+          metadata: { previousPriority, newPriority, reason },
+        });
+        emailService.sendPriorityChanged(staff, complaint, previousPriority, newPriority, reason);
+      }
+    } catch (err) {
+      console.warn(`[NotificationService:notifyPriorityChanged] ${err.message}`);
+    }
+  }
 }
 
 const notificationService = new NotificationService();

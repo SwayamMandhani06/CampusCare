@@ -4,6 +4,7 @@ import api from '../../services/api';
 import Button from '../../components/Button';
 import StatusBadge from '../../components/StatusBadge';
 import PriorityBadge from '../../components/PriorityBadge';
+import SlaBadge from '../../components/SlaBadge';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
 import { CATEGORIES, getCategoryIcon } from '../../utils/categoryIcons';
@@ -341,16 +342,26 @@ const MyComplaintsPage = () => {
                   <h3 className="text-sm sm:text-base font-medium text-ink group-hover:text-brand transition-colors truncate">
                     {item.title}
                   </h3>
-                  <div className="flex items-center text-xs text-muted">
-                    <MapPin size={12} className="mr-1 shrink-0 text-brand" />
-                    <span className="truncate max-w-[300px]">{item.location}</span>
+                  <div className="flex items-center space-x-3 text-xs text-muted flex-wrap">
+                    <span className="flex items-center">
+                      <MapPin size={12} className="mr-1 shrink-0 text-brand" />
+                      <span className="truncate max-w-[250px]">{item.location}</span>
+                    </span>
+                    {item.status !== 'RESOLVED' && (item.sla?.status === 'BREACHED' || item.sla?.resolutionBreached) && (
+                      <span className="px-1.5 py-0.2 rounded text-[10px] font-mono text-amber-600 bg-amber-500/10 border border-amber-500/20">
+                        Delayed
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-3 shrink-0 self-end sm:self-center">
+              <div className="flex items-center space-x-3 shrink-0 self-end sm:self-center flex-wrap">
                 <PriorityBadge priority={item.priority} />
                 <StatusBadge status={item.status} />
+                {item.sla?.status && (
+                  <SlaBadge status={item.sla.status} showEscalation={false} size="sm" />
+                )}
                 <span className="text-xs font-mono text-muted hidden md:inline">
                   {formatRelativeDate(item.createdAt)}
                 </span>

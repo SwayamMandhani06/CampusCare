@@ -18,7 +18,6 @@ import {
   Legend,
 } from 'recharts';
 import {
-  ShieldCheck,
   FileText,
   Clock,
   Wrench,
@@ -27,6 +26,11 @@ import {
   Users,
   ArrowRight,
   RefreshCw,
+  AlertTriangle,
+  AlertOctagon,
+  Flame,
+  TrendingUp,
+  Activity,
 } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -72,6 +76,16 @@ const AdminDashboard = () => {
     resolved: 0,
     totalStudents: 0,
     totalStaff: 0,
+  };
+
+  const slaMetrics = data?.slaMetrics || {
+    totalActive: 0,
+    onTrack: 0,
+    atRisk: 0,
+    breached: 0,
+    escalated: 0,
+    avgResolutionHours: 0,
+    slaComplianceRate: 100,
   };
 
   const statusPieData = [
@@ -213,6 +227,112 @@ const AdminDashboard = () => {
           </div>
           <span className="text-[10px] font-mono text-muted mt-1 block">Closed & signed</span>
         </Card>
+      </motion.div>
+
+      {/* SLA Operational Performance KPIs */}
+      <motion.div variants={itemVariants} className="my-8 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <span className="text-xs font-mono uppercase text-muted tracking-wider">
+              SLA Health & Compliance
+            </span>
+            <span className="px-1.5 py-0.2 rounded text-[10px] font-mono uppercase bg-brand/10 text-brand border border-brand/20">
+              Live Engine
+            </span>
+          </div>
+          <Link
+            to="/admin/complaints?slaStatus=BREACHED"
+            className="text-xs font-mono text-brand hover:underline flex items-center space-x-1"
+          >
+            <span>View At-Risk & Breached →</span>
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+          {/* 1. Active Unresolved */}
+          <Card className="p-3.5 bg-paper/80">
+            <div className="flex items-center justify-between text-muted">
+              <span className="text-[10px] font-mono uppercase tracking-wider">Active</span>
+              <Activity size={13} />
+            </div>
+            <div className="text-xl sm:text-2xl font-medium text-ink mt-1.5">
+              <AnimatedCounter value={slaMetrics.totalActive} />
+            </div>
+            <span className="text-[10px] font-mono text-muted mt-0.5 block truncate">Unresolved tickets</span>
+          </Card>
+
+          {/* 2. On-Track */}
+          <Card className="p-3.5 bg-emerald-500/5 border-emerald-500/20">
+            <div className="flex items-center justify-between text-emerald-600">
+              <span className="text-[10px] font-mono uppercase tracking-wider font-medium">On Track</span>
+              <CheckCircle2 size={13} />
+            </div>
+            <div className="text-xl sm:text-2xl font-medium text-emerald-600 mt-1.5">
+              <AnimatedCounter value={slaMetrics.onTrack} />
+            </div>
+            <span className="text-[10px] font-mono text-muted mt-0.5 block truncate">&gt;25% SLA left</span>
+          </Card>
+
+          {/* 3. At-Risk */}
+          <Card className="p-3.5 bg-amber-500/5 border-amber-500/20">
+            <div className="flex items-center justify-between text-amber-500">
+              <span className="text-[10px] font-mono uppercase tracking-wider font-medium">At Risk</span>
+              <AlertTriangle size={13} />
+            </div>
+            <div className="text-xl sm:text-2xl font-medium text-amber-500 mt-1.5">
+              <AnimatedCounter value={slaMetrics.atRisk} />
+            </div>
+            <span className="text-[10px] font-mono text-muted mt-0.5 block truncate">&le;25% SLA left</span>
+          </Card>
+
+          {/* 4. Breached */}
+          <Card className="p-3.5 bg-rose-500/5 border-rose-500/20">
+            <div className="flex items-center justify-between text-rose-500">
+              <span className="text-[10px] font-mono uppercase tracking-wider font-medium">Breached</span>
+              <AlertOctagon size={13} />
+            </div>
+            <div className="text-xl sm:text-2xl font-medium text-rose-500 mt-1.5">
+              <AnimatedCounter value={slaMetrics.breached} />
+            </div>
+            <span className="text-[10px] font-mono text-muted mt-0.5 block truncate">Overdue deadline</span>
+          </Card>
+
+          {/* 5. Escalated */}
+          <Card className="p-3.5 bg-red-500/5 border-red-500/20">
+            <div className="flex items-center justify-between text-red-500">
+              <span className="text-[10px] font-mono uppercase tracking-wider font-medium">Escalated</span>
+              <Flame size={13} />
+            </div>
+            <div className="text-xl sm:text-2xl font-medium text-red-500 mt-1.5">
+              <AnimatedCounter value={slaMetrics.escalated} />
+            </div>
+            <span className="text-[10px] font-mono text-muted mt-0.5 block truncate">Management alert</span>
+          </Card>
+
+          {/* 6. Avg Resolution Time */}
+          <Card className="p-3.5 bg-paper/80">
+            <div className="flex items-center justify-between text-muted">
+              <span className="text-[10px] font-mono uppercase tracking-wider">Avg Resolution</span>
+              <Clock size={13} />
+            </div>
+            <div className="text-xl sm:text-2xl font-medium text-ink mt-1.5">
+              {slaMetrics.avgResolutionHours}h
+            </div>
+            <span className="text-[10px] font-mono text-muted mt-0.5 block truncate">Closed tickets</span>
+          </Card>
+
+          {/* 7. SLA Compliance % */}
+          <Card className="p-3.5 bg-paper/80">
+            <div className="flex items-center justify-between text-muted">
+              <span className="text-[10px] font-mono uppercase tracking-wider">Compliance</span>
+              <TrendingUp size={13} className="text-emerald-500" />
+            </div>
+            <div className="text-xl sm:text-2xl font-medium text-ink mt-1.5">
+              {slaMetrics.slaComplianceRate}%
+            </div>
+            <span className="text-[10px] font-mono text-muted mt-0.5 block truncate">Target &ge; 90%</span>
+          </Card>
+        </div>
       </motion.div>
 
       {/* 3. Analytics Charts (Recharts) */}

@@ -34,6 +34,27 @@ const campuscareHttpRequestDurationSeconds = new promClient.Histogram({
   buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
 });
 
+// Counter: Total SLA At-Risk Detections
+const campuscareSlaAtRiskTotal = new promClient.Counter({
+  name: 'campuscare_sla_at_risk_total',
+  help: 'Total number of complaints transitioning into SLA AT_RISK state',
+  labelNames: ['priority'],
+});
+
+// Counter: Total SLA Breaches
+const campuscareSlaBreachedTotal = new promClient.Counter({
+  name: 'campuscare_sla_breached_total',
+  help: 'Total number of complaints breaching SLA deadlines',
+  labelNames: ['priority'],
+});
+
+// Counter: Total Automated Escalations
+const campuscareSlaEscalationsTotal = new promClient.Counter({
+  name: 'campuscare_sla_escalations_total',
+  help: 'Total number of automated complaint escalations triggered by SLA monitor',
+  labelNames: ['level'],
+});
+
 /**
  * Normalizes request paths to safe, low-cardinality route patterns.
  * Prevents URL parameter pollution (e.g. user IDs, complaint IDs, tokens) in Prometheus labels.
@@ -103,6 +124,9 @@ module.exports = {
   campuscareHttpRequestsTotal,
   campuscareHttpErrorsTotal,
   campuscareHttpRequestDurationSeconds,
+  campuscareSlaAtRiskTotal,
+  campuscareSlaBreachedTotal,
+  campuscareSlaEscalationsTotal,
   metricsMiddleware,
   metricsHandler,
   normalizeRoute,

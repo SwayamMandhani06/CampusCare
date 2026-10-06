@@ -5,6 +5,7 @@
 const Complaint = require('../models/Complaint');
 const notificationService = require('../utils/notificationService');
 const { formatComplaintsCsv } = require('../utils/csvExport');
+const { recordFirstResponse, recordResolution } = require('../services/slaService');
 
 /**
  * @desc    Get all complaints assigned to logged-in staff with advanced filtering
@@ -27,6 +28,14 @@ const getStaffTasks = async (req, res) => {
 
     if (priority) {
       query.priority = priority.toUpperCase();
+    }
+
+    if (req.query.slaStatus) {
+      query['sla.status'] = req.query.slaStatus.toUpperCase();
+    }
+
+    if (req.query.escalated !== undefined && req.query.escalated !== '') {
+      query['sla.escalated'] = req.query.escalated === 'true';
     }
 
     if (startDate || endDate) {
@@ -118,6 +127,28 @@ const updateTaskStatus = async (req, res) => {
 
     const now = new Date();
     complaint.status = upperStatus;
+
+    recordFirstResponse(complaint, now);
+
+    if (upperStatus === 'RESOLVED') {
+      const wasResolved = recordResolution(complaint, now);
+      if (wasResolved) {
+        complaint.activityTimeline.push({
+          eventType: 'SLA_RESOLVED',
+          actor: req.user._id,
+          actorName: req.user.name,
+          actorRole: req.user.role,
+          message: complaint.sla?.resolutionBreached
+            ? 'Task resolved after SLA deadline (breached).'
+            : 'Task resolved within target SLA window.',
+          timestamp: now,
+          metadata: {
+            resolutionBreached: complaint.sla?.resolutionBreached,
+            resolutionAt: now,
+          },
+        });
+      }
+    }
 
     // Append to status history
     complaint.statusHistory.push({
@@ -217,6 +248,9 @@ const resolveTask = async (req, res) => {
     complaint.status = 'RESOLVED';
     complaint.resolutionNotes = resolutionNotes || 'Resolved by staff';
 
+    recordFirstResponse(complaint, now);
+    const wasResolved = recordResolution(complaint, now);
+
     // Append to status timeline
     complaint.statusHistory.push({
       status: 'RESOLVED',
@@ -235,6 +269,23 @@ const resolveTask = async (req, res) => {
       timestamp: now,
       metadata: { resolutionNotes: complaint.resolutionNotes },
     });
+
+    if (wasResolved) {
+      complaint.activityTimeline.push({
+        eventType: 'SLA_RESOLVED',
+        actor: req.user._id,
+        actorName: req.user.name,
+        actorRole: req.user.role,
+        message: complaint.sla?.resolutionBreached
+          ? 'Task resolved after SLA deadline (breached).'
+          : 'Task resolved within target SLA window.',
+        timestamp: now,
+        metadata: {
+          resolutionBreached: complaint.sla?.resolutionBreached,
+          resolutionAt: now,
+        },
+      });
+    }
 
     await complaint.save();
 

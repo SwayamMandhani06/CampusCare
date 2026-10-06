@@ -11,6 +11,11 @@ const allowedNotificationTypes = [
   'COMPLAINT_RESOLVED',
   'COMMENT_ADDED',
   'FEEDBACK_SUBMITTED',
+  'PRIORITY_CHANGED',
+  'SLA_AT_RISK',
+  'SLA_BREACH',
+  'SLA_BREACHED',
+  'COMPLAINT_ESCALATED',
 ];
 
 const notificationSchema = new mongoose.Schema(

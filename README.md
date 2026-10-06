@@ -538,7 +538,7 @@ DEMO_PASSWORD=CampusCare@2026
 
 ---
 
-### 🧪 Automated Testing
+### 🧪 Automated Testing (Batch 1)
 
 Run the complete test suite (151 tests across 4 suites):
 
@@ -555,11 +555,108 @@ npm run test:metrics     # 19 Prometheus observability tests
 npm run test:batch1      # 55 Batch 1 end-to-end feature tests
 ```
 
-Frontend lint & production build:
+---
+
+## ⚡ CampusCare 2.0 Batch 2 — Intelligent Priority Automation & SLA Management System
+
+Batch 2 enhances CampusCare from a manual logging registry into an operationally smart, deterministic facility management engine with automated SLA governance and multi-replica safety.
+
+### 🧠 1. Deterministic Rule-Based Priority Engine
+CampusCare uses a deterministic rule-based priority engine (`backend/services/priorityService.js`). It does not rely on third-party AI APIs or LLM keys, ensuring deterministic, offline-capable, and sub-millisecond evaluation:
+- **`CRITICAL`**: Electrical hazards (exposed live wires, sparking, burning smells, short circuits), active fire/smoke, structural flooding/burst pipes, serious campus security threats.
+- **`HIGH`**: Complete laboratory failures (computer labs, chemistry facilities), widespread internet/network outages affecting multiple departments, core campus infrastructure offline.
+- **`MEDIUM`**: Standard classroom equipment failure (projectors, loose fan regulators), routine plumbing blockages, localized facility repairs.
+- **`LOW`**: Minor cosmetic wear, non-urgent furniture maintenance, routine touch-ups.
+- **Audit Traceability**: Computes both `priority` (`LOW | MEDIUM | HIGH | CRITICAL`) and a human-readable `priorityReason` explaining the exact safety or operational rule triggered.
+- **Source Tracking**: Marked as `prioritySource: 'AUTOMATIC'`.
+
+### 🛡️ 2. Audited Administrator Manual Priority Override
+- Administrators can override priority at any time via `PUT /api/admin/complaints/:id/priority`.
+- **Mandatory Justification**: Requires a minimum 5-character reason explaining the administrative override.
+- **Audit Persistence**: Sets `prioritySource: 'MANUAL'`, stores `priorityUpdatedBy` and `priorityUpdatedAt`, logs a `PRIORITY_CHANGED` event on the activity timeline, and preserves previous priority.
+- **Override Respect Guarantee**: Automated SLA escalations will **never** overwrite an admin's manually assigned priority.
+
+### ⏱️ 3. Centralized SLA Policy Engine & Tracking
+CampusCare establishes strict institutional SLA policies (`backend/services/slaService.js`):
+
+| Priority Level | Response SLA Target | Resolution SLA Target |
+|:---|:---|:---|
+| **`CRITICAL`** | **1 Hour** (60 minutes) | **8 Hours** (480 minutes) |
+| **`HIGH`** | **4 Hours** (240 minutes) | **24 Hours** (1,440 minutes) |
+| **`MEDIUM`** | **12 Hours** (720 minutes) | **48 Hours** (2,880 minutes) |
+| **`LOW`** | **24 Hours** (1,440 minutes) | **72 Hours** (4,320 minutes) |
+
+- **First Response Definition**: Achieved when an authorized administrator or technician performs an actionable workflow step: ticket is reviewed, assigned to a technician, status transitions beyond `PENDING`, or a staff comment is posted.
+- **Resolution Definition**: Achieved when status becomes `RESOLVED`. Records authoritative `resolutionAt` timestamp and stores whether resolution completed within SLA or breached.
+- **Authoritative Status Calculation**:
+  - `ON_TRACK`: More than 25% target time remaining.
+  - `AT_RISK`: 25% or less target time remaining before breach.
+  - `BREACHED`: Deadline passed before first response or resolution.
+  - `RESOLVED`: Complaint completed.
+
+### 🔄 4. Automated SLA Monitoring & Multi-Level Escalation
+- **Lightweight Periodic Scheduler**: Background interval (`backend/services/slaScheduler.js`) inspects unresolved complaints at a configurable interval (`SLA_CHECK_INTERVAL_MS`, default 60s).
+- **Multi-Replica Kubernetes Safety (No Redis Required)**: Uses distributed lease locking via MongoDB collection `SystemLock` (`backend/models/SystemLock.js`). Before checking complaints, an instance acquires an atomic lock with a 45-second TTL (`findOneAndUpdate` with `$lt: now`). Even with multiple backend replicas running on k3s, only one worker performs SLA monitoring at a time.
+- **Multi-Level Escalation Workflow**:
+  - **Level 1 Escalation (On Breach)**: Complaint is flagged `sla.escalated = true`, `sla.escalationLevel = 1`. In-app and optional email notifications dispatched to assigned technician and administrators. Activity timeline records `SLA_BREACHED` and `COMPLAINT_ESCALATED`. If `prioritySource === 'AUTOMATIC'`, priority is automatically upgraded (`LOW` → `MEDIUM` → `HIGH` → `CRITICAL`) with targets recalculated.
+  - **Level 2 Executive Escalation (Persistent Overdue)**: Complaints remaining breached beyond `SECOND_ESCALATION_AFTER_BREACH_MINUTES` (default 120m) escalate to Level 2 with high-priority executive alerts.
+  - **Duplicate Prevention**: State flags (`breachNotified`, `escalation2Notified`) prevent notification spam across scheduler cycles.
+
+### 👁️ 5. Multi-Role UI Experience
+- **Admin Console**: SLA status and escalation filters, priority source tags (`Auto` / `Manual`), priority reason tooltips, dedicated SLA Telemetry card with live countdowns, and audited manual override modal requiring justification.
+- **Admin Dashboard**: 7 real-time SLA KPI cards: Active Unresolved, On-Track, At-Risk, Breached, Escalated, Average Resolution Time (hours), and SLA Compliance Percentage (target ≥ 90%).
+- **Staff Workbench**: Priority badge with reason, SLA state pill with live time remaining/overdue countdown, escalation badge with pulsing alert, and response/resolution deadlines.
+- **Student Portal**: Priority and clear resolution timeline with estimated completion date/time. Polite delay messaging (*"This complaint is currently delayed. Campus facilities has been alerted."*) without exposing sensitive internal supervisory workflows.
+
+### 📡 New REST APIs (Batch 2)
+
+| Method | Endpoint | Access | Description |
+|:---|:---|:---|:---|
+| `PUT` | `/api/admin/complaints/:id/priority` | Admin only | Manually override complaint priority with mandatory justification |
+| `GET` | `/api/admin/complaints?slaStatus=...` | Admin only | Filter complaints by SLA status (`ON_TRACK`, `AT_RISK`, `BREACHED`, `RESOLVED`) |
+| `GET` | `/api/admin/complaints?escalated=true` | Admin only | Filter escalated complaints |
+| `GET` | `/api/admin/complaints?prioritySource=...` | Admin only | Filter by `AUTOMATIC` or `MANUAL` priority origin |
+| `GET` | `/api/staff/tasks?slaStatus=...` | Staff only | Filter assigned work orders by SLA status |
+
+### 📊 Observability (Prometheus Metrics)
+- `campuscare_sla_at_risk_total`: Gauge tracking total tickets currently at risk (≤25% SLA remaining).
+- `campuscare_sla_breached_total`: Counter incremented whenever an active complaint breaches its SLA deadline.
+- `campuscare_sla_escalations_total`: Counter tracking supervisory escalations triggered by the scheduler.
+
+### ⚙️ Batch 2 Environment Variables
+
+```bash
+# SLA Scheduler Configuration
+SLA_SCHEDULER_ENABLED=true               # Set to false to disable background scheduler
+SLA_CHECK_INTERVAL_MS=60000             # Periodic monitoring interval (default: 60s)
+SLA_LEASE_TTL_MS=45000                  # Distributed lock lease expiration (default: 45s)
+FIRST_ESCALATION_AFTER_BREACH_MINUTES=0  # Delay before level 1 escalation (0 = immediate)
+SECOND_ESCALATION_AFTER_BREACH_MINUTES=120 # Delay before level 2 persistent escalation (120m)
+```
+
+### 🧪 Complete Automated Testing (228 Tests Passed)
+
+Run the full end-to-end verification suite across all 5 suites:
+
+```bash
+cd backend
+npm test
+```
+
+Individual test suites:
+```bash
+npm run test:auth        # 28 authentication & RBAC tests
+npm run test:complaints  # 49 complaint lifecycle tests
+npm run test:metrics     # 19 Prometheus observability tests
+npm run test:batch1      # 55 Batch 1 feature tests
+npm run test:batch2      # 77 Batch 2 Intelligent Priority & SLA tests
+```
+
+Frontend verification:
 ```bash
 cd frontend
-npm run lint             # Oxlint static analysis
-npm run build            # Vite production bundle build
+npm run lint             # Oxlint verification (0 errors)
+npm run build            # Vite production build
 ```
 
 ---

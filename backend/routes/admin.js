@@ -10,6 +10,7 @@ const {
   getAllComplaints,
   assignStaff,
   updateComplaintStatus,
+  updateComplaintPriority,
   getAllUsers,
   exportAdminComplaintsCsv,
 } = require('../controllers/adminController');
@@ -25,6 +26,7 @@ router.get('/complaints/export', exportAdminComplaintsCsv);
 router.get('/complaints', getAllComplaints);
 router.put('/complaints/:id/assign', assignStaff);
 router.put('/complaints/:id/status', updateComplaintStatus);
+router.put('/complaints/:id/priority', updateComplaintPriority);
 router.get('/users', getAllUsers);
 
 module.exports = router;

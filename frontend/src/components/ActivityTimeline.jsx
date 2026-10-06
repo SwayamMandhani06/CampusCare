@@ -10,6 +10,12 @@ import {
   ArrowRight,
   Shield,
   GraduationCap,
+  Zap,
+  Sliders,
+  AlertTriangle,
+  AlertOctagon,
+  Flame,
+  Cpu,
 } from 'lucide-react';
 import { formatTimeAgo, formatFullDateTime } from '../utils/formatDate';
 
@@ -38,6 +44,20 @@ const ActivityTimeline = ({ timeline = [] }) => {
         return <Star size={13} className="text-status-assigned" />;
       case 'IMAGE_UPLOADED':
         return <Image size={13} className="text-brand" />;
+      case 'PRIORITY_AUTO_ASSIGNED':
+        return <Zap size={13} className="text-amber-500" />;
+      case 'PRIORITY_CHANGED':
+        return <Sliders size={13} className="text-brand" />;
+      case 'SLA_STARTED':
+        return <Clock size={13} className="text-blue-500" />;
+      case 'SLA_AT_RISK':
+        return <AlertTriangle size={13} className="text-amber-500" />;
+      case 'SLA_BREACHED':
+        return <AlertOctagon size={13} className="text-red-500" />;
+      case 'COMPLAINT_ESCALATED':
+        return <Flame size={13} className="text-rose-500" />;
+      case 'SLA_RESOLVED':
+        return <CheckCircle size={13} className="text-emerald-500" />;
       default:
         return <Clock size={13} className="text-muted" />;
     }
@@ -46,6 +66,7 @@ const ActivityTimeline = ({ timeline = [] }) => {
   const getRoleIcon = (role) => {
     if (role === 'admin') return <Shield size={10} className="text-status-reviewed" />;
     if (role === 'staff') return <Wrench size={10} className="text-status-assigned" />;
+    if (role === 'system') return <Cpu size={10} className="text-purple-500" />;
     return <GraduationCap size={10} className="text-brand" />;
   };
 

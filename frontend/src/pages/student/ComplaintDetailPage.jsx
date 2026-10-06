@@ -8,6 +8,7 @@ import Input from '../../components/Input';
 import Textarea from '../../components/Textarea';
 import StatusBadge from '../../components/StatusBadge';
 import PriorityBadge from '../../components/PriorityBadge';
+import SlaBadge from '../../components/SlaBadge';
 import StatusRail from '../../components/StatusRail';
 import ComplaintComments from '../../components/ComplaintComments';
 import ComplaintImageGallery from '../../components/ComplaintImageGallery';
@@ -28,6 +29,8 @@ import {
   X,
   Lock,
   History,
+  Clock,
+  AlertTriangle,
 } from 'lucide-react';
 
 const PRIORITIES = [
@@ -186,9 +189,12 @@ const ComplaintDetailPage = () => {
                 </h1>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 flex-wrap">
                 <PriorityBadge priority={complaint.priority} />
                 <StatusBadge status={complaint.status} />
+                {complaint.sla?.status && (
+                  <SlaBadge status={complaint.sla.status} showEscalation={false} />
+                )}
               </div>
             </div>
 
@@ -297,6 +303,33 @@ const ComplaintDetailPage = () => {
                     <span>Reported: <strong className="text-ink">{formatFullDateTime(complaint.createdAt)}</strong></span>
                   </div>
                 </div>
+
+                {/* Estimated Resolution SLA Indicator */}
+                {isResolved ? (
+                  <div className="p-3.5 rounded-lg bg-emerald-500/10 border border-emerald-500/25 flex items-center space-x-2.5 text-xs font-mono text-emerald-600">
+                    <Check size={15} className="shrink-0" />
+                    <span>
+                      Resolved on {formatFullDateTime(complaint.sla?.resolutionAt || complaint.updatedAt)}
+                    </span>
+                  </div>
+                ) : complaint.sla?.status === 'BREACHED' || complaint.sla?.resolutionBreached ? (
+                  <div className="p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/25 flex items-center space-x-2.5 text-xs font-mono text-amber-600">
+                    <AlertTriangle size={15} className="shrink-0" />
+                    <div>
+                      <span className="font-medium block">This complaint is currently delayed.</span>
+                      <span className="text-[11px] text-muted block mt-0.5 font-sans">
+                        Campus facilities has been alerted and is prioritizing resolution for this issue.
+                      </span>
+                    </div>
+                  </div>
+                ) : complaint.sla?.resolutionDeadline ? (
+                  <div className="p-3.5 rounded-lg bg-paper/60 border border-line flex items-center space-x-2.5 text-xs font-mono text-ink">
+                    <Clock size={15} className="text-brand shrink-0" />
+                    <div>
+                      <span>Expected resolution by: <strong>{formatFullDateTime(complaint.sla.resolutionDeadline)}</strong></span>
+                    </div>
+                  </div>
+                ) : null}
 
                 {/* Description */}
                 <div>

@@ -15,6 +15,9 @@ const User = require('./models/User');
 const Complaint = require('./models/Complaint');
 const Comment = require('./models/Comment');
 const Notification = require('./models/Notification');
+const SystemLock = require('./models/SystemLock');
+const { evaluatePriority } = require('./services/priorityService');
+const { calculateSlaDeadlines, computeSlaStatus } = require('./services/slaService');
 
 dotenv.config();
 
@@ -163,7 +166,8 @@ const seedDemonstrationData = async () => {
     await Complaint.deleteMany({});
     await Comment.deleteMany({});
     await Notification.deleteMany({});
-    console.log('[Seed] Cleared existing complaints, comments, and notifications.');
+    await SystemLock.deleteMany({});
+    console.log('[Seed] Cleared existing complaints, comments, notifications, and system locks.');
 
     const now = Date.now();
     const hours = (h) => new Date(now - h * 60 * 60 * 1000);
@@ -232,16 +236,18 @@ const seedDemonstrationData = async () => {
         createdAt: hours(22),
       },
 
-      // 7. REVIEWED
+      // 7. REVIEWED (Demo Scenario: Manually Overridden Priority by Administrator)
       {
         title: 'LAN Jack Termination Dislodged in High-Performance Computing Lab',
         description: 'Workstation Node-12 ethernet port wall faceplate pulled out with exposed CAT6 conductor pair.',
         category: 'Internet/WiFi',
         location: 'Computer Center, 4th Floor, HPC Research Lab',
         priority: 'HIGH',
+        prioritySource: 'MANUAL',
+        priorityReason: 'Administrative override: High-occupancy research cluster with active M.Tech capstone project evaluations.',
         status: 'REVIEWED',
         student: students[6],
-        createdAt: days(1),
+        createdAt: hours(6),
       },
       // 8. REVIEWED
       {
@@ -265,41 +271,56 @@ const seedDemonstrationData = async () => {
         student: students[8],
         createdAt: days(2),
       },
-      // 10. REVIEWED
+      // 10. REVIEWED (Demo Scenario: Automatically Classified CRITICAL Hazard)
       {
         title: 'Water Stagnation Near Chemistry Lab Emergency Eye Wash',
         description: 'Drainage pipe has slight upward gradient causing water pooling around the safety station.',
         category: 'Plumbing',
         location: 'Science Block, 1st Floor Chemistry Lab 108',
         priority: 'CRITICAL',
+        prioritySource: 'AUTOMATIC',
+        priorityReason: 'Laboratory safety station hazard threatening eyewash accessibility.',
         status: 'REVIEWED',
         student: students[9],
         createdAt: days(2),
       },
 
-      // 11. ASSIGNED
+      // 11. ASSIGNED (Demo Scenario: HIGH + AT_RISK SLA Warning)
       {
         title: 'Master Switchboard MCB Trip in CAD Lab 104',
         description: 'Circuit breaker trips when 10 or more CAD graphic workstations are switched on simultaneously.',
         category: 'Electrical',
         location: 'Mechanical Dept Building, Ground Floor, CAD Lab 104',
         priority: 'HIGH',
+        prioritySource: 'AUTOMATIC',
+        priorityReason: 'High facility impact disrupting computer graphics laboratory curriculum.',
         status: 'ASSIGNED',
         staff: staffElectrical,
         student: students[1],
-        createdAt: days(3),
+        createdAt: hours(19), // 19h elapsed out of 24h target -> 5h remaining (< 25%) -> AT_RISK
+        slaOverride: {
+          status: 'AT_RISK',
+          atRiskNotified: true,
+        },
       },
-      // 12. ASSIGNED
+      // 12. ASSIGNED (Demo Scenario: HIGH + BREACHED SLA)
       {
         title: 'Hostel Block A 3rd Floor Washroom Basin Clog',
         description: 'Two adjacent ceramic handwash basins have slow drainage with debris buildup in trap pipe.',
         category: 'Plumbing',
         location: 'Boys Hostel Block A, 3rd Floor East Restroom',
-        priority: 'MEDIUM',
+        priority: 'HIGH',
+        prioritySource: 'AUTOMATIC',
+        priorityReason: 'Sanitary plumbing issue in residential hostel wing.',
         status: 'ASSIGNED',
         staff: staffPlumbing,
         student: students[0],
-        createdAt: days(3),
+        createdAt: hours(28), // 28h elapsed out of 24h target -> BREACHED by 4h
+        slaOverride: {
+          status: 'BREACHED',
+          resolutionBreached: true,
+          breachNotified: true,
+        },
       },
       // 13. ASSIGNED
       {
@@ -337,17 +358,27 @@ const seedDemonstrationData = async () => {
         student: students[4],
         createdAt: days(4),
       },
-      // 16. ASSIGNED
+      // 16. ASSIGNED (Demo Scenario: CRITICAL + ESCALATED Level 1)
       {
         title: 'Exhaust Fan Bearing Noise in Central Kitchen',
         description: 'Commercial 24-inch exhaust hood fan generates loud metallic grinding vibration.',
         category: 'Hostel Maintenance',
         location: 'Mess & Dining Hall, Kitchen Exhaust Hood Bay',
         priority: 'CRITICAL',
+        prioritySource: 'AUTOMATIC',
+        priorityReason: 'Active safety hazard in dining kitchen ventilation system.',
         status: 'ASSIGNED',
         staff: staffLead,
         student: students[5],
-        createdAt: days(4),
+        createdAt: hours(9), // 9h elapsed out of 8h CRITICAL target -> Overdue by 1h -> Level 1 escalation
+        slaOverride: {
+          status: 'BREACHED',
+          resolutionBreached: true,
+          breachNotified: true,
+          escalated: true,
+          escalationLevel: 1,
+          escalation1Notified: true,
+        },
       },
 
       // 17. IN_PROGRESS
@@ -362,17 +393,28 @@ const seedDemonstrationData = async () => {
         student: students[6],
         createdAt: days(5),
       },
-      // 18. IN_PROGRESS
+      // 18. IN_PROGRESS (Demo Scenario: CRITICAL + ESCALATED Level 2 Executive Director queue)
       {
         title: 'Main Server Room Split AC Temperature Sensor Drift',
-        description: 'Primary 2-ton cooling unit reports 18C but ambient temperature probe reads 27C near rack 3.',
+        description: 'Primary 2-ton cooling unit reports 18C but ambient temperature probe reads 27C near core rack 3.',
         category: 'Equipment',
         location: 'Server Room Data Center, 2nd Floor IT Wing',
         priority: 'CRITICAL',
+        prioritySource: 'AUTOMATIC',
+        priorityReason: 'Critical IT server infrastructure overheating threat.',
         status: 'IN_PROGRESS',
         staff: staffElectrical,
         student: students[7],
-        createdAt: days(5),
+        createdAt: hours(15), // 15h elapsed out of 8h target -> Overdue by 7h (> 120m) -> Level 2 escalation
+        slaOverride: {
+          status: 'BREACHED',
+          resolutionBreached: true,
+          breachNotified: true,
+          escalated: true,
+          escalationLevel: 2,
+          escalation1Notified: true,
+          escalation2Notified: true,
+        },
       },
       // 19. IN_PROGRESS
       {
@@ -423,7 +465,7 @@ const seedDemonstrationData = async () => {
         createdAt: days(6),
       },
 
-      // 23. RESOLVED
+      // 23. RESOLVED (Demo Scenario: Resolved Within SLA Target Window)
       {
         title: 'Flush Valve Leakage in Main Building 1st Floor Washroom',
         description: 'Continuous water drainage from central flush valve in cubicle 3.',
@@ -433,9 +475,10 @@ const seedDemonstrationData = async () => {
         status: 'RESOLVED',
         staff: staffPlumbing,
         student: students[1],
+        resolvedWithinSla: true,
         resolutionNotes: 'Replaced worn rubber seal washer and calibrated dual-flush brass cylinder. Pressure tested leak-free.',
         feedback: { rating: 5, comment: 'Fixed the leak within two hours. Excellent plumbing support.' },
-        createdAt: days(7),
+        createdAt: days(3),
       },
       // 24. RESOLVED
       {
@@ -479,7 +522,7 @@ const seedDemonstrationData = async () => {
         feedback: { rating: 5, comment: 'Clean repair. No more sharp edges.' },
         createdAt: days(10),
       },
-      // 27. RESOLVED
+      // 27. RESOLVED (Demo Scenario: Resolved After SLA Deadline Breach)
       {
         title: 'Hostel Mess Drainage Grate Blockage',
         description: 'Dishwashing area exterior floor trap clogged with food grease residue.',
@@ -489,9 +532,10 @@ const seedDemonstrationData = async () => {
         status: 'RESOLVED',
         staff: staffCleaning,
         student: students[4],
+        resolvedWithinSla: false,
         resolutionNotes: 'High-pressure hydro-jet cleared oil trap and sanitized trench with chlorine wash.',
-        feedback: { rating: 4, comment: 'Drainage is completely clean now.' },
-        createdAt: days(11),
+        feedback: { rating: 4, comment: 'Drainage is completely clean now although it took longer than expected.' },
+        createdAt: days(4),
       },
       // 28. RESOLVED
       {
@@ -515,6 +559,42 @@ const seedDemonstrationData = async () => {
       const student = def.student;
       const staff = def.staff || null;
 
+      // Priority evaluation & source attribution
+      const evaluated = evaluatePriority({
+        title: def.title,
+        description: def.description,
+        category: def.category,
+        location: def.location,
+      });
+
+      const priority = def.priority || evaluated.priority;
+      const prioritySource = def.prioritySource || 'AUTOMATIC';
+      const priorityReason = def.priorityReason || evaluated.priorityReason;
+
+      // SLA calculation & lifecycle scenario application
+      let baseSla = calculateSlaDeadlines(priority, def.createdAt);
+
+      if (def.status !== 'PENDING') {
+        baseSla.responseAt = new Date(def.createdAt.getTime() + 2 * 60 * 60 * 1000);
+        baseSla.responseBreached = false;
+      }
+
+      if (def.status === 'RESOLVED') {
+        const resolutionHours = def.resolvedWithinSla === false ? Math.round((baseSla.resolutionTargetMinutes / 60) + 12) : 10;
+        const resolutionTime = new Date(def.createdAt.getTime() + resolutionHours * 60 * 60 * 1000);
+        baseSla.resolutionAt = resolutionTime;
+        baseSla.resolutionBreached = def.resolvedWithinSla === false;
+        baseSla.status = 'RESOLVED';
+      } else if (def.slaOverride) {
+        Object.assign(baseSla, def.slaOverride);
+        if (def.slaOverride.escalated) {
+          baseSla.escalatedAt = new Date(def.createdAt.getTime() + baseSla.resolutionTargetMinutes * 60 * 1000);
+        }
+      } else {
+        const computed = computeSlaStatus({ createdAt: def.createdAt, priority, sla: baseSla, status: def.status });
+        baseSla.status = computed.status;
+      }
+
       // Status history
       const history = [
         {
@@ -536,6 +616,41 @@ const seedDemonstrationData = async () => {
           timestamp: def.createdAt,
         },
       ];
+
+      // Priority timeline event
+      if (prioritySource === 'MANUAL') {
+        timeline.push({
+          eventType: 'PRIORITY_CHANGED',
+          actor: adminLead._id,
+          actorName: adminLead.name,
+          actorRole: 'admin',
+          message: `Priority manually set to ${priority}: ${priorityReason}`,
+          timestamp: new Date(def.createdAt.getTime() + 10 * 60 * 1000),
+          metadata: { priority, reason: priorityReason, source: 'MANUAL' },
+        });
+      } else {
+        timeline.push({
+          eventType: 'PRIORITY_AUTO_ASSIGNED',
+          actorName: 'System Automation',
+          actorRole: 'system',
+          message: `Priority classified as ${priority}: ${priorityReason}`,
+          timestamp: def.createdAt,
+          metadata: { priority, reason: priorityReason, source: 'AUTOMATIC' },
+        });
+      }
+
+      // SLA policy activation event
+      timeline.push({
+        eventType: 'SLA_STARTED',
+        actorName: 'System Automation',
+        actorRole: 'system',
+        message: `SLA policy activated. Target resolution: ${Math.round(baseSla.resolutionTargetMinutes / 60)}h.`,
+        timestamp: def.createdAt,
+        metadata: {
+          responseDeadline: baseSla.responseDeadline,
+          resolutionDeadline: baseSla.resolutionDeadline,
+        },
+      });
 
       if (def.status === 'REVIEWED' || def.status === 'ASSIGNED' || def.status === 'IN_PROGRESS' || def.status === 'RESOLVED') {
         const reviewedTime = new Date(def.createdAt.getTime() + 2 * 60 * 60 * 1000);
@@ -591,8 +706,44 @@ const seedDemonstrationData = async () => {
         });
       }
 
+      // SLA AT RISK event
+      if (baseSla.status === 'AT_RISK' || baseSla.atRiskNotified) {
+        timeline.push({
+          eventType: 'SLA_AT_RISK',
+          actorName: 'System Automation',
+          actorRole: 'system',
+          message: 'SLA resolution window at risk (<25% time remaining). Priority flagged.',
+          timestamp: new Date(def.createdAt.getTime() + Math.round(baseSla.resolutionTargetMinutes * 0.76 * 60 * 1000)),
+          metadata: { priority },
+        });
+      }
+
+      // SLA BREACHED event
+      if (baseSla.status === 'BREACHED' || baseSla.resolutionBreached) {
+        timeline.push({
+          eventType: 'SLA_BREACHED',
+          actorName: 'System Automation',
+          actorRole: 'system',
+          message: 'Target resolution deadline exceeded. SLA breach recorded.',
+          timestamp: baseSla.resolutionDeadline,
+          metadata: { priority },
+        });
+      }
+
+      // COMPLAINT ESCALATED event
+      if (baseSla.escalated) {
+        timeline.push({
+          eventType: 'COMPLAINT_ESCALATED',
+          actorName: 'System Automation',
+          actorRole: 'system',
+          message: `Complaint escalated to Level ${baseSla.escalationLevel} supervisory queue.`,
+          timestamp: baseSla.escalatedAt || baseSla.resolutionDeadline,
+          metadata: { escalationLevel: baseSla.escalationLevel },
+        });
+      }
+
       if (def.status === 'RESOLVED') {
-        const resolvedTime = new Date(def.createdAt.getTime() + 10 * 60 * 60 * 1000);
+        const resolvedTime = baseSla.resolutionAt || new Date(def.createdAt.getTime() + 10 * 60 * 60 * 1000);
         history.push({
           status: 'RESOLVED',
           changedAt: resolvedTime,
@@ -606,6 +757,18 @@ const seedDemonstrationData = async () => {
           actorRole: staff ? 'staff' : 'admin',
           message: def.resolutionNotes || 'Complaint resolved',
           timestamp: resolvedTime,
+        });
+
+        timeline.push({
+          eventType: 'SLA_RESOLVED',
+          actor: staff ? staff._id : adminLead._id,
+          actorName: staff ? staff.name : adminLead.name,
+          actorRole: staff ? 'staff' : 'admin',
+          message: baseSla.resolutionBreached
+            ? 'Complaint resolved after SLA deadline (breached).'
+            : 'Complaint resolved within target SLA window.',
+          timestamp: resolvedTime,
+          metadata: { resolutionBreached: baseSla.resolutionBreached },
         });
 
         if (def.feedback) {
@@ -625,7 +788,12 @@ const seedDemonstrationData = async () => {
         description: def.description,
         category: def.category,
         location: def.location,
-        priority: def.priority,
+        priority,
+        prioritySource,
+        priorityReason,
+        priorityUpdatedAt: def.createdAt,
+        priorityUpdatedBy: prioritySource === 'MANUAL' ? adminLead._id : null,
+        sla: baseSla,
         status: def.status || 'PENDING',
         createdBy: student._id,
         assignedTo: staff ? staff._id : null,

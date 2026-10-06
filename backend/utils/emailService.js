@@ -193,6 +193,60 @@ class EmailService {
     `;
     this.sendMailAsync({ to: recipient.email, subject, text, html });
   }
+
+  sendSlaAtRisk(recipient, complaint, remainingMinutes) {
+    if (!recipient?.email) return;
+    const subject = `[URGENT] SLA At Risk: Ticket #${complaint._id.toString().slice(-6)}`;
+    const text = `Hello ${recipient.name},\n\nComplaint #${complaint._id} ("${complaint.title}") is approaching its SLA resolution deadline.\nEstimated time remaining: ${remainingMinutes} minutes.\n\nPlease attend to this issue promptly.\n\nBest regards,\nCampusCare Facilities Team`;
+    const html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+        <h2 style="color: #b45309; margin-top: 0;">⚠️ SLA Target At Risk: #${complaint._id.toString().slice(-6)}</h2>
+        <p>Hello <strong>${recipient.name}</strong>,</p>
+        <p>Ticket <em>"${complaint.title}"</em> has entered the <strong>AT RISK</strong> zone with less than 25% resolution time remaining.</p>
+        <div style="background-color: #fffbeb; border: 1px solid #fef3c7; padding: 12px 16px; margin: 16px 0; font-size: 13px; border-radius: 6px;">
+          <p style="margin: 0;"><strong>Location:</strong> ${complaint.location}</p>
+          <p style="margin: 4px 0 0;"><strong>Estimated Time Remaining:</strong> ~${remainingMinutes} minutes</p>
+        </div>
+        <p style="font-size: 13px; color: #718096;">Please log into CampusCare to review the ticket and expedite resolution.</p>
+      </div>
+    `;
+    this.sendMailAsync({ to: recipient.email, subject, text, html });
+  }
+
+  sendSlaBreached(recipient, complaint, escalationLevel) {
+    if (!recipient?.email) return;
+    const subject = `[ESCALATION L${escalationLevel}] SLA Breached: Ticket #${complaint._id.toString().slice(-6)}`;
+    const text = `Attention ${recipient.name},\n\nComplaint #${complaint._id} ("${complaint.title}") has breached its SLA resolution deadline and has been escalated to Level ${escalationLevel}.\n\nImmediate supervisory intervention required.\n\nCampusCare Operations`;
+    const html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+        <h2 style="color: #b91c1c; margin-top: 0;">🚨 SLA Breached & Escalated (Level ${escalationLevel})</h2>
+        <p>Attention <strong>${recipient.name}</strong>,</p>
+        <p>Complaint <strong>#${complaint._id.toString().slice(-6)}</strong> (<em>${complaint.title}</em>) has exceeded its SLA resolution deadline.</p>
+        <div style="background-color: #fef2f2; border: 1px solid #fee2e2; padding: 12px 16px; margin: 16px 0; font-size: 13px; border-radius: 6px;">
+          <p style="margin: 0; color: #991b1b;"><strong>Status:</strong> ESCALATED (Level ${escalationLevel})</p>
+          <p style="margin: 4px 0 0;"><strong>Priority:</strong> ${complaint.priority}</p>
+          <p style="margin: 4px 0 0;"><strong>Location:</strong> ${complaint.location}</p>
+        </div>
+        <p style="font-size: 13px; color: #718096;">Please review the ticket on the CampusCare console immediately.</p>
+      </div>
+    `;
+    this.sendMailAsync({ to: recipient.email, subject, text, html });
+  }
+
+  sendPriorityChanged(recipient, complaint, previousPriority, newPriority, reason) {
+    if (!recipient?.email) return;
+    const subject = `Priority Updated to ${newPriority}: Ticket #${complaint._id.toString().slice(-6)}`;
+    const text = `Hello ${recipient.name},\n\nThe priority for ticket #${complaint._id} ("${complaint.title}") was changed from ${previousPriority} to ${newPriority}.\nReason: ${reason}\n\nCampusCare Team`;
+    const html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+        <h2 style="color: #3d5a80; margin-top: 0;">Priority Updated: #${complaint._id.toString().slice(-6)}</h2>
+        <p>Hello <strong>${recipient.name}</strong>,</p>
+        <p>The priority level for ticket <em>"${complaint.title}"</em> was updated from <strong>${previousPriority}</strong> to <strong>${newPriority}</strong>.</p>
+        <p style="font-size: 13px; color: #4a5568;"><strong>Reason:</strong> ${reason}</p>
+      </div>
+    `;
+    this.sendMailAsync({ to: recipient.email, subject, text, html });
+  }
 }
 
 const emailService = new EmailService();

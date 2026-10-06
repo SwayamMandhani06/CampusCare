@@ -10,6 +10,10 @@ import {
   Wrench,
   Star,
   ExternalLink,
+  AlertTriangle,
+  AlertOctagon,
+  Flame,
+  Zap,
 } from 'lucide-react';
 import api from '../services/api';
 import { formatTimeAgo } from '../utils/formatDate';
@@ -129,6 +133,15 @@ const NotificationBell = () => {
         return <MessageSquare size={14} className="text-brand" />;
       case 'FEEDBACK_SUBMITTED':
         return <Star size={14} className="text-status-assigned" />;
+      case 'PRIORITY_CHANGED':
+        return <Zap size={14} className="text-amber-500" />;
+      case 'SLA_AT_RISK':
+        return <AlertTriangle size={14} className="text-amber-500" />;
+      case 'SLA_BREACH':
+      case 'SLA_BREACHED':
+        return <AlertOctagon size={14} className="text-red-500" />;
+      case 'COMPLAINT_ESCALATED':
+        return <Flame size={14} className="text-rose-500" />;
       default:
         return <Bell size={14} className="text-muted" />;
     }

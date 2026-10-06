@@ -1,6 +1,8 @@
 /**
  * Complaint Model
  * Schema for campus complaints/issues submitted by students and managed by admin & staff.
+ * Includes Batch 1 (Attachments, Comments, History, Feedback) and
+ * Batch 2 (Rule-Based Priority Automation, SLA Tracking, Risk Detection, Escalation).
  */
 const mongoose = require('mongoose');
 
@@ -18,6 +20,7 @@ const allowedCategories = [
 
 const allowedPriorities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
 const allowedStatuses = ['PENDING', 'REVIEWED', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED'];
+const allowedSlaStatuses = ['ON_TRACK', 'AT_RISK', 'BREACHED', 'RESOLVED'];
 
 // Sub-schema for timeline tracking (Preserved for 100% backward compatibility)
 const statusHistorySchema = new mongoose.Schema(
@@ -110,6 +113,12 @@ const activityTimelineSchema = new mongoose.Schema(
         'STATUS_CHANGED',
         'ASSIGNED',
         'PRIORITY_CHANGED',
+        'PRIORITY_AUTO_ASSIGNED',
+        'SLA_STARTED',
+        'SLA_AT_RISK',
+        'SLA_BREACHED',
+        'COMPLAINT_ESCALATED',
+        'SLA_RESOLVED',
         'COMMENT_ADDED',
         'RESOLVED',
         'FEEDBACK_SUBMITTED',
@@ -146,6 +155,80 @@ const activityTimelineSchema = new mongoose.Schema(
   { _id: true }
 );
 
+// Sub-schema for SLA policy tracking and risk detection
+const slaTrackingSchema = new mongoose.Schema(
+  {
+    responseTargetMinutes: {
+      type: Number,
+      default: 720, // 12h default (MEDIUM)
+    },
+    resolutionTargetMinutes: {
+      type: Number,
+      default: 2880, // 48h default (MEDIUM)
+    },
+    responseDeadline: {
+      type: Date,
+    },
+    resolutionDeadline: {
+      type: Date,
+    },
+    responseAt: {
+      type: Date,
+      default: null,
+    },
+    resolutionAt: {
+      type: Date,
+      default: null,
+    },
+    responseBreached: {
+      type: Boolean,
+      default: false,
+    },
+    resolutionBreached: {
+      type: Boolean,
+      default: false,
+    },
+    status: {
+      type: String,
+      enum: allowedSlaStatuses,
+      default: 'ON_TRACK',
+    },
+    lastCheckedAt: {
+      type: Date,
+      default: Date.now,
+    },
+    escalated: {
+      type: Boolean,
+      default: false,
+    },
+    escalationLevel: {
+      type: Number,
+      default: 0,
+    },
+    escalatedAt: {
+      type: Date,
+      default: null,
+    },
+    atRiskNotified: {
+      type: Boolean,
+      default: false,
+    },
+    breachNotified: {
+      type: Boolean,
+      default: false,
+    },
+    escalation1Notified: {
+      type: Boolean,
+      default: false,
+    },
+    escalation2Notified: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { _id: false }
+);
+
 const complaintSchema = new mongoose.Schema(
   {
     title: {
@@ -179,6 +262,25 @@ const complaintSchema = new mongoose.Schema(
         message: '{VALUE} is not a valid priority level',
       },
       default: 'MEDIUM',
+    },
+    prioritySource: {
+      type: String,
+      enum: ['AUTOMATIC', 'MANUAL'],
+      default: 'AUTOMATIC',
+    },
+    priorityReason: {
+      type: String,
+      default: 'Default priority assigned.',
+      trim: true,
+    },
+    priorityUpdatedAt: {
+      type: Date,
+      default: null,
+    },
+    priorityUpdatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
     },
     status: {
       type: String,
@@ -216,6 +318,10 @@ const complaintSchema = new mongoose.Schema(
       type: [activityTimelineSchema],
       default: [],
     },
+    sla: {
+      type: slaTrackingSchema,
+      default: () => ({}),
+    },
   },
   {
     timestamps: true, // Automatically manages createdAt and updatedAt
@@ -226,14 +332,19 @@ const complaintSchema = new mongoose.Schema(
 complaintSchema.index({ status: 1 });
 complaintSchema.index({ category: 1 });
 complaintSchema.index({ priority: 1 });
+complaintSchema.index({ prioritySource: 1 });
 complaintSchema.index({ createdBy: 1 });
 complaintSchema.index({ assignedTo: 1 });
 complaintSchema.index({ createdAt: -1 });
+complaintSchema.index({ 'sla.status': 1, status: 1 });
+complaintSchema.index({ 'sla.resolutionDeadline': 1 });
+complaintSchema.index({ 'sla.escalated': 1 });
 
 // Helpful constants exported alongside model
 complaintSchema.statics.categories = allowedCategories;
 complaintSchema.statics.priorities = allowedPriorities;
 complaintSchema.statics.statuses = allowedStatuses;
+complaintSchema.statics.slaStatuses = allowedSlaStatuses;
 
 const Complaint = mongoose.model('Complaint', complaintSchema);
 

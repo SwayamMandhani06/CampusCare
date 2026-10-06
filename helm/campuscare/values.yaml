@@ -12,6 +12,8 @@ config:
   nodeEnv: "production"
   port: "5000"
   mongoHost: "campuscare-mongodb-service"
+  slaCheckIntervalMs: "60000"
+  slaSchedulerEnabled: "true"
 
 # ------------------------------------------------------------------------------
 # Sensitive Secrets (Placeholders / Templates)

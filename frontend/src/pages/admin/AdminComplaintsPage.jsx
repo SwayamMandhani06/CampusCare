@@ -3,6 +3,7 @@ import api from '../../services/api';
 import Button from '../../components/Button';
 import StatusBadge from '../../components/StatusBadge';
 import PriorityBadge from '../../components/PriorityBadge';
+import SlaBadge from '../../components/SlaBadge';
 import StatusRail from '../../components/StatusRail';
 import ComplaintComments from '../../components/ComplaintComments';
 import ComplaintImageGallery from '../../components/ComplaintImageGallery';
@@ -11,7 +12,7 @@ import ActivityTimeline from '../../components/ActivityTimeline';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
 import { CATEGORIES, getCategoryIcon } from '../../utils/categoryIcons';
-import { formatRelativeDate, formatFullDateTime } from '../../utils/formatDate';
+import { formatRelativeDate, formatFullDateTime, formatSlaTimeRemaining } from '../../utils/formatDate';
 import {
   Search,
   ChevronLeft,
@@ -25,6 +26,9 @@ import {
   RotateCcw,
   Download,
   History,
+  Clock,
+  Flame,
+  Zap,
 } from 'lucide-react';
 
 const STATUS_OPTIONS = [
@@ -44,6 +48,25 @@ const PRIORITY_OPTIONS = [
   { value: 'CRITICAL', label: 'Critical' },
 ];
 
+const SLA_STATUS_OPTIONS = [
+  { value: '', label: 'All SLA Statuses' },
+  { value: 'ON_TRACK', label: 'On Track' },
+  { value: 'AT_RISK', label: 'At Risk' },
+  { value: 'BREACHED', label: 'Breached' },
+  { value: 'RESOLVED', label: 'Resolved' },
+];
+
+const ESCALATED_OPTIONS = [
+  { value: '', label: 'All Tickets' },
+  { value: 'true', label: 'Escalated Only' },
+];
+
+const PRIORITY_SOURCE_OPTIONS = [
+  { value: '', label: 'All Sources' },
+  { value: 'AUTOMATIC', label: 'Automatic' },
+  { value: 'MANUAL', label: 'Manual' },
+];
+
 const AdminComplaintsPage = () => {
   const [complaints, setComplaints] = useState([]);
   const [staffUsers, setStaffUsers] = useState([]);
@@ -57,6 +80,9 @@ const AdminComplaintsPage = () => {
   const [category, setCategory] = useState('');
   const [status, setStatus] = useState('');
   const [priority, setPriority] = useState('');
+  const [slaStatus, setSlaStatus] = useState('');
+  const [escalated, setEscalated] = useState('');
+  const [prioritySource, setPrioritySource] = useState('');
   const [assignedStaff, setAssignedStaff] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -65,7 +91,8 @@ const AdminComplaintsPage = () => {
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [selectedStaffId, setSelectedStaffId] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
-  const [selectedPriority, setSelectedPriority] = useState('');
+  const [overridePriority, setOverridePriority] = useState('');
+  const [overrideReason, setOverrideReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [actionSuccess, setActionSuccess] = useState('');
   const [actionError, setActionError] = useState('');
@@ -103,6 +130,9 @@ const AdminComplaintsPage = () => {
       if (category) params.category = category;
       if (status) params.status = status;
       if (priority) params.priority = priority;
+      if (slaStatus) params.slaStatus = slaStatus;
+      if (escalated) params.escalated = escalated;
+      if (prioritySource) params.prioritySource = prioritySource;
       if (assignedStaff) params.assignedStaff = assignedStaff;
       if (startDate) params.startDate = startDate;
       if (endDate) params.endDate = endDate;
@@ -121,7 +151,7 @@ const AdminComplaintsPage = () => {
 
   useEffect(() => {
     fetchComplaints();
-  }, [debouncedSearch, category, status, priority, assignedStaff, startDate, endDate, pagination.page]);
+  }, [debouncedSearch, category, status, priority, slaStatus, escalated, prioritySource, assignedStaff, startDate, endDate, pagination.page]);
 
   // CSV Export
   const handleExportCsv = async () => {
@@ -132,6 +162,9 @@ const AdminComplaintsPage = () => {
       if (category) params.category = category;
       if (status) params.status = status;
       if (priority) params.priority = priority;
+      if (slaStatus) params.slaStatus = slaStatus;
+      if (escalated) params.escalated = escalated;
+      if (prioritySource) params.prioritySource = prioritySource;
       if (assignedStaff) params.assignedStaff = assignedStaff;
       if (startDate) params.startDate = startDate;
       if (endDate) params.endDate = endDate;
@@ -163,6 +196,9 @@ const AdminComplaintsPage = () => {
     setCategory('');
     setStatus('');
     setPriority('');
+    setSlaStatus('');
+    setEscalated('');
+    setPrioritySource('');
     setAssignedStaff('');
     setStartDate('');
     setEndDate('');
@@ -173,7 +209,8 @@ const AdminComplaintsPage = () => {
     setSelectedComplaint(complaint);
     setSelectedStaffId(complaint.assignedTo?._id || '');
     setSelectedStatus(complaint.status);
-    setSelectedPriority(complaint.priority);
+    setOverridePriority(complaint.priority || 'MEDIUM');
+    setOverrideReason('');
     setActionSuccess('');
     setActionError('');
   };
@@ -182,6 +219,40 @@ const AdminComplaintsPage = () => {
     setSelectedComplaint(null);
     setActionSuccess('');
     setActionError('');
+  };
+
+  // Admin Action: Manual Priority Override
+  const handleOverridePriority = async () => {
+    if (!overridePriority) {
+      setActionError('Please select a priority.');
+      return;
+    }
+    if (!overrideReason.trim() || overrideReason.trim().length < 5) {
+      setActionError('A valid operational reason of at least 5 characters is required for manual priority override.');
+      return;
+    }
+
+    setActionLoading(true);
+    setActionSuccess('');
+    setActionError('');
+
+    try {
+      const res = await api.put(`/admin/complaints/${selectedComplaint._id}/priority`, {
+        priority: overridePriority,
+        reason: overrideReason.trim(),
+      });
+
+      if (res.data && res.data.complaint) {
+        setSelectedComplaint(res.data.complaint);
+        setActionSuccess(`Priority overridden to ${res.data.complaint.priority} (Source: MANUAL). Reason logged.`);
+        fetchComplaints(pagination.page);
+      }
+    } catch (err) {
+      console.error('[OverridePriority] Error:', err);
+      setActionError(err.response?.data?.message || 'Failed to override priority.');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   // Admin Action: Assign Staff
@@ -242,35 +313,9 @@ const AdminComplaintsPage = () => {
     }
   };
 
-  // Admin Action: Change Priority
-  const handlePriorityChange = async (newPriority) => {
-    if (!newPriority || newPriority === selectedComplaint.priority) return;
-
-    setActionLoading(true);
-    setActionSuccess('');
-    setActionError('');
-
-    try {
-      const res = await api.put(`/admin/complaints/${selectedComplaint._id}/status`, {
-        priority: newPriority,
-      });
-
-      if (res.data && res.data.complaint) {
-        setSelectedComplaint(res.data.complaint);
-        setSelectedPriority(res.data.complaint.priority);
-        setActionSuccess(`Priority updated to ${newPriority}`);
-        fetchComplaints(pagination.page);
-      }
-    } catch (err) {
-      console.error('[PriorityChange] Error:', err);
-      setActionError(err.response?.data?.message || 'Failed to update priority.');
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
   const hasActiveFilters = Boolean(
-    search || category || status || priority || assignedStaff || startDate || endDate
+    search || category || status || priority || slaStatus || escalated || prioritySource || assignedStaff || startDate || endDate
   );
 
   return (
@@ -285,7 +330,7 @@ const AdminComplaintsPage = () => {
             Complaint Management
           </h1>
           <p className="text-xs text-muted mt-1">
-            Complete database of campus issues with triage, staff assignment, and status controls.
+            Complete database of campus issues with triage, staff assignment, SLA tracking, and status controls.
           </p>
         </div>
 
@@ -361,7 +406,7 @@ const AdminComplaintsPage = () => {
           </div>
         </div>
 
-        {/* Row 2: Priority, Staff, Date Range, Reset */}
+        {/* Row 2: Priority, Staff, Date Range */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 pt-2 border-t border-line/60 items-center">
           {/* Priority */}
           <div className="md:col-span-3">
@@ -402,7 +447,7 @@ const AdminComplaintsPage = () => {
           </div>
 
           {/* Date Range */}
-          <div className="md:col-span-4 flex items-center space-x-2">
+          <div className="md:col-span-6 flex items-center space-x-2">
             <input
               type="date"
               value={startDate}
@@ -425,9 +470,66 @@ const AdminComplaintsPage = () => {
               title="End date"
             />
           </div>
+        </div>
+
+        {/* Row 3: SLA Status, Priority Source, Escalation, Reset */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 pt-2 border-t border-line/60 items-center">
+          {/* SLA Status Filter */}
+          <div className="md:col-span-3">
+            <select
+              value={slaStatus}
+              onChange={(e) => {
+                setSlaStatus(e.target.value);
+                setPagination((prev) => ({ ...prev, page: 1 }));
+              }}
+              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand font-mono"
+            >
+              {SLA_STATUS_OPTIONS.map((sla) => (
+                <option key={sla.value} value={sla.value}>
+                  {sla.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Priority Source Filter */}
+          <div className="md:col-span-3">
+            <select
+              value={prioritySource}
+              onChange={(e) => {
+                setPrioritySource(e.target.value);
+                setPagination((prev) => ({ ...prev, page: 1 }));
+              }}
+              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand font-mono"
+            >
+              {PRIORITY_SOURCE_OPTIONS.map((src) => (
+                <option key={src.value} value={src.value}>
+                  {src.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Escalation Filter */}
+          <div className="md:col-span-3">
+            <select
+              value={escalated}
+              onChange={(e) => {
+                setEscalated(e.target.value);
+                setPagination((prev) => ({ ...prev, page: 1 }));
+              }}
+              className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded cursor-pointer focus:border-brand focus-visible:outline-brand font-mono"
+            >
+              {ESCALATED_OPTIONS.map((esc) => (
+                <option key={esc.value} value={esc.value}>
+                  {esc.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* Reset Filters */}
-          <div className="md:col-span-2 flex justify-end">
+          <div className="md:col-span-3 flex justify-end">
             {hasActiveFilters && (
               <Button
                 variant="ghost"
@@ -454,6 +556,7 @@ const AdminComplaintsPage = () => {
                 <th className="py-3 px-4 font-medium">Category</th>
                 <th className="py-3 px-4 font-medium">Priority</th>
                 <th className="py-3 px-4 font-medium">Status</th>
+                <th className="py-3 px-4 font-medium">SLA State</th>
                 <th className="py-3 px-4 font-medium">Assigned Staff</th>
                 <th className="py-3 px-4 font-medium">Created</th>
                 <th className="py-3 px-4 font-medium text-right">Action</th>
@@ -462,18 +565,18 @@ const AdminComplaintsPage = () => {
             <tbody className="divide-y divide-line">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-muted">
+                  <td colSpan={9} className="py-12 text-center text-muted">
                     <LoadingSpinner label="Loading complaint registry..." size={20} />
                   </td>
                 </tr>
               ) : complaints.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-10">
+                  <td colSpan={9} className="py-10">
                     <EmptyState
                       title="No Complaints Found"
                       message={
                         hasActiveFilters
-                          ? 'No tickets match the selected search, status, staff, or date criteria.'
+                          ? 'No tickets match the selected search, status, SLA, staff, or date criteria.'
                           : 'No complaints registered in the system yet.'
                       }
                       action={
@@ -518,14 +621,50 @@ const AdminComplaintsPage = () => {
                       </div>
                     </td>
 
-                    {/* Priority */}
+                    {/* Priority & Source */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
-                      <PriorityBadge priority={item.priority} />
+                      <div className="flex flex-col space-y-0.5">
+                        <div className="flex items-center space-x-1.5">
+                          <PriorityBadge priority={item.priority} />
+                          <span
+                            className={`px-1 py-0.2 rounded text-[9px] font-mono uppercase tracking-wider ${
+                              item.prioritySource === 'MANUAL'
+                                ? 'bg-amber-500/15 text-amber-600 border border-amber-500/30'
+                                : 'bg-line/60 text-muted'
+                            }`}
+                            title={`Priority Source: ${item.prioritySource || 'AUTOMATIC'}`}
+                          >
+                            {item.prioritySource === 'MANUAL' ? 'Manual' : 'Auto'}
+                          </span>
+                        </div>
+                        {item.priorityReason && (
+                          <span
+                            className="text-[10px] text-muted truncate max-w-[140px] font-sans"
+                            title={item.priorityReason}
+                          >
+                            {item.priorityReason}
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* Status */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       <StatusBadge status={item.status} />
+                    </td>
+
+                    {/* SLA State */}
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <SlaBadge
+                        status={item.sla?.status || 'ON_TRACK'}
+                        escalated={item.sla?.escalated}
+                        escalationLevel={item.sla?.escalationLevel}
+                        timeRemaining={
+                          item.status === 'RESOLVED'
+                            ? 'Resolved'
+                            : formatSlaTimeRemaining(item.sla?.resolutionDeadline)
+                        }
+                      />
                     </td>
 
                     {/* Assigned Staff */}
@@ -684,6 +823,86 @@ const AdminComplaintsPage = () => {
                 </div>
               )}
 
+              {/* SLA Telemetry & Operational Health Panel */}
+              <div className="p-4 border border-line rounded-lg bg-paper/60 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-1.5">
+                    <Clock size={14} className="text-brand" />
+                    <h3 className="text-xs font-mono uppercase tracking-wider text-ink font-medium">
+                      Service Level Agreement (SLA)
+                    </h3>
+                  </div>
+                  <SlaBadge
+                    status={selectedComplaint.sla?.status || 'ON_TRACK'}
+                    escalated={selectedComplaint.sla?.escalated}
+                    escalationLevel={selectedComplaint.sla?.escalationLevel}
+                    timeRemaining={
+                      selectedComplaint.status === 'RESOLVED'
+                        ? 'Resolved'
+                        : formatSlaTimeRemaining(selectedComplaint.sla?.resolutionDeadline)
+                    }
+                  />
+                </div>
+
+                {selectedComplaint.sla?.escalated && (
+                  <div className="p-2.5 rounded bg-red-500/10 border border-red-500/20 text-xs text-red-500 flex items-center space-x-2 font-mono">
+                    <Flame size={14} className="shrink-0 animate-pulse" />
+                    <span>
+                      Escalated to Level {selectedComplaint.sla.escalationLevel || 1}
+                      {selectedComplaint.sla.escalatedAt ? ` on ${formatFullDateTime(selectedComplaint.sla.escalatedAt)}` : ''}
+                    </span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 text-xs font-mono">
+                  {/* Response SLA */}
+                  <div className="p-2.5 rounded bg-line/20 border border-line/40 space-y-1">
+                    <span className="text-[10px] text-muted uppercase block">Response Target & Deadline</span>
+                    <div className="text-ink font-medium">
+                      Target: {selectedComplaint.sla?.responseTargetMinutes ? `${selectedComplaint.sla.responseTargetMinutes / 60}h` : '—'}
+                    </div>
+                    <div className="text-[11px] text-muted">
+                      Deadline: {formatFullDateTime(selectedComplaint.sla?.responseDeadline) || '—'}
+                    </div>
+                    <div className="text-[11px]">
+                      {selectedComplaint.sla?.responseAt ? (
+                        <span className="text-status-resolved">
+                          ✓ Responded: {formatFullDateTime(selectedComplaint.sla.responseAt)}
+                        </span>
+                      ) : selectedComplaint.sla?.responseBreached ? (
+                        <span className="text-priority-critical">⚠ Response SLA Breached</span>
+                      ) : (
+                        <span className="text-muted">Awaiting first response action</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Resolution SLA */}
+                  <div className="p-2.5 rounded bg-line/20 border border-line/40 space-y-1">
+                    <span className="text-[10px] text-muted uppercase block">Resolution Target & Deadline</span>
+                    <div className="text-ink font-medium">
+                      Target: {selectedComplaint.sla?.resolutionTargetMinutes ? `${selectedComplaint.sla.resolutionTargetMinutes / 60}h` : '—'}
+                    </div>
+                    <div className="text-[11px] text-muted">
+                      Deadline: {formatFullDateTime(selectedComplaint.sla?.resolutionDeadline) || '—'}
+                    </div>
+                    <div className="text-[11px]">
+                      {selectedComplaint.sla?.resolutionAt ? (
+                        <span className="text-status-resolved">
+                          ✓ Resolved: {formatFullDateTime(selectedComplaint.sla.resolutionAt)}
+                        </span>
+                      ) : selectedComplaint.sla?.resolutionBreached ? (
+                        <span className="text-priority-critical">⚠ Resolution Breached</span>
+                      ) : (
+                        <span className="text-muted">
+                          {formatSlaTimeRemaining(selectedComplaint.sla?.resolutionDeadline)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Admin Actions: Assignment & Status Override */}
               <div className="p-4 border border-line rounded-lg bg-paper/80 space-y-4">
                 <h3 className="text-xs font-mono uppercase tracking-wider text-ink font-medium flex items-center space-x-1.5">
@@ -726,31 +945,55 @@ const AdminComplaintsPage = () => {
                   )}
                 </div>
 
-                {/* 2. Change Priority */}
-                <div className="space-y-1.5 pt-3 border-t border-line">
-                  <label className="text-xs font-medium text-ink block">
-                    Update Urgency / Priority
-                  </label>
-                  <div className="flex items-center space-x-2">
-                    <select
-                      value={selectedPriority}
-                      onChange={(e) => setSelectedPriority(e.target.value)}
-                      className="flex-1 px-3 py-2 bg-paper text-xs text-ink border border-line rounded focus:border-brand focus-visible:outline-brand cursor-pointer font-mono"
-                    >
-                      {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((pr) => (
-                        <option key={pr} value={pr}>
-                          {pr}
-                        </option>
-                      ))}
-                    </select>
+                {/* 2. Manual Priority Override with Mandatory Reason */}
+                <div className="space-y-2 pt-3 border-t border-line">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-medium text-ink block">
+                      Manual Priority Override (Audited)
+                    </label>
+                    <span className="text-[10px] font-mono text-muted uppercase">
+                      Current: {selectedComplaint.priority} ({selectedComplaint.prioritySource || 'AUTOMATIC'})
+                    </span>
+                  </div>
+                  {selectedComplaint.priorityReason && (
+                    <div className="text-[11px] text-muted italic bg-line/20 p-2 rounded border border-line/40">
+                      Reason: &ldquo;{selectedComplaint.priorityReason}&rdquo;
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                    <div className="sm:col-span-4">
+                      <select
+                        value={overridePriority}
+                        onChange={(e) => setOverridePriority(e.target.value)}
+                        className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded focus:border-brand focus-visible:outline-brand cursor-pointer font-mono"
+                      >
+                        {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((pr) => (
+                          <option key={pr} value={pr}>
+                            {pr}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="sm:col-span-8">
+                      <input
+                        type="text"
+                        placeholder="Reason (e.g. Affects entire computer laboratory)"
+                        value={overrideReason}
+                        onChange={(e) => setOverrideReason(e.target.value)}
+                        className="w-full px-3 py-2 bg-paper text-xs text-ink border border-line rounded focus:border-brand focus-visible:outline-brand"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end pt-1">
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => handlePriorityChange(selectedPriority)}
-                      disabled={actionLoading || selectedPriority === selectedComplaint.priority}
-                      className="text-xs font-mono shrink-0"
+                      onClick={handleOverridePriority}
+                      disabled={actionLoading || !overrideReason.trim() || overrideReason.trim().length < 5}
+                      className="text-xs font-mono"
                     >
-                      Update Priority
+                      <Zap size={12} className="mr-1" />
+                      Save Priority Override
                     </Button>
                   </div>
                 </div>

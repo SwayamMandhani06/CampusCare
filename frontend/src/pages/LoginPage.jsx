@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import InputField from '../components/Input';
-import { LogIn, ArrowLeft, AlertCircle, KeyRound } from 'lucide-react';
+import { LogIn, ArrowLeft, AlertCircle } from 'lucide-react';
 
 const LoginPage = () => {
   const { login } = useAuth();
@@ -138,21 +138,6 @@ const LoginPage = () => {
               >
                 Sign In
               </Button>
-            </div>
-
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail('student@pccoepune.org');
-                  setPassword('CampusCare@2026');
-                  if (error) setError('');
-                }}
-                className="w-full py-2 px-3 text-xs font-mono text-muted hover:text-ink bg-line/20 hover:bg-line/40 rounded border border-line/60 transition-colors flex items-center justify-center space-x-2"
-              >
-                <KeyRound size={12} className="text-brand" />
-                <span>Quick Fill Demo Student</span>
-              </button>
             </div>
           </form>
 
